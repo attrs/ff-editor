@@ -3,16 +3,17 @@
   "version": "0.0.0",
   "description": "router for browser",
   "main": "lib/index.js",
+  "web": "dist/firefront.js",
   "homepage": "https://github.com/attrs/firefront",
   "repository": "attrs/firefront",
   "author": "joje <joje.attrs@gmail.com>",
   "scripts": {
+    "demo": "node node_modules/webmodules/bin/wpm.js up 9999 ./demo -s",
+    "build": "node node_modules/gulp/bin/gulp.js build"
   },
   "license": "MIT",
   "dependencies": {
-    "medium-editor": "^5.21.1",
-    "medium-editor-custom-html": "^1.1.0",
-    "spectrum-colorpicker": "^1.8.0"
+    "observe-js": "^0.5.7"
   },
   "devDependencies": {
     "gulp": "^3.9.1",
@@ -21,6 +22,7 @@
     "gulp-rimraf": "^0.2.0",
     "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
+    "webmodules": "^0.1.32",
     "webpack": "^1.13.1",
     "webpack-stream": "^3.2.0"
   },
@@ -31,6 +33,5 @@
     "LICENSE",
     "README.md"
   ],
-  "keywords": [
-  ]
+  "keywords": []
 }
