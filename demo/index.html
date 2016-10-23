@@ -5,12 +5,17 @@
   <meta charset="utf-8">
   <title>firefront demo</title>
   
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
   <style>
     .article {
       width: 1000px;
       margin: 0 auto;
       min-height: 600px;
       border: 1px solid #ccc;
+    }
+    
+    [contenteditable] {
+      outline: none;
     }
   </style>
   
@@ -19,19 +24,22 @@
     var ff = require('firefront');
     ff.render({
       title: {
-        html: 'Title',
+        html: 'Hello firefront',
         placeholder: 'placeholder'
       },
       contents: {
-        html: '<p>Contents</p>',
+        html: '<p>Hello firefront</p><div ff-id="nested">test</div>',
         placeholder: 'placeholder'
+      },
+      nested: {
+        html: 'nested'
       }
-    }).editmode();
+    }).edit();
   </script>
   <script src="/web_modules/webmodules/runtime.js"></script>
 </head>
 <body>
   <h1 ff-id="title">Title</h1>
-  <div class="article" ff-id="contents" ff-type="article"></div>
+  <div class="article" ff-id="contents"></div>
 </body>
 </html>
