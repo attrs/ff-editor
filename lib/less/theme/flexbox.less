@@ -1,0 +1,168 @@
+[flexbox] {
+  display: flex;
+  flex-direction: column;
+}
+
+[flexbox~="vertical"] {
+  flex-direction: column;
+}
+
+[flexbox~="horizontal"] {
+  flex-direction: row;
+}
+
+[flexbox~="wrap"] {
+  flex-wrap: wrap;
+}
+
+[flexbox~="horizontal"][flexbox~="reverse"] {
+  flex-direction: row-reverse;
+}
+
+[flexbox~="vertical"][flexbox~="reverse"] {
+  flex-direction: column-reverse;
+}
+
+[flexbox~="wrap"][flexbox~="reverse"] {
+  flex-wrap: wrap-reverse;
+}
+
+[flexbox~="inline"] {
+  display: inline-flex;
+}
+
+[flex] {
+  -ms-flex: 1 1 0.000000001px;
+  flex: 1;
+}
+
+[flex="auto"] {
+  -ms-flex: 1 1 auto;
+  flex-basis: auto;
+}
+
+[flex="none"] {
+  flex: none;
+}
+
+[flex="1"] {
+  flex: 1;
+}
+
+[flex="2"] {
+  flex: 2;
+}
+
+[flex="3"] {
+  flex: 3;
+}
+
+[flex="4"] {
+  flex: 4;
+}
+
+[flex="5"] {
+  flex: 5;
+}
+
+[flex="6"] {
+  flex: 6;
+}
+
+[flex="7"] {
+  flex: 7;
+}
+
+[flex="8"] {
+  flex: 8;
+}
+
+[flex="9"] {
+  flex: 9;
+}
+
+[flex="10"] {
+  flex: 10;
+}
+
+[flex="11"] {
+  flex: 11;
+}
+
+[flex="12"] {
+  flex: 12;
+}
+
+[flexbox][align="start"] {
+  -ms-flex-align: start;
+  align-items: flex-start;
+}
+
+[flexbox][align="center"] {
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+[flexbox][align="end"] {
+  -ms-flex-align: end;
+  align-items: flex-end;
+}
+
+/* alignment in main axis */
+[flexbox][justify] {
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+}
+
+[flexbox][justify="start"] {
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+}
+
+[flexbox][justify="center"] {
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+
+[flexbox][justify="end"] {
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+}
+
+[flexbox][justify="space-around"], [flexbox][justify="distribute"] {
+  -ms-flex-pack: distribute;
+  justify-content: space-around;
+}
+
+[flexbox][align="center center"], [flexbox][justify="center center"] {
+  -ms-flex-align: center;
+  align-items: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+}
+
+/* self alignment */
+[flexbox][align-self="start"] {
+  -ms-align-self: flex-start;
+  align-self: flex-start;
+}
+
+[flexbox][align-self="center"] {
+  -ms-align-self: center;
+  align-self: center;
+}
+
+[flexbox][align-self="end"] {
+  -ms-align-self: flex-end;
+  align-self: flex-end;
+}
+
+[flexbox][align-self="stretch"] {
+  -ms-align-self: stretch;
+  align-self: stretch;
+}
+
+[flexbox][stretch] {
+  -ms-align-self: stretch;
+  align-self: stretch;
+}

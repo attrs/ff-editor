@@ -1,0 +1,45 @@
+.nav.nav-tabs {
+  //margin: -25px -20px 30px;
+  padding: 12px 18px 0;
+  border-bottom-width: 0;
+  //border-bottom: 1px solid @border-color;
+  
+  & > li > a {
+    color: lighten(@text-color, 25%);
+    padding: 10px 20px;
+    
+    .fa {
+      color: lighten(@text-color, 30%);
+      margin-right: 3px;
+    }
+  }
+  
+  & > li:hover > a,
+  & > li:focus > a {
+    border-color: @border-color;
+  }
+  & > li.active > a,
+  & > li.active > a:hover,
+  & > li.active > a:focus {
+    color: @text-color;
+    background-color: transparent;
+    border-bottom-color: transparent;
+    
+    .fa {
+      color: lighten(@text-color, 10%);
+    }
+  }
+  
+  &.page-tabs {
+    background-color: darken(@main-bg, 2%);
+    border-bottom-width: 1px;
+    
+    & > li.active > a,
+    & > li.active > a:hover,
+    & > li.active > a:focus {
+      color: @text-color;
+      background-color: @main-bg;
+      border-bottom-color: transparent;
+    }
+  }
+}
