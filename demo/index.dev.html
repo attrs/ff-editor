@@ -5,7 +5,8 @@
   <meta charset="utf-8">
   <title>firefront demo</title>
   
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+  
   <style>
     body {
       margin: 0;
@@ -26,10 +27,10 @@
       outline: none;
     }
   </style>
-
-  <script src="../dist/firefront.js"></script>
-  <script>
-    FF.editor().reset({
+  
+  <script type="text/commonjs">
+    var ff = require('firefront');
+    ff.editor().reset({
       title: {
         html: 'Hello firefront',
         placeholder: 'placeholder'
@@ -43,6 +44,7 @@
       }
     }).edit();
   </script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
 </head>
 <body>
   <h1 ff-id="title">Title</h1>
