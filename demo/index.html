@@ -30,6 +30,42 @@
   
   <script type="text/commonjs">
     var ff = require('firefront');
+    var Part = ff.Part;
+    
+    function Test(el) {
+      Part.call(this, el);
+      console.debug('this is Test');
+    }
+    
+    Test.prototype = Object.create(Part.prototype);
+    Test.prototype.constructor = Test;
+    
+    var instance = new Test(document.createElement('div'));
+    console.log('Test', i, i instanceof Test);
+    console.log('Part', i, i instanceof Part);
+  
+    ff.regist('test', Test);
+  </script>
+    
+  <script type="text/es2016">
+    import {default as ff, Part} from 'firefront';
+  
+    class Test extends Part {
+      constructor(el) {
+        super(this, el);
+        console.debug('this is Test');
+      }
+    }
+    
+    let instance = new Test(document.createElement('div'));
+    console.log('Test', i, i instanceof Test);
+    console.log('Part', i, i instanceof Part);
+    
+    ff.regist('test.es6', Test);
+  </script>
+  
+  <script type="text/commonjs">
+    var ff = require('firefront');
     ff.render({
       title: {
         html: 'Hello firefront',
