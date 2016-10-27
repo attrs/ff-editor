@@ -43,3 +43,26 @@
     }
   }
 }
+
+.nav.nav-underlined {
+  li > a {
+    border-bottom: 2px solid transparent;
+  }
+  
+  li.active > a {
+    color: @text-color;
+    background-color: initial;
+    border-bottom: 2px solid @brand-point;
+  }
+  
+  li:hover > a {
+    color: @text-color;
+    background-color: initial;
+    border-bottom: 2px solid lighten(@brand-point, 30%);
+  }
+  
+  li > a:focus {
+    color: @text-color;
+    background-color: initial;
+  }
+}

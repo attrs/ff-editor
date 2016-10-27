@@ -1,3 +1,15 @@
+// workbench variables
+@sidebar-bg-color: #111518;
+@sidebar-bg-color: #21262A;
+@sidebar-active-color: @brand-warning;
+//@gnb-text-color: white;
+//@gnb-bg-color: #6EC0E4;
+//@gnb-border-bottom-color: #73CFF8;
+@gnb-text-color: @text-color;
+@gnb-bg-color: white;
+@gnb-border-bottom-color: @border-color;
+
+
 //
 // Variables
 // --------------------------------------------------
@@ -28,7 +40,7 @@
 @brand-system:          #37bc9b;
 @brand-light:           #fafafa;
 @brand-dark:            #3b3f4f;
-
+@brand-point:           #3498db;
 
 //== Scaffolding
 //
@@ -57,10 +69,11 @@
 //
 //## Font, line-height, and color for body text, headings, and more.
 
-@font-family-sans-serif:  "Helvetica Neue", Helvetica, Arial, sans-serif;
-@font-family-serif:       Georgia, "Times New Roman", Times, serif;
+@font-family-sans-serif:  -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+@font-family-serif:       Georgia, "Times New Roman", Times, serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 //** Default monospace fonts for `<code>`, `<kbd>`, and `<pre>`.
-@font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace;
+@font-family-monospace:   Menlo, Monaco, Consolas, "Courier New", monospace, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+@font-family-script:      @font-family-serif;
 @font-family-base:        @font-family-sans-serif;
 
 @font-size-base:          14px;
@@ -91,7 +104,7 @@
 //## Specify custom location and filename of the included Glyphicons icon font. Useful for those including Bootstrap via Bower.
 
 //** Load fonts from this directory.
-@icon-font-path:          "/fonts/glyphicons/";
+@icon-font-path:          "//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/fonts/";
 //** File name for all font files.
 @icon-font-name:          "glyphicons-halflings-regular";
 //** Element ID within SVG icon file.

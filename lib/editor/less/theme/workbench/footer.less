@@ -1,0 +1,30 @@
+footer {
+  color: @text-color-light;
+  font-size: 13px;
+  overflow: hidden;
+  padding: 10px 0px;
+  background-color: #fafafa;
+  border-top: 1px solid @border-color;
+  
+  b {
+    color: darken(@text-color-light, 10%);
+  }
+  
+  & > .row {
+    margin: 0;
+  }
+  
+  .icon {
+    margin-left: 7px;
+    display: inline-block;
+    color: @text-color-light;
+    padding: 3px 7px;
+    background-color: #eaeaea;
+    border-radius: 3px;
+    transition: all 0.25s ease;
+    
+    &:hover {
+      color: @text-color;
+    }
+  }
+}

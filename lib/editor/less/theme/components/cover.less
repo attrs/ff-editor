@@ -1,0 +1,81 @@
+.cover {
+  position: relative;
+  height: 600px;
+  transition: all .25;
+  
+  .cover__bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: 50% 50%;
+    z-index: 1;
+  }
+  
+  .cover__shadow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #000;
+    opacity: .28;
+    z-index: 2;
+  }
+  
+  .cover__contents {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    
+    &:before {
+      content: '';
+      display: inline-block;
+      height: 100%;
+      vertical-align: middle;
+      margin-right: -0.25em;
+    }
+    
+    .cover__middle {
+      display: inline-block;
+      vertical-align: middle;
+      width: 100%;
+    }
+  }
+}
+
+.headline {
+  text-align: center;
+  
+  .headline__category {
+    display: inline-block;
+    font-size: 14px;
+    opacity: .9;
+    font-weight: bold;
+    margin: 10px 0;
+    padding: 0;
+  }
+  
+  .headline__title {
+    line-height: 25pt;
+    letter-spacing: 0.3em;
+    opacity: .85;
+    word-wrap: break-word;
+    font-size: 34pt;
+    font-weight: 400;
+    margin: 0;
+  }
+  
+  .headline__desc {
+    font-size: 12pt;
+    line-height: 18pt;
+    font-weight: normal;
+    margin: 10px 0;
+    padding: 0;
+  }
+}

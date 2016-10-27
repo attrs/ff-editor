@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "x-modal": "0.0.2"
+    "x-modal": "0.0.3"
   },
   "devDependencies": {
     "css-loader": "^0.25.0",

@@ -164,6 +164,54 @@ hr.separator {
   width: 300px !important;
 }
 
+.w600 {
+  width: 600px !important;
+}
+
+.w900 {
+  width: 900px !important;
+}
+
+.w1200 {
+  width: 1200px !important;
+}
+
+.xw50 {
+  max-width: 50px !important;
+}
+
+.xw100 {
+  max-width: 100px !important;
+}
+
+.xw150 {
+  max-width: 150px !important;
+}
+
+.xw200 {
+  max-width: 200px !important;
+}
+
+.xw250 {
+  max-width: 250px !important;
+}
+
+.xw300 {
+  max-width: 300px !important;
+}
+
+.xw600 {
+  max-width: 600px !important;
+}
+
+.xw900 {
+  max-width: 900px !important;
+}
+
+.xw1200 {
+  max-width: 1200px !important;
+}
+
 .h50 {
   height: 50px !important;
 }
@@ -188,6 +236,18 @@ hr.separator {
   height: 300px !important;
 }
 
+.h600 {
+  height: 600px !important;
+}
+
+.h900 {
+  height: 900px !important;
+}
+
+.h1200 {
+  height: 1200px !important;
+}
+
 .antialiased {
   font-smoothing: antialiased;
   -webkit-font-smoothing: antialiased;
@@ -204,6 +264,10 @@ hr.separator {
 
 .border {
   border: 1px solid @border-color;
+}
+
+.border-muted {
+  border-color: @muted !important;
 }
 
 .bt {
@@ -232,6 +296,19 @@ hr.separator {
   border-bottom: none !important;
 }
 
+.text-serif {
+  font-family: @font-family-serif !important;
+}
+.text-sans {
+  font-family: @font-family-sans-serif !important;
+}
+.text-mono {
+  font-family: @font-family-monospace !important;
+}
+.text-script {
+  font-family: @font-family-script !important;
+}
+
 .text-white {
   color: @white !important;
 }
@@ -253,6 +330,10 @@ hr.separator {
 .text-alert {
   color: @brand-alert !important;
 }
+.text-muted {
+  color: @muted !important;
+}
+
 .bg-system {
   background-color: @brand-system !important;
 }
@@ -591,33 +672,3 @@ hr.separator {
   font-size: 16px !important;
 }
 
-.text-white {
-  .text-emphasis-variant(@white);
-}
-.text-muted {
-  .text-emphasis-variant(@muted);
-}
-.text-primary {
-  .text-emphasis-variant(@brand-primary);
-}
-.text-success {
-  .text-emphasis-variant(@brand-success);
-}
-.text-info {
-  .text-emphasis-variant(@brand-info);
-}
-.text-warning {
-  .text-emphasis-variant(@brand-warning);
-}
-.text-danger {
-  .text-emphasis-variant(@brand-danger);
-}
-.text-alert {
-  .text-emphasis-variant(@brand-alert);
-}
-.text-system {
-  .text-emphasis-variant(@brand-system);
-}
-.text-dark {
-  .text-emphasis-variant(@brand-dark);
-}

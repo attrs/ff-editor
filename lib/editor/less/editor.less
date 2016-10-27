@@ -1,4 +1,3 @@
-@bootstrap: "./bootstrap/less";
 @theme: "./theme";
 @import "@{theme}/variables.less";
 
@@ -14,43 +13,7 @@
 .ff-body {
   font-size: 12px;
   
-  @import "@{bootstrap}/mixins.less";
-  @import "@{bootstrap}/scaffolding.less";
-  @import "@{bootstrap}/type.less";
-  @import "@{bootstrap}/code.less";
-  @import "@{bootstrap}/grid.less";
-  @import "@{bootstrap}/tables.less";
-  @import "@{bootstrap}/forms.less";
-  @import "@{bootstrap}/buttons.less";
-  @import "@{bootstrap}/dropdowns.less";
-  @import "@{bootstrap}/button-groups.less";
-  @import "@{bootstrap}/input-groups.less";
-  @import "@{bootstrap}/navs.less";
-  @import "@{bootstrap}/navbar.less";
-  @import "@{bootstrap}/pager.less";
-  @import "@{bootstrap}/labels.less";
-  @import "@{bootstrap}/panels.less";
-  @import "@{bootstrap}/utilities.less";
-  @import "@{theme}/overrides/navs";
-  @import "@{theme}/overrides/buttons";
-  @import "@{theme}/overrides/button-groups";
-  @import "@{theme}/overrides/media";
-  @import "@{theme}/overrides/dropdowns";
-  @import "@{theme}/overrides/panels";
-  @import "@{theme}/overrides/tables";
-  @import "@{theme}/overrides/list-group";
-  @import "@{theme}/overrides/forms";
-  @import "@{theme}/overrides/labels";
-  @import "@{theme}/overrides/type";
-  @import "@{theme}/overrides/grid";
-  @import "@{theme}/components/chip";
-  @import "@{theme}/components/form";
-  @import "@{theme}/components/box";
-  @import "@{theme}/components/checkbox";
-  @import "@{theme}/components/switch";
-  @import "@{theme}/components/picture-list";
-  @import "@{theme}/components/tagbox";
-  @import "@{theme}/util";
+  @import "@{theme}/theme.less";
   
   .clearfix:before, .clearfix:after, .dl-horizontal dd:before, .dl-horizontal dd:after, .container:before, .container:after, .container-fluid:before, .container-fluid:after, .row:before, .row:after, .form-horizontal .form-group:before, .form-horizontal .form-group:after, .btn-toolbar:before, .btn-toolbar:after, .btn-group-vertical > .btn-group:before, .btn-group-vertical > .btn-group:after, .nav:before, .nav:after, .navbar:before, .navbar:after, .navbar-header:before, .navbar-header:after, .navbar-collapse:before, .navbar-collapse:after, .pager:before, .pager:after, .panel-body:before, .panel-body:after, .modal-header:before, .modal-header:after, .modal-footer:before, .modal-footer:after {
     content: " ";
