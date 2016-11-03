@@ -3,7 +3,6 @@
   "version": "0.0.2",
   "description": "firefront",
   "main": "lib/index.js",
-  "web": "dist/firefront.js",
   "homepage": "https://github.com/attrs/firefront",
   "repository": "attrs/firefront",
   "author": "joje <joje.attrs@gmail.com>",
