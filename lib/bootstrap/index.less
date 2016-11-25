@@ -1,15 +1,6 @@
 @theme: "./theme";
 @import "@{theme}/variables.less";
 
-.ff {
-  cursor: pointer;
-  cursor: hand;
-  
-  &:hover {
-    outline: @border-color dotted thin;
-  }
-}
-
 .ff-body {
   font-size: 12px;
   
@@ -29,83 +20,3 @@
     clear: both;
   }
 }
-
-.ff-toolbar {
-  border: none;
-  box-sizing: border-box;
-  border-radius: 50px;
-  background-color: rgba(0,0,0,0.85);
-  
-  ul {
-    display: block;
-    margin: 0;
-    padding: 0;
-    
-    &:after {
-      clear: both;
-      content: "";
-      display: table;
-    }
-    
-    li {
-      float: left;
-      list-style: none;
-      margin: 0;
-      padding: 0;
-    }
-    
-    li a:hover, li a:active, li a:focus {
-      text-decoration: none;
-    }
-    
-    li a {
-      display: block;
-      cursor: pointer;
-      font-size: 1em;
-      line-height: 1em;
-      background-color: transparent;
-      color: @white;
-      margin: 12px 10px;
-      text-decoration: none;
-    }
-    
-    li a:hover {
-      color: @brand-info;
-    }
-  
-    li.active a {
-      color: @brand-info;
-    }
-  
-    li:first-child {
-      padding-left: 15px;
-    }
-  
-    li:last-child {
-      padding-right: 15px;
-    }
-  }
-  
-  &.ff-toolbar-vertical {
-    ul {
-      li {
-        float: initial;
-      }
-      
-      li a {
-        margin: 15px 14px;
-      }
-      
-      li:first-child {
-        padding-top: 10px;
-        padding-left: 0;
-      }
-      
-      li:last-child {
-        padding-bottom: 10px;
-        padding-right: 0;
-      }
-    }
-  }
-}
-

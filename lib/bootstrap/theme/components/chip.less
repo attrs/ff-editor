@@ -1,0 +1,43 @@
+.chip {
+  position: relative;
+  padding: 8px;
+  color: @text-color;
+  background: @contents-bg-light;
+  font-size: 12px;
+  border-radius: 3px;
+  border: 1px solid @border-color;
+  
+  &:before, &:after {
+    content: " ";
+    display: table;
+  }
+  &:after {
+    clear: both;
+  }
+  
+  & > .chip-icon {
+    display: inline-block;
+    vertical-align: middle;
+    width: 20px;
+    font-size: 16px;
+    text-align: center;
+  }
+  
+  & > .chip-name {
+    display: inline-block;
+    vertical-align: middle;
+    padding-left: 5px;
+  }
+  
+  & > .chip-desc {
+    float: right;
+  }
+  
+  & > .chip-acc {
+    float: right;
+    
+    .btn {
+      color: lighten(@text-color, 20%);
+    }
+  }
+}

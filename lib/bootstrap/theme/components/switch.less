@@ -1,0 +1,153 @@
+label.switch {
+  cursor: pointer;
+  position: relative;
+  padding-right: 10px;
+  display: inline-block;
+  margin-bottom: 5px;
+  height: 34px;
+
+  & > label {
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    height: 34px;
+    width: 80px;
+    min-height: 34px;
+    min-width: 80px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    line-height: 20px;
+    text-align: center;
+    background: #D7D7D7;
+    border: 2px solid #D7D7D7;
+    text-transform: uppercase;
+    font-family: Helvetica, Arial, sans-serif;
+    transition: 0.3s ease-out;
+    border-radius: 3px;
+  }
+  & > label + span {
+    display: inline-block;
+    padding-left: 5px;
+    position: relative;
+    top: -7px;
+  }
+  & > label:before {
+    content: attr(data-off);
+    position: absolute;
+    top: 1px;
+    right: 14px;
+    line-height: 28px;
+  }
+  & > label:after {
+    content: "";
+    margin: 1px;
+    width: 28px;
+    height: 28px;
+    display: block;
+    background: #fff;
+    -webkit-border-radius: 2px;
+    border-radius: 2px;
+  }
+  & > input {
+    -webkit-appearance: none;
+    position: absolute;
+    width: inherit;
+    height: inherit;
+    opacity: 0;
+    left: 0;
+    top: 0;
+  }
+
+  & > input:focus {
+    outline: none;
+  }
+  & > input:focus + label {
+    color: #fff;
+    border-color: #C7C7C7;
+    background: #C7C7C7;
+  }
+  & > input:focus + label:after {
+    background: #fff;
+  }
+  
+  & > input:checked + label {
+    border-color: #999;
+    background: #999;
+    padding-left: 46px;
+    color: white;
+  }
+  & > input:checked + label:before {
+    content: attr(data-on);
+    left: 14px;
+    top: 1px;
+    right: initial;
+  }
+  & > input:checked + label:after {
+    margin: 1px;
+    width: 28px;
+    height: 28px;
+    background: white;
+  }
+  
+  // brand
+  &.switch-primary > input:checked + label {
+    background: @brand-primary;
+    border-color: @brand-primary;
+  }
+  &.switch-primary > input:checked + label:after {
+    color: @brand-primary;
+  }
+  &.switch-primary > input:checked:focus + label {
+    background: @brand-primary;
+    border-color: @brand-primary;
+  }
+  
+  &.switch-success > input:checked + label {
+    background: @brand-success;
+    border-color: @brand-success;
+  }
+  &.switch-success > input:checked + label:after {
+    color: @brand-success;
+  }
+  &.switch-success > input:checked:focus + label {
+    background: @brand-success;
+    border-color: @brand-success;
+  }
+  
+  &.switch-info > input:checked + label {
+    background: @brand-info;
+    border-color: @brand-info;
+  }
+  &.switch-info > input:checked + label:after {
+    color: @brand-info;
+  }
+  &.switch-info > input:checked:focus + label {
+    background: @brand-info;
+    border-color: @brand-info;
+  }
+  
+  &.switch-warning > input:checked + label {
+    background: @brand-warning;
+    border-color: @brand-warning;
+  }
+  &.switch-warning > input:checked + label:after {
+    color: @brand-warning;
+  }
+  &.switch-warning > input:checked:focus + label {
+    background: @brand-warning;
+    border-color: @brand-warning;
+  }
+  
+  &.switch-danger > input:checked + label {
+    background: @brand-danger;
+    border-color: @brand-danger;
+  }
+  &.switch-danger > input:checked + label:after {
+    color: @brand-danger;
+  }
+  &.switch-danger > input:checked:focus + label {
+    background: @brand-danger;
+    border-color: @brand-danger;
+  }
+}

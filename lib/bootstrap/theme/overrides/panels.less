@@ -1,0 +1,140 @@
+@panel-header-color: lighten(@border-color, 10%); //#fafafa;
+@panel-header-text-color: lighten(@text-color, 15%);
+@panel-body-color: @white;
+
+.panel {
+  position: relative;
+  background-color: @panel-body-color;
+  border-radius: 3px;
+  border: 1px solid @border-color;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  
+  .panel-footer {
+    background: @panel-header-color;
+    border-top: 1px solid @border-color;
+  }
+  
+  .panel-heading {
+    position: relative;
+    min-height: 52px;
+    line-height: 50px;
+    color: @panel-header-text-color;
+    background: @panel-header-color;
+    border-bottom: 1px solid @border-color;
+    
+    font-weight: normal;
+    font-size: 1.1em;
+    padding: 0 8px;
+    
+    .panel-icon {
+      color: lighten(@panel-header-text-color, 20%);
+      padding-left: 7px;
+    }
+    
+    .panel-title {
+      padding-left: 3px;
+      margin-top: 0;
+      margin-bottom: 0;
+      line-height: 49px;
+      letter-spacing: 0.1px;
+      color: @panel-header-text-color;
+      font-size: 1em;
+      font-weight: 400;
+    }
+    
+    .panel-controls {
+      display: block;
+      position: relative;
+      float: right;
+      padding-left: 5px;
+      padding-right: 7px;
+      margin-right: -8px;
+      
+      &.panel-controls-masked {
+        background: rgba(0, 0, 0, 0.03);
+        border-left: 1px solid @border-color;
+      }
+      
+      & > a {
+        display: inline-block;
+        padding-top: 1px;
+        opacity: 0.7;
+        width: 26px;
+        color: lighten(@text-color, 7%);
+        font-size: 13px;
+        font-weight: normal;
+        text-align: center;
+        
+        &:hover {
+          color: darken(@text-color, 7%);
+        }
+      }
+    }
+    
+    .panel-tabs {
+      position: absolute;
+      bottom: 0;
+      //right: 0;
+      
+      & > li {
+        position: relative;
+        float: left;
+        margin-bottom: -1px;
+        
+        a {
+          color: lighten(@panel-header-text-color, 15%);
+          font-size: 14px;
+          letter-spacing: 0.2px;
+          line-height: 30px;
+          padding: 9px 20px 11px;
+          border-radius: 0;
+          border-left: 1px solid transparent;
+          border-right: 1px solid transparent;
+          
+          &:hover {
+            color: @panel-header-text-color;
+          }
+        }
+        
+        &.active > a {
+          color: @panel-header-text-color;
+          cursor: default;
+          background: @panel-body-color;
+          border-left-color: @border-color;
+          border-right-color: @border-color;
+          
+          &:last-child > a {
+            border-right-color: transparent;
+          }
+        }
+      }
+      
+      &.panel-tabs-left {
+        left: 0;
+        
+        & > li.active:first-child > a {
+          border-left-color: transparent;
+        }
+        & > li.active:last-child > a {
+          border-right-color: @border-color;
+        }
+      }
+    }
+  }
+    
+  .panel-toolbar {
+    padding: 10px;
+    background-color: @panel-body-color;
+    border-bottom: 1px solid @border-color;
+    
+    .row {
+      margin-left: 0;
+      margin-right: 0;
+      
+      .col-xs-1, .col-sm-1, .col-md-1, .col-lg-1, .col-xs-2, .col-sm-2, .col-md-2, .col-lg-2, .col-xs-3, .col-sm-3, .col-md-3, .col-lg-3, .col-xs-4, .col-sm-4, .col-md-4, .col-lg-4, .col-xs-5, .col-sm-5, .col-md-5, .col-lg-5, .col-xs-6, .col-sm-6, .col-md-6, .col-lg-6, .col-xs-7, .col-sm-7, .col-md-7, .col-lg-7, .col-xs-8, .col-sm-8, .col-md-8, .col-lg-8, .col-xs-9, .col-sm-9, .col-md-9, .col-lg-9, .col-xs-10, .col-sm-10, .col-md-10, .col-lg-10, .col-xs-11, .col-sm-11, .col-md-11, .col-lg-11, .col-xs-12, .col-sm-12, .col-md-12, .col-lg-12 {
+        padding-left: 0;
+        padding-right: 0;
+      }
+    }
+  }
+}

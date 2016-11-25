@@ -1,0 +1,54 @@
+input.form-control {
+  height: initial;
+  outline: none;
+  
+  &:focus {
+    outline: none;
+  }
+}
+
+.form-group {
+  label {
+    font-size: 1em;
+    font-weight: bold;
+    margin: 0;
+    line-height: 33px;
+    box-sizing: border-box;
+  
+    em {
+      display: inline-block;
+      color: @brand-danger;
+      font-style: normal;
+      margin-left: 4px;
+      margin-right: 4px;
+      position: relative;
+      top: 3px;
+    }
+  }
+  
+  .label {
+    line-height: 34px;
+  }
+}
+
+.form-horizontal {
+  .form-group {
+    padding-bottom: 6px;
+  }
+  
+  .control-label {
+    padding-top: 0;
+  }
+}
+
+.form-horizontal .radio, .form-horizontal .checkbox, .form-horizontal .radio-inline, .form-horizontal .checkbox-inline {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+}
+
+.radio input[type="radio"], .radio-inline input[type="radio"], .checkbox input[type="checkbox"], .checkbox-inline input[type="checkbox"] {
+  position: absolute;
+  margin-left: -20px;
+  margin-top: 9px;
+}
