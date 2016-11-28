@@ -152,19 +152,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !document.body ) return this;
 	      
 	      var root = this.element();
-	      for(var k in parts) {
-	        if( !root.contains(parts[k].element()) ) {
-	          //parts[k].close();
-	          delete parts[k];
-	        }
-	      }
 	      
-	      [].forEach.call(root.querySelectorAll('[ff-id]') , function(el) {
+	      (function() {
+	        for(var k in parts) {
+	          var el = parts[k].element();
+	          if( !root.contains(el) ) {
+	            parts[k].destroy();
+	            delete el.__ff__;
+	            delete parts[k];
+	          }
+	        }
+	      })();
+	      
+	      [].forEach.call(root.querySelectorAll('[ff-id], [ff-type]') , function(el) {
 	        var id = el.getAttribute('ff-id');
+	        var type = el.getAttribute('ff-type') || 'html';
 	        var part = el.__ff__;
 	        
 	        if( !part ) {
-	          var type = el.getAttribute('ff-type') || 'html';
 	          var Type = editor.type(type);
 	          if( !Type ) Type = Part;
 	          part = el.__ff__ = new Type(el);
@@ -188,9 +193,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      parts[id] && parts[id].data(null);
 	      return this;
 	    },
-	    close: function() {
+	    destroy: function() {
 	      this.editmode(false);
-	      for(var k in parts) parts[k].close();
+	      for(var k in parts) parts[k].destroy();
 	      return this;
 	    },
 	    type: function(type, fn) {
@@ -233,7 +238,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var ostyle = el.getAttribute('style');
 	  var ocls = el.className;
 	  var defaults = el.innerHTML;
-	  var emitter = Events(this);
+	  var dispatcher = Events(this);
 	  var highlighter = Highlighter(el);
 	  var self = this;
 	  
@@ -253,7 +258,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  });
 	  
-	  emitter.on('update', function(e) {
+	  dispatcher.on('update', function(e) {
 	    var data = this.data();
 	    
 	    if( data ) {
@@ -277,13 +282,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.restoreDefaults();
 	    }
 	    
-	    emitter.emit('render', {
+	    dispatcher.dispatch('render', {
 	      type: 'update',
 	      originalEvent: e
 	    });
 	  })
 	  .on('modechange', function(e) {
-	    emitter.emit('render', {
+	    dispatcher.dispatch('render', {
 	      type: 'modechange',
 	      originalEvent: e
 	    });
@@ -296,11 +301,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	  
 	  el.addEventListener('keyup', function(e) {
-	    emitter.emit('keyup', e);
+	    dispatcher.dispatch('keyup', e);
 	  });
 	  
 	  el.addEventListener('keydown', function(e) {
-	    emitter.emit('keydown', e);
+	    dispatcher.dispatch('keydown', e);
 	  });
 	  
 	  var isenter = function(target) {
@@ -314,36 +319,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( !self.editmode() ) return;
 	    if( !isenter(e.target) ) return;
 	    self.highlighter().show();
-	    emitter.emit('enter', e);
+	    dispatcher.dispatch('enter', e);
 	  })
 	  .leave(function(e) {
 	    if( !self.editmode() ) return;
 	    self.highlighter().hide();
-	    emitter.emit('leave', e);
+	    dispatcher.dispatch('leave', e);
 	  })
 	  .click(function(e) {
 	    if( !self.editmode() ) return;
 	    if( !isenter(e.target) ) return;
-	    emitter.emit('click', e);
+	    dispatcher.dispatch('click', e);
 	  })
 	  .focus(function(e) {
 	    if( !self.editmode() ) return;
 	    if( !isenter(e.target) ) return;
 	    self.toolbar().show();
-	    emitter.emit('focus', e);
+	    dispatcher.dispatch('focus', e);
 	  })
 	  .blur(function(e) {
 	    if( !self.editmode() ) return;
 	    self.toolbar().hide();
 	    highlighter.hide();
-	    emitter.emit('blur', e);
+	    dispatcher.dispatch('blur', e);
 	  });
 	  
 	  this._id = id;
 	  this._data = {};
-	  this._emitter = emitter;
+	  this._dispatcher = dispatcher;
 	  this._mouseobserver = mouseobserver;
-	  this._emitter = emitter;
+	  this._dispatcher = dispatcher;
 	  this._element = el;
 	  this._defaults = defaults;
 	  this._toolbar = toolbar;
@@ -371,7 +376,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var prev = this._editmode;
 	    var editmode = this._editmode = !!b;
 	    
-	    if( editmode !== prev ) this._emitter.emit('modechange', {editmode: editmode});
+	    if( editmode !== prev ) this.dispatch('modechange', {editmode: editmode});
 	    if( !editmode ) {
 	      this.toolbar().hide();
 	      this.highlighter().hide();
@@ -386,7 +391,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var data = this._data = value || null;
 	    
 	    if( prev !== data ) {
-	      if( update !== false ) this._emitter.emit('update', {
+	      if( update !== false ) this.dispatch('update', {
 	        prev: prev,
 	        data: data
 	      });
@@ -395,7 +400,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( data ) {
 	        var self = this;
 	        this._dataobserve = function(changes) {
-	          self._emitter.emit('update', {
+	          self._dispatcher.dispatch('update', {
 	            prev: prev,
 	            data: data,
 	            changes: changes
@@ -418,16 +423,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this;
 	  },
 	  on: function(type, fn) {
-	    this._emitter.on(type, fn);
+	    this._dispatcher.on(type, fn);
 	    return this;
 	  },
 	  once: function(type, fn) {
-	    this._emitter.once(type, fn);
+	    this._dispatcher.once(type, fn);
 	    return this;
 	  },
 	  off: function(type, fn) {
-	    this._emitter.off(type, fn);
+	    this._dispatcher.off(type, fn);
 	    return this;
+	  },
+	  dispatch: function() {
+	    return this._dispatcher.dispatch.apply(this._dispatcher, arguments);
 	  },
 	  config: function() {
 	    var self = this;
@@ -461,8 +469,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  clear: function() {
 	    this.data(null);
-	    this._emitter.emit('clear');
-	    this._emitter.emit('render', {
+	    this.dispatch('clear');
+	    this.dispatch('render', {
 	      type: 'clear'
 	    });
 	    return this;
@@ -470,15 +478,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  focus: function() {
 	    return this;
 	  },
-	  close: function() {
+	  destroy: function() {
+	    this.dispatch('destroy');
 	    this.restoreDefaults();
-	    this.mouseobserver().disconnect();
-	    this.toolbar().hide();
-	    this.highlighter().hide();
-	    this._emitter.emit('close');
-	    this._emitter.emit('render', {
-	      type: 'close'
+	    this.dispatch('render', {
+	      type: 'destroy'
 	    });
+	    this.mouseobserver().disconnect();
+	    this.toolbar().destroy();
+	    this.highlighter().destroy();
+	    this._dispatcher.destroy();
 	    return this;
 	  },
 	  
@@ -519,7 +528,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      else el.appendChild(node);
 	    });
 	    
-	    this._emitter.emit('insert', {
+	    this.dispatch('insert', {
 	      range: range,
 	      nodes: nodes
 	    });
@@ -650,6 +659,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        highlighter.style.display = 'none';
 	      }
 	      return this;
+	    },
+	    destroy: function() {
+	      if( highlighter && highlighter.parentNode ) highlighter.parentNode.removeChild(highlighter);
+	      el = null;
+	      return this;
 	    }
 	  };
 	  
@@ -774,6 +788,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	      
 	      document.body && document.body.appendChild(toolbar);
 	      
+	      this.updatePosition();
+	      
+	      return this;
+	    },
+	    updatePosition: function() {
 	      var ownerElement = owner.element();
 	      if( options.position && ownerElement ) {
 	        var ownerposition = getPosition(ownerElement);
@@ -828,6 +847,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	        
 	        if( top <= 5 ) top = 5;
 	        if( left <= 5 ) left = 5;
+	        
+	        if( vertical ) {
+	          if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
+	          if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
+	        }
+	        
 	        toolbar.style.top = top + 'px';
 	        toolbar.style.left = left + 'px';
 	      }
@@ -836,8 +861,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( +options.bottom >= 0 ) toolbar.style.bottom = options.bottom + 'px';
 	      if( +options.left >= 0 ) toolbar.style.left = options.left + 'px';
 	      if( +options.right >= 0 ) toolbar.style.right = options.right + 'px';
-	      
-	      return this;
 	    },
 	    show: function() {
 	      if( !btns.length ) return;
@@ -887,8 +910,20 @@ return /******/ (function(modules) { // webpackBootstrap
 	      
 	      instance.update();
 	      return this;
+	    },
+	    destroy: function() {
+	      if( buttonul && buttonul.parentNode ) buttonul.parentNode.removeChild(buttonul);
+	      if( toolbar && toolbar.parentNode ) toolbar.parentNode.removeChild(toolbar);
+	      window.removeEventListener('scroll', instance.updatePosition);
+	      window.removeEventListener('resize', instance.updatePosition);
+	      btns = null, visible = null, toolbar = null, buttonul = null;
+	      options = null, owner = null;
+	      return this;
 	    }
 	  };
+	  
+	  window.addEventListener('scroll', instance.updatePosition);
+	  window.addEventListener('resize', instance.updatePosition);
 	  
 	  return instance;
 	}
@@ -973,7 +1008,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this;
 	  };
 	  
-	  var emit = function(type, detail) {
+	  var dispatch = function(type, detail) {
 	    var typename = (type && type.type) || type;
 	    if( !listeners[typename] && !listeners['*'] ) return;
 	    
@@ -1014,12 +1049,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return listeners[type] && listeners[type].length ? true : false;
 	  };
 	  
+	  var destroy = function() {
+	    listeners = null;
+	    return this;
+	  };
+	  
 	  return {
 	    on: on,
 	    once: once,
 	    off: off,
-	    emit: emit,
-	    has: has
+	    dispatch: dispatch,
+	    has: has,
+	    destroy: destroy
 	  };
 	};
 
@@ -1154,6 +1195,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    disconnect: function() {
 	      remove(targets, target);
+	      remove(entered, target);
+	      if( focused === target ) focused = null;
 	      return this;
 	    }
 	  }
