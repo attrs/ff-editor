@@ -175,7 +175,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          part = el.__ff__ = new Type(el);
 	        }
 	        
-	        part.editor = editor;
+	        part.editor(editor);
 	        part.data(data[id] || null);
 	        part.editmode(editmode);
 	        
@@ -232,12 +232,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function Part(el) {
 	  if( !arguments.length ) return;
+	  if( typeof el === 'string' ) el = Part.evalElement(el);
 	  if( !Part.isElement(el) ) throw new TypeError('Argument element must be an element');
 	  
 	  var id = el.getAttribute('ff-id');
 	  var ostyle = el.getAttribute('style');
 	  var ocls = el.className;
-	  var defaults = el.innerHTML;
+	  var defaults = {
+	    style: ostyle,
+	    cls: ocls,
+	    html: el.innerHTML
+	  };
 	  var dispatcher = Events(this);
 	  var highlighter = Highlighter(el);
 	  var self = this;
@@ -278,8 +283,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	        
 	        el.style = style.join(';');
 	      }
-	    } else {
-	      this.restoreDefaults();
 	    }
 	    
 	    dispatcher.dispatch('render', {
@@ -415,11 +418,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  defaults: function(defaults) {
 	    if( !arguments.length ) return this._defaults;
-	    this._defaults = defaults || '';
+	    
+	    var prev = this._defaults || {};
+	    if( typeof defaults === 'string' ) defaults = {html:defaults,cls:prev.cls,style:prev.style};
+	    if( typeof defaults !== 'object' ) return console.error('defaults must be an object but', defaults);
+	    
+	    this._defaults = defaults || this._defaults;
 	    return this;
 	  },
 	  restoreDefaults: function() {
-	    this.element().innerHTML = this._defaults || '';
+	    var defaults = this._defaults;
+	    var el = this.element();
+	    if( defaults ) {
+	      if( defaults.style ) el.setAttribute('style', defaults.style);
+	      else el.removeAttribute('style');
+	      
+	      if( defaults.cls ) el.setAttribute('class', defaults.cls);
+	      else el.removeAttribute('class');
+	      
+	      el.innerHTML = defaults.html || '';
+	    }
 	    return this;
 	  },
 	  on: function(type, fn) {
@@ -504,6 +522,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	  range: function() {
 	    return this._range;
 	  },
+	  editor: function(editor) {
+	    if( !arguments.length ) return this._editor;
+	    if( !editor ) {
+	      this._editor = null;
+	      return this;
+	    }
+	    
+	    this._editor = editor;
+	    this.editmode(editor.editmode());
+	    
+	    return this;
+	  },
 	  insert: function(nodes) {
 	    if( !nodes ) return this;
 	    var el = this.element();
@@ -519,10 +549,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return console.error('[firefront] Part.insert: illegal arguments', nodes);
 	    }
 	    
+	    var self = this;
+	    
 	    if( range ) range.deleteContents();
 	    [].forEach.call(nodes, function(node) {
 	      if( !node ) return;
-	      if( node instanceof Part ) node = node.element();
+	      if( node instanceof Part ) {
+	        node.editor(self.editor());
+	        node = node.element();
+	      }
 	      
 	      if( range ) range.insertNode(node);
 	      else el.appendChild(node);
@@ -543,6 +578,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return (
 	    typeof HTMLElement === 'object' ? o instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
 	  );
+	};
+	
+	Part.evalElement = function(html) {
+	  var tmp = document.createElement('div');
+	  tmp.innerHTML = html;
+	  return tmp.children[0];
 	};
 	
 	Part.fragment = function(html) {
@@ -4279,6 +4320,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    
 	    if( data && 'html' in data ) {
 	      el.innerHTML = data.html || '';
+	    } else {
+	      this.restoreDefaults();
 	    }
 	    
 	    if( editmode && !el.children.length ) {
