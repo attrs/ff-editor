@@ -1,6 +1,6 @@
 {
   "name": "firefront",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "firefront",
   "main": "lib/index.js",
   "homepage": "https://github.com/attrs/firefront",
