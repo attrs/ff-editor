@@ -70,7 +70,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Types = __webpack_require__(4);
 	var connect = __webpack_require__(37);
 	
-	var editors = new WeakMap();
+	var editor;
 	var emptykey = {};
 	var ctx = module.exports = {
 	  Part: Part,
@@ -79,10 +79,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Toolbar: Toolbar,
 	  connect: connect,
 	  editor: function(el) {
-	    var key = el || emptykey;
-	    if( editors.has(key) ) return editors.get(key);
-	    editors.set(key, new Editor(el));
-	    return editors.get(key);
+	    if( !arguments.length ) {
+	      return editor = editor || new Editor();
+	    }
+	    
+	    return el.__ffeditor__ = el.__ffeditor__ || new Editor(el);
 	  },
 	  type: function(type, fn) {
 	    if( !arguments.length ) return console.error('missing type name');
@@ -550,7 +551,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    
 	    var self = this;
-	    
 	    if( range ) range.deleteContents();
 	    [].forEach.call(nodes, function(node) {
 	      if( !node ) return;
@@ -576,7 +576,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	Part.isElement = function(node){
 	  return (
-	    typeof HTMLElement === 'object' ? o instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
+	    typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
 	  );
 	};
 	
