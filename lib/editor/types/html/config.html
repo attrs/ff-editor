@@ -1,0 +1,50 @@
+<div class="ff-dialog bs">
+  <div class="p0">
+    <form class="form-horizontal">
+      <div class="panel m0">
+        <div class="panel-heading">
+          <ul class="nav panel-tabs panel-tabs-left">
+            <li class="active">
+              <a href="#style" data-toggle="tab"><i class="fa fa-info-circle"></i> 스타일/클래스</a>
+            </li>
+            <li>
+              <a href="#source" data-toggle="tab"><i class="fa fa-check-circle-o"></i> HTML 소스</a>
+            </li>
+          </ul>
+        </div>
+        
+        <div class="panel-body p15">
+          <!-- panel body -->
+          <div class="tab-content">
+            <!-- 스타일/클래스 -->
+            <div class="tab-pane active p15" id="style" role="tabpanel">
+              <div class="form-group">
+                <label>스타일</label>
+                <input type="text" name="style" class="form-control" placeholder="스타일">
+              </div>
+              <div class="form-group">
+                <label>클래스</label>
+                <input type="text" name="cls" class="form-control" placeholder="클래스">
+              </div>
+            </div>
+            
+            <!-- HTML -->
+            <div class="tab-pane" id="source" role="tabpanel">
+              <textarea name="html" class="form-control" style="height: 400px;"></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <div class="panel-footer">
+          <div class="row">
+            <div class="col-md-6"></div>
+            <div class="col-md-6 text-right">
+              <button type="button" class="btn btn-default" modal-close>취소</button>
+              <button type="submit" class="btn btn-primary">적용</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
