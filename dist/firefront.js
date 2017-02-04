@@ -85,6 +85,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    
 	    return el.__ffeditor__ = el.__ffeditor__ || new Editor(el);
 	  },
+	  endpoint: function(url) {
+	    connect.endpoint(url);
+	    return this;
+	  },
 	  type: function(type, fn) {
 	    if( !arguments.length ) return console.error('missing type name');
 	    if( arguments.length === 1 ) return Part.types.get(type);
@@ -120,10 +124,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var types = {};
 	  var observer;
 	  var editmode = false;
-	  
-	  ensure(function() {
-	    editor.reset();
-	  });
 	  
 	  var editor = {
 	    element: function() {
@@ -232,6 +232,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    top: 20,
 	    right: 20,
 	    cls: 'ff-editor-toolbar'
+	  });
+	  
+	  ensure(function() {
+	    editor.reset();
 	  });
 	  
 	  return editor;
@@ -4416,7 +4420,12 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 36 */
 /***/ function(module, exports) {
 
+	var endpoint;
+	
 	module.exports = {
+	  endpoint: function(url) {
+	    endpoint = url;
+	  },
 	  load: function(url, done) {
 	    done();
 	  }
