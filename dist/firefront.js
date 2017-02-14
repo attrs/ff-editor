@@ -332,7 +332,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  el.addEventListener('keydown', keydown);
 	  
 	  var isenter = function(target) {
-	    var hel = highlighter.element;
+	    var hel = highlighter.element();
 	    if( target === el || el.contains(target) || hel === target || (hel && hel.contains(target)) ) return true;
 	    return false;
 	  };
@@ -618,7 +618,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var highlighter, enabled = true, show = false;
 	  
 	  var instance = {
-	    get element() {
+	    element: function() {
 	      return highlighter;
 	    },
 	    update: function() {
