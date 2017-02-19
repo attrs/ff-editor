@@ -108,6 +108,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var Part = __webpack_require__(3);
 	var Toolbar = __webpack_require__(7);
+	var Events = __webpack_require__(8);
 	
 	__webpack_require__(31);
 	
@@ -124,6 +125,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var types = {};
 	  var observer;
 	  var editmode = false;
+	  var dispatcher = Events(Editor);
 	  
 	  var editor = {
 	    element: function() {
@@ -131,10 +133,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    editmode: function(b) {
 	      if( !arguments.length ) return editmode;
+	      
 	      editmode = !!b;
 	      
 	      parts.forEach(function(part) {
 	        part.editmode(!!b);
+	      });
+	      
+	      dispatcher.dispatch('editmode', {
+	        editmode: editmode
 	      });
 	      
 	      toolbar.update();
@@ -152,6 +159,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        return data;
 	      }
 	      
+	      dispatcher.dispatch('data', {
+	        data: data
+	      });
+	      
 	      editor.reset(d || {});
 	      return this;
 	    },
@@ -159,8 +170,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( !document.body ) return console.error('dom is not ready');
 	      if( !arguments.length ) d = data;
 	      
-	      var oeditmode = this.editmode();
-	      this.editmode(false);
+	      var oeditmode = editmode;
+	      editmode = false;
 	      
 	      data = d || {};
 	      toolbar.update();
@@ -175,7 +186,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	      parts = [];
 	      this.scan();
 	      
-	      this.editmode(oeditmode);
+	      dispatcher.dispatch('reset', {
+	        parts: parts
+	      });
+	      
+	      editmode = oeditmode;
+	      
+	      parts.forEach(function(part) {
+	        part.editmode(editmode);
+	      });
+	      
 	      return this;
 	    },
 	    scan: function() {
@@ -204,7 +224,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return parts.slice();
 	    },
 	    part: function(id) {
-	      return parts[id];
+	      if( typeof id === 'string' || typeof id === 'number' ) return parts[id];
+	      if( id && id instanceof Part ) return id;
+	      if( id && typeof id === 'object' ) {
+	        id = id[0] || id;
+	        return id && id.__ff__;
+	      }
+	      
+	      return null;
 	    },
 	    clear: function(id) {
 	      parts.forEach(function(part) {
@@ -224,6 +251,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	      if( arguments.length === 1 ) return types[type] || Part.types.get(type);
 	      types[type] = fn;
 	      return this;
+	    },
+	    on: function(type, fn) {
+	      dispatcher.on(type, fn);
+	      return this;
+	    },
+	    once: function(type, fn) {
+	      dispatcher.once(type, fn);
+	      return this;
+	    },
+	    off: function(type, fn) {
+	      dispatcher.off(type, fn);
+	      return this;
+	    },
+	    dispatch: function() {
+	      return dispatcher.dispatch.apply(dispatcher, arguments);
 	    }
 	  };
 	  
