@@ -329,8 +329,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var highlighter = Highlighter(el);
 	  var self = this;
 	  
-	  //console.log('part init', el);
-	  
 	  var toolbar = new Toolbar(this, {
 	    position: 'top center',
 	    group: 'part',
@@ -4366,7 +4364,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	function HTMLPart(el) {
-	  Part.call(this, el);
+	  el = Part.call(this, el);
 	  
 	  var part = this;
 	  var defaults = this._defaults = {
@@ -4437,59 +4435,65 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	};
 	
-	HTMLPart.prototype = new Part;
 	
-	HTMLPart.prototype.defaults = function() {
-	  if( !arguments.length ) return this._defaults;
-	};
-	
-	HTMLPart.prototype.restoreDefaults = function() {
-	  var defaults = this._defaults;
-	  var el = this.element();
-	  if( defaults ) {
-	    if( defaults.style ) el.setAttribute('style', defaults.style);
-	    else el.removeAttribute('style');
-	    
-	    if( defaults.cls ) el.setAttribute('class', defaults.cls);
-	    else el.removeAttribute('class');
-	    
-	    el.innerHTML = defaults.html || '';
+	HTMLPart.prototype = Object.create(Part.prototype, {
+	  defaults: {
+	    value: function() {
+	      if( !arguments.length ) return this._defaults;
+	    }
+	  },
+	  restoreDefaults: {
+	    value: function() {
+	      var defaults = this._defaults;
+	      var el = this.element();
+	      if( defaults ) {
+	        if( defaults.style ) el.setAttribute('style', defaults.style);
+	        else el.removeAttribute('style');
+	        
+	        if( defaults.cls ) el.setAttribute('class', defaults.cls);
+	        else el.removeAttribute('class');
+	        
+	        el.innerHTML = defaults.html || '';
+	      }
+	      return this;
+	    }
+	  },
+	  config: {
+	    value: function() {
+	      var part = this;
+	      var el = this.element();
+	      
+	      xmodal.open(__webpack_require__(34), function(err, modal) {
+	        if( err ) return xmodal.error(err);
+	        
+	        var data = part.data();
+	        var form = modal.body.querySelector('form');
+	        if( data && data.style ) form.style.value = data && data.style;
+	        if( data && data.cls ) form.cls.value = data && data.cls;
+	        form.html.value = el.innerHTML || '';
+	        
+	        form.onsubmit = function(e) {
+	          e.preventDefault();
+	          
+	          data = data || {};
+	          if( form.style.value ) data.style = form.style.value;
+	          else delete data.style;
+	          
+	          if( form.cls.value ) data.cls = form.cls.value;
+	          else delete data.cls;
+	          
+	          if( form.html.value ) data.html = form.html.value;
+	          else delete data.html;
+	          
+	          part.data(data);
+	          modal.close();
+	        };
+	      });
+	      return this;
+	    }
 	  }
-	  return this;
-	};
+	});
 	
-	HTMLPart.prototype.config = function() {
-	  var part = this;
-	  var el = this.element();
-	  
-	  xmodal.open(__webpack_require__(34), function(err, modal) {
-	    if( err ) return xmodal.error(err);
-	    
-	    var data = part.data();
-	    var form = modal.body.querySelector('form');
-	    if( data && data.style ) form.style.value = data && data.style;
-	    if( data && data.cls ) form.cls.value = data && data.cls;
-	    form.html.value = el.innerHTML || '';
-	    
-	    form.onsubmit = function(e) {
-	      e.preventDefault();
-	      
-	      data = data || {};
-	      if( form.style.value ) data.style = form.style.value;
-	      else delete data.style;
-	      
-	      if( form.cls.value ) data.cls = form.cls.value;
-	      else delete data.cls;
-	      
-	      if( form.html.value ) data.html = form.html.value;
-	      else delete data.html;
-	      
-	      part.data(data);
-	      modal.close();
-	    };
-	  });
-	  return this;
-	};
 	
 	module.exports = HTMLPart;
 
