@@ -92,13 +92,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  type: function(type, fn) {
 	    if( !arguments.length ) return console.error('missing type name');
 	    if( arguments.length === 1 ) return Part.types.get(type);
-	    Part.types.add(type, fn);
+	    Part.types.define(type, fn);
 	    return this;
 	  }
 	};
 	
 	ctx.type('html', ctx.HTMLPart);
-	ctx.type('image', ctx.ImagePart);
+	//ctx.type('image', ctx.ImagePart);
 
 
 /***/ },
@@ -319,23 +319,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	function Part(el) {
-	  if( !arguments.length ) return;
-	  if( typeof el === 'string' ) el = Part.evalElement(el);
-	  if( !Part.isElement(el) ) throw new TypeError('Argument element must be an element');
+	  if( el && el.__ff__ ) return el.__ff__;
+	  if( !el || !Part.isElement(el) ) el = this.create(el);
+	  
+	  el.__ff__ = this;
 	  
 	  var id = el.getAttribute('ff-id');
 	  var dispatcher = Events(this);
 	  var highlighter = Highlighter(el);
 	  var self = this;
 	  
+	  //console.log('part init', el);
+	  
 	  var toolbar = new Toolbar(this, {
 	    position: 'top center',
 	    group: 'part',
 	    cls: 'ff-part-toolbar'
 	  }).add({
-	    text: '<i class="fa fa-remove"></i>',
+	    text: '<i class="fa fa-undo"></i>',
 	    fn: function(e) {
 	      self.clear();
+	    }
+	  }).add({
+	    text: '<i class="fa fa-remove"></i>',
+	    fn: function(e) {
+	      self.remove();
 	    }
 	  });
 	  
@@ -419,14 +427,31 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this._highlighter = highlighter;
 	  
 	  observable(this);
+	  
+	  this.scan();
+	  
+	  var mo;
+	  if( window.MutationObserver ) {
+	    if( mo ) mo.disconnect();
+	    mo = new MutationObserver(function(mutations) {
+	      self.scan();
+	    });
+	    
+	    mo.observe(el, {
+	      childList: true,
+	      subtree: true
+	    });
+	  }
+	  
+	  return el;
 	}
 	
 	Part.prototype = {
 	  id: function() {
 	    return this._id;
 	  },
-	  mouseobserver: function() {
-	    return this._mouseobserver;
+	  element: function() {
+	    return this._element;
 	  },
 	  toolbar: function() {
 	    return this._toolbar;
@@ -434,8 +459,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	  highlighter: function() {
 	    return this._highlighter;
 	  },
-	  element: function() {
-	    return this._element;
+	  create: function(arg) {
+	    var el = document.createElement('div');
+	    
+	    if( typeof arg === 'string' ) {
+	      el.innerHTML = arg;
+	    }
+	    
+	    return el;
+	  },
+	  remove: function() {
+	    var el = this.element();
+	    if( el.parentNode ) el.parentNode.removeChild(el);
+	    return this;
+	  },
+	  scan: function() {
+	    var self = this;
+	    var el = this.element();
+	    [].slice.call(el.querySelectorAll('[ff-type]')).reverse().forEach(function(node) {
+	      if( node.__ff__ ) return;
+	      var type = node.getAttribute('ff-type');
+	      var Type = Types.get(type);
+	      if( !Type ) return console.warn('[firefront] not exists part type: ' + type);
+	      
+	      new Type(node).editor(self.editor());
+	    });
+	    return this;
+	  },
+	  mouseobserver: function() {
+	    return this._mouseobserver;
 	  },
 	  editmode: function(b) {
 	    if( !arguments.length ) return !!this._editmode;
@@ -536,10 +588,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    
 	    return this;
 	  },
-	  insert: function(nodes) {
+	  insert: function(nodes, ranged) {
 	    if( !nodes ) return this;
 	    var el = this.element();
-	    var range = this.range();
+	    var range = ranged ? this.range() : null;
 	    
 	    if( typeof nodes === 'object' && typeof nodes.length !== 'number' ) {
 	      nodes = [nodes];
@@ -637,7 +689,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  get: function(id) {
 	    return types[id];
 	  },
-	  add: function(id, handler) {
+	  define: function(id, handler) {
 	    if( !id ) throw new TypeError('missing id');
 	    if( typeof id !== 'string' ) throw new TypeError('id must be a string');
 	    if( typeof handler !== 'function' ) throw new TypeError('type plugin must be a function');
