@@ -1,0 +1,51 @@
+.ff-paragraph {
+  clear: both;
+  overflow: auto;
+  font-size: 14px;
+  line-height: 1.5;
+  
+  & > .ff-paragraph-image {
+    display: block;
+    max-width: 100%;
+    margin: 0 auto;
+    margin-bottom: 10px;
+    
+    &.ff-paragraph-image-align-right {
+      float: left;
+      margin-right: 25px;
+      max-width: 40%;
+    }
+    
+    &.ff-paragraph-image-align-left {
+      float: left;
+      margin-right: 25px;
+      max-width: 40%;
+      text-align: center;
+    }
+  }
+  
+  &.ff-paragraph-align-left {
+    text-align: left;
+  }
+  
+  &.ff-paragraph-align-right {
+    text-align: right;
+  }
+  
+  &.ff-paragraph-align-center {
+    text-align: center;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: normal;
+    padding: 0;
+    margin: 0;
+    margin-bottom: 20px;
+  }
+  
+  p {
+    margin: 0;
+    padding: 0;
+  }
+}
+

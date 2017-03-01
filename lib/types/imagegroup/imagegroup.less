@@ -1,0 +1,42 @@
+.ff-imagegroup {
+  display: block;
+  margin-bottom: 10px;
+  
+  .ff-imagegroup-row {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 5px;
+    
+    .ff-imagegroup-cell {
+      display: table-cell;
+      vertical-align: top;
+    }
+  }
+  
+  &.ff-imagegroup-valign-top {
+    .ff-imagegroup-cell {
+      vertical-align: top;
+    }
+  }
+  
+  &.ff-imagegroup-valign-middle {
+    .ff-imagegroup-cell {
+      vertical-align: middle;
+    }
+  }
+  
+  &.ff-imagegroup-valign-bottom {
+    .ff-imagegroup-cell {
+      vertical-align: bottom;
+    }
+  }
+  
+  img {
+    display: block;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+}
+

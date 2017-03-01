@@ -5,47 +5,13 @@
   <meta charset="utf-8">
   <title>firefront demo</title>
   
-  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: Helvetica, Arial, sans-serif;
-      font-size: 14px;
-      font-style: normal;
-    }
-    
-    .article {
-      width: 1000px;
-      margin: 0 auto;
-      min-height: 600px;
-      border: 1px solid #ccc;
-    }
-    
-    [contenteditable] {
-      outline: none;
-    }
-  </style>
-
-  <script src="../dist/firefront.js"></script>
-  <script>
-    FF.editor().reset({
-      title: {
-        html: 'Hello firefront',
-        placeholder: 'placeholder'
-      },
-      contents: {
-        html: '<p>Hello firefront</p><div ff-id="nested">test</div>',
-        placeholder: 'placeholder'
-      },
-      nested: {
-        html: 'nested'
-      }
-    }).edit();
-  </script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script type="text/less" data-src="/less/index.less"></script>
+  <script type="text/commonjs" data-src="/src/app.js"></script>
+  <script src="/web_modules/webmodules/runtime.js"></script>
 </head>
 <body>
   <h1 ff-id="title">Title</h1>
-  <div class="article" ff-id="contents"></div>
+  <div class="article" ff-type="article"></div>
 </body>
 </html>
