@@ -13,7 +13,8 @@
   "license": "MIT",
   "dependencies": {
     "tinyevent": "^0.1.0",
-    "tinyselector": "^0.1.0"
+    "tinyselector": "^0.1.0",
+    "x-modal": "^0.1.11"
   },
   "devDependencies": {
     "bootstrap-theme-attrs": "^0.2.22",

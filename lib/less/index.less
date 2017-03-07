@@ -1,19 +1,29 @@
 .ff {
-  cursor: pointer;
-  cursor: hand;
   box-sizing: border-box;
   
   &:hover {
-    outline: #eee dotted thin;
-  }
-  
-  * {
-    box-sizing: border-box;
+    //outline: #eee dotted thin;
   }
 }
 
 .ff-highlighter {
   box-sizing: border-box;
+}
+
+.ff-part {
+  &[draggable] {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    user-select: none;
+    /* Required to make elements draggable in old WebKit */
+    -khtml-user-drag: element;
+    -webkit-user-drag: element;
+  }
+  
+  &.ff-enter-state {
+    background-color: #eee;
+  }
 }
 
 @import "toolbar";

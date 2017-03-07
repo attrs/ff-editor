@@ -1,10 +1,15 @@
 .ff-paragraph {
-  clear: both;
-  overflow: auto;
+  //clear: both;
+  //overflow: auto;
   font-size: 14px;
   line-height: 1.5;
+  padding: 8px 0;
   
-  & > .ff-paragraph-image {
+  &:first-child {
+    padding-top: 0;
+  }
+  
+  /*& > .ff-paragraph-image {
     display: block;
     max-width: 100%;
     margin: 0 auto;
@@ -22,7 +27,7 @@
       max-width: 40%;
       text-align: center;
     }
-  }
+  }*/
   
   &.ff-paragraph-align-left {
     text-align: left;
