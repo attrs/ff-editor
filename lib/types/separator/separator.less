@@ -1,3 +1,5 @@
+@border-color: #ccc;
+
 .ff-separator {
   margin: 0 auto;
   max-width: 150px;
@@ -5,7 +7,7 @@
   &:before {
     content: "";
     display: block;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid @border-color;
     padding-top: 15px;
   }
   
@@ -13,5 +15,15 @@
     content: "";
     display: block;
     padding-bottom: 15px;
+  }
+  
+  &.ff-separator-wide {
+    max-width: 100%;
+  }
+  
+  &.ff-separator-dashed {
+    &:before {
+      border-bottom: 1px dashed @border-color;
+    }
   }
 }
