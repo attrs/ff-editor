@@ -1,14 +1,14 @@
 @border-color: #ccc;
 
 .ff-separator {
-  margin: 0 auto;
-  max-width: 150px;
   
   &:before {
     content: "";
     display: block;
     border-bottom: 1px solid @border-color;
     padding-top: 15px;
+    max-width: 150px;
+    margin: 0 auto;
   }
   
   &:after {
@@ -18,7 +18,9 @@
   }
   
   &.ff-separator-wide {
-    max-width: 100%;
+    &:before {
+      max-width: 100%;
+    }
   }
   
   &.ff-separator-dashed {
