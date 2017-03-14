@@ -12,6 +12,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "async-each-series": "^1.1.0",
     "tinyevent": "^0.1.0",
     "tinyselector": "^0.1.0",
     "x-modal": "^0.1.11"
