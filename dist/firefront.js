@@ -68,32 +68,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	__webpack_require__(19);
 	
 	var Part = __webpack_require__(21);
-	var TextPart = __webpack_require__(22);
-	var ArticlePart = __webpack_require__(41);
-	var ParagraphPart = __webpack_require__(67);
-	var SeparatorPart = __webpack_require__(70);
-	var ImagePart = __webpack_require__(73);
-	var VideoPart = __webpack_require__(76);
-	var FloaterPart = __webpack_require__(79);
+	var ArticlePart = __webpack_require__(22);
+	var ParagraphPart = __webpack_require__(62);
+	var SeparatorPart = __webpack_require__(65);
+	var ImagePart = __webpack_require__(68);
+	var VideoPart = __webpack_require__(71);
+	var RowPart = __webpack_require__(74);
 	
 	Context.Toolbar = Toolbar;
 	Context.Part = Part;
-	Context.Text = TextPart;
 	Context.Article = ArticlePart;
 	Context.Paragraph = ParagraphPart;
 	Context.Separator = SeparatorPart;
 	Context.Image = ImagePart;
 	Context.Video = VideoPart;
-	Context.Floater = FloaterPart;
+	Context.Row = RowPart;
 	
-	Context.types().define('default', ImagePart);
-	Context.types().define('text', TextPart);
+	Context.types().define('default', ParagraphPart);
 	Context.types().define('article', ArticlePart);
 	Context.types().define('paragraph', ParagraphPart);
 	Context.types().define('separator', SeparatorPart);
 	Context.types().define('image', ImagePart);
 	Context.types().define('video', VideoPart);
-	Context.types().define('floater', FloaterPart);
+	Context.types().define('row', RowPart);
 	
 	(function() {
 	  var readyfn;
@@ -2312,10 +2309,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	});
 	
 	function Part(el) {
+	  if( el && el.__ff__ ) return el.__ff__;
+	  if( !(this instanceof Part) ) return null;
 	  if( !el ) el = this.create();
 	  if( !context.isElement(el) ) el = this.create(el);
 	  if( !context.isElement(el) ) throw new TypeError('illegal argument: el');
-	  if( el.__ff__ ) return el.__ff__;
 	  el.__ff__ = this;
 	  
 	  $(el).addClass('ff ff-part');
@@ -2341,50 +2339,62 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	  
 	  dispatcher.on('mouseenter', function(e) {
+	    if( e.defaultPrevented ) return;
 	    if( !this.editmode() ) return;
 	    
 	    $(el).ac('ff-enter-state');
 	  })
 	  .on('mousedown', function(e) {
+	    if( e.defaultPrevented ) return;
 	    if( !this.editmode() ) return;
 	    
 	    this.toolbar().update();
 	  })
 	  .on('mousemove', function(e) {
+	    if( e.defaultPrevented ) return;
 	    if( !this.editmode() ) return;
 	    
 	    this.toolbar().update();
 	  })
 	  .on('mouseleave', function(e) {
+	    if( e.defaultPrevented ) return;
 	    if( !this.editmode() ) return;
 	    
 	    $(el).removeClass('ff-enter-state');
 	  })
 	  .on('focus', function(e) {
+	    if( e.defaultPrevented ) return;
 	    if( !this.editmode() ) return;
 	    
 	    $(el).ac('ff-focus-state');
 	    this.toolbar().show();
 	  })
 	  .on('blur', function(e) {
+	    if( e.defaultPrevented ) return;
 	    if( !this.editmode() ) return;
 	    
 	    $(el).rc('ff-focus-state');
 	    this.toolbar().hide();
 	  })
 	  .on('update', function(e) {
+	    if( e.defaultPrevented ) return;
+	    
 	    dispatcher.fire('render', {
 	      type: 'update',
 	      originalEvent: e
 	    });
 	  })
 	  .on('modechange', function(e) {
+	    if( e.defaultPrevented ) return;
+	    
 	    dispatcher.fire('render', {
 	      type: 'modechange',
 	      originalEvent: e
 	    });
 	  })
 	  .on('dragstart', function(e) {
+	    if( e.defaultPrevented ) return;
+	    
 	    if( !this.editmode() ) return;
 	    
 	    if( e.target === el ) {
@@ -2394,12 +2404,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  })
 	  .on('dragend', function(e) {
+	    if( e.defaultPrevented ) return;
+	    
 	    if( e.target === el ) {
 	      context.dragging = null;
 	      $(el).rc('ff-dragging');
 	    }
 	  })
 	  .on('*', function(e) {
+	    if( e.defaultPrevented ) return;
+	    
 	    var type = e.type;
 	    var name = 'on' + type;
 	    
@@ -2422,8 +2436,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  setTimeout(function() {
 	    observer = new MutationObserver(function(mutations) {
 	      mutations.forEach(function(mutation) {
-	        if( mutation.type == 'attributes' && self.attributeChangedCallback ) {
-	          self.attributeChangedCallback(mutation.attributeName, mutation.oldValue, el.getAttribute(mutation.attributeName));
+	        if( mutation.type == 'attributes' ) {
+	          dispatcher.fire('attr', {
+	            name: mutation.attributeName,
+	            old: mutation.oldValue,
+	            value: el.getAttribute(mutation.attributeName)
+	          });
 	        }
 	      });
 	    });
@@ -2439,12 +2457,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }, 0);
 	}
 	
-	var proto = Part.prototype = {}; //Object.create(HTMLDivElement.prototype);
-	
-	proto.attributeChangedCallback = function(name, old, value) {};
-	proto.connectedCallback = function() {};
-	proto.disconnectedCallback = function() {};
-	proto.adoptedCallback = function(olddoc, newdoc) {};
+	var proto = Part.prototype = {};
 	
 	proto.context = function() {
 	  return context;
@@ -2531,13 +2544,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this;
 	};
 	
+	proto.click = function() {
+	  this.dom().click();
+	};
+	
 	proto.focus = function() {
 	  if( this !== focused ) {
 	    if( focused && typeof focused.blur == 'function' ) focused.blur();
 	    this.fire('focus');
 	    focused = this;
 	  }
-	  return this;
 	};
 	
 	proto.blur = function() {
@@ -2545,7 +2561,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.fire('blur');
 	    focused = null;
 	  }
-	  return this;
 	};
 	
 	proto.range = function() {
@@ -2605,137 +2620,314 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var modal = __webpack_require__(23);
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(21);
+	var Toolbar = __webpack_require__(13);
+	var components = __webpack_require__(23);
+	var Marker = __webpack_require__(49);
+	var DnD = __webpack_require__(57);
 	
-	function anchorPrevent(e) {
-	  e.preventDefault();
-	  e.stopPropagation();
-	}
+	__webpack_require__(60);
 	
-	function TextPart(el) {
+	function ArticlePart(el) {
 	  Part.call(this, el);
 	  
-	  var prevented = [];
+	  var el = this.dom();
 	  
-	  this.highlighter().enable(false);
+	  $(el).addClass('ff-article');
 	  
-	  this.toolbar().first({
-	    text: '<i class="fa fa-gear"></i>',
+	  var toolbar = this.toolbar()
+	  .add({
+	    text: '<i class="fa fa-eraser"></i>',
+	    tooltip: '내용 삭제',
 	    fn: function(e) {
-	      this.owner().config();
+	      this.owner().clear();
 	    }
+	  }, 0)
+	  .always();
+	  
+	  var sidebar = new Toolbar(this)
+	  .position('vertical top right outside');
+	  
+	  components.forEach(function(item) {
+	    sidebar.add(item);
 	  });
-	};
+	  
+	  this._marker = new Marker(this);
+	  this._dnd = new DnD(this);
+	  this._sidebar = sidebar;
+	  this.update();
+	}
 	
-	
-	TextPart.prototype = Object.create(Part.prototype, {
-	  oninit: {
+	ArticlePart.prototype = Object.create(Part.prototype, {
+	  onclick: {
 	    value: function(e) {
-	      var el = this.dom();
-	      this._defaults = {
-	        style: el.getAttribute('style'),
-	        cls: el.className,
-	        html: el.innerHTML
-	      };
+	      if( this.editmode() && e.target === this.dom() ) {
+	        if( !this.children().length ) {
+	          var Paragraph = this.context().Paragraph;
+	          var paragraph = new Paragraph();
+	          this.insert(paragraph);
+	        }
+	        
+	        if( this.children().length === 1 ) {
+	          this.getPart(0).click();
+	        }
+	      }
 	    }
 	  },
 	  onmodechange: {
 	    value: function(e) {
-	      var el = this.dom();
-	      
-	      if( this.editmode() ) {
-	        el.setAttribute('contenteditable', 'true');
-	        $(el).find('[href]').on('click', anchorPrevent);
-	      } else {
-	        el.removeAttribute('contenteditable');
-	        $(el).find('[href]').off('click', anchorPrevent);
-	      }
+	      var sidebar = this.sidebar();
+	      if( this.editmode() ) sidebar.show();
+	      else sidebar.hide();
 	    }
 	  },
-	  setData: {
-	    value: function(data) {
-	      if( data && data.html ) this.dom().innerHTML = data.html;
+	  onmousemove: {
+	    value: function(e) {
+	      this.sidebar().update();
+	    }
+	  },
+	  sidebar: {
+	    value: function() {
+	      return this._sidebar;
+	    }
+	  },
+	  update: {
+	    value: function() {
+	      this._dnd.update();
+	    }
+	  },
+	  marker: {
+	    value: function() {
+	      return this._marker;
+	    }
+	  },
+	  oninsert: {
+	    value: function() {
+	      this.update();
+	    }
+	  },
+	  oneditmode: {
+	    value: function() {
+	      this.update();
+	    }
+	  },
+	  onnormalmode: {
+	    value: function() {
+	      this.update();
+	    }
+	  },
+	  clear: {
+	    value: function() {
+	      this.dom().innerHTML = '';
 	      return this;
 	    }
 	  },
-	  getData: {
-	    value: function() {
-	      return {
-	        html:this.dom().innerHTML
-	      };
+	  get: {
+	    value: function(index) {
+	      return this.children()[index];
 	    }
 	  },
-	  defaults: {
-	    value: function() {
-	      if( !arguments.length ) return this._defaults;
+	  getPart: {
+	    value: function(index) {
+	      var el = $(this.dom()).children('.ff-part')[index];
+	      return el && el.__ff__;
 	    }
 	  },
-	  restoreDefaults: {
-	    value: function() {
-	      var defaults = this._defaults;
-	      var el = this.dom();
-	      if( defaults ) {
-	        if( defaults.style ) el.setAttribute('style', defaults.style);
-	        else el.removeAttribute('style');
-	        
-	        if( defaults.cls ) el.setAttribute('class', defaults.cls);
-	        else el.removeAttribute('class');
-	        
-	        el.innerHTML = defaults.html || '';
-	      }
-	      return this;
+	  find: {
+	    value: function(selector) {
+	      return $(this.dom()).find(selector);
 	    }
 	  },
-	  config: {
+	  indexOf: {
+	    value: function(node) {
+	      if( !node ) return -1;
+	      node = node.dom() || node;
+	      return $(this.dom()).indexOf(node);
+	    }
+	  },
+	  children: {
 	    value: function() {
-	      var part = this;
-	      var el = this.dom();
-	      
-	      modal.open(__webpack_require__(40), function(err, modal) {
-	        if( err ) return console.error(err);
-	        
-	        var data = part.data();
-	        var form = modal.body.querySelector('form');
-	        if( data && data.style ) form.style.value = data && data.style;
-	        if( data && data.cls ) form.cls.value = data && data.cls;
-	        form.html.value = el.innerHTML || '';
-	        
-	        form.onsubmit = function(e) {
-	          e.preventDefault();
-	          
-	          data = data || {};
-	          if( form.style.value ) data.style = form.style.value;
-	          else delete data.style;
-	          
-	          if( form.cls.value ) data.cls = form.cls.value;
-	          else delete data.cls;
-	          
-	          if( form.html.value ) data.html = form.html.value;
-	          else delete data.html;
-	          
-	          part.data(data);
-	          modal.close();
-	        };
+	      return $(this.dom()).children().filter(function() {
+	        return !($(this).hc('ff-marker') || $(this).hc('ff-placeholder'));
 	      });
+	    }
+	  },
+	  insert: {
+	    value: function(node, ref) {
+	      var context = this.context();
+	      var part = this;
+	      var target = $(this.dom());
+	      var marker = this.marker();
+	      var children = this.children();
+	      
+	      if( arguments.length <= 1 && marker.isExpanded() ) {
+	        ref = children[marker.getIndex()];
+	        marker.collapse();
+	      } else if( typeof ref == 'number' ) {
+	        ref = children[ref];
+	      }
+	      
+	      $(node).reverse().each(function() {
+	        var el = (this.dom && this.dom()) || this;
+	        
+	        if( window.File && this instanceof window.File ) {
+	          var type = this.type;
+	          
+	          if( type ) {
+	            context.upload(this, function(err, result) {
+	              if( type.indexOf('image/') === 0 ) {
+	                part.insert(new context.Image(result));
+	              } else {
+	                part.insert(new Attachment(result));
+	              }
+	            });
+	          }
+	        } else if( ref ) {
+	          ref.parentNode.insertBefore(el, ref);
+	        } else {
+	          target.append(el);
+	        }
+	      });
+	      
+	      this.fire('insert', {
+	        node: node,
+	        ref: ref,
+	        target: target
+	      });
+	      
+	      this.update();
 	      
 	      return this;
 	    }
 	  }
 	});
 	
+	ArticlePart.components = components;
+	ArticlePart.Marker = Marker;
 	
-	module.exports = TextPart;
+	module.exports = ArticlePart;
 
 /***/ },
 /* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var swal = __webpack_require__(24);
-	var modal = __webpack_require__(33);
+	var $ = __webpack_require__(7);
+	var modal = __webpack_require__(24);
+	var URL = __webpack_require__(41);
+	var querystring = __webpack_require__(45);
+	var Items = __webpack_require__(48);
+	var context = __webpack_require__(1);
 	
-	__webpack_require__(38);
+	var items = Items();
+	
+	items
+	.add({
+	  text: '<i class="fa fa-font"></i>',
+	  tooltip: '문단',
+	  fn: function(e) {
+	    this.owner().insert(new context.Paragraph());
+	  }
+	})
+	.add({
+	  text: '<i class="fa fa-picture-o"></i>',
+	  tooltip: '이미지 파일',
+	  fn: function(e) {
+	    var part = this.owner();
+	    part.context().selectFiles(function(err, files) {
+	      if( err ) return modal.error(err);
+	      if( !files.length ) return;
+	      
+	      if( files.length === 1 ) {
+	        part.insert(new context.Image(files[0]));
+	      } else {
+	        var row = new context.Row();
+	        files.forEach(function(file) {
+	          row.add(new context.Image(file));
+	        });
+	        part.insert(row);
+	      }
+	    });
+	  }
+	})
+	.add({
+	  text: '<i class="fa fa-instagram"></i>',
+	  tooltip: '이미지',
+	  fn: function(e) {
+	    var part = this.owner();
+	    modal.prompt('이미지 URL을 입력해주세요', function(src) {
+	      if( !src ) return;
+	      
+	      var url = URL.parse(src);
+	      if( !url || !url.hostname ) return modal.error('URL을 정확히 입력해주세요');
+	      
+	      if( ~url.hostname.indexOf('instagram.com') ) {
+	        if( url.pathname.indexOf('/p/') !== 0 ) return modal.error('URL을 정확히 입력해주세요');
+	        var shortid = url.pathname.substring(3).split('/')[0];
+	        src = 'https://www.instagram.com/p/' + shortid + '/media';
+	      }
+	      
+	      part.insert(new context.Image(src));
+	    });
+	  }
+	})
+	.add({
+	  text: '<i class="fa fa-youtube-square"></i>',
+	  tooltip: '동영상',
+	  fn: function(e) {
+	    var part = this.owner();
+	    modal.prompt('동영상 URL을 입력해주세요', function(src) {
+	      if( !src ) return;
+	      
+	      var url = URL.parse(src);
+	      if( !url || !url.hostname ) return modal.error('URL을 정확히 입력해주세요');
+	      
+	      if( ~url.hostname.indexOf('youtube.com') ) {
+	        var qry = url && url.query && querystring.parse(url.query);
+	        if( !qry || !qry.v ) return modal.error('URL을 정확히 입력해주세요');
+	        
+	        src = 'https://www.youtube.com/embed/' + qry.v;
+	      } else if( ~url.hostname.indexOf('vimeo.com') ) {
+	        var videoid = url.pathname.substring(1);
+	        if( !videoid ) return modal.error('URL을 정확히 입력해주세요');
+	        
+	        src = 'https://player.vimeo.com/video/' + videoid;
+	      }
+	      
+	      part.insert(new context.Video(src));
+	    });
+	  }
+	})
+	.add({
+	  text: '<i class="fa fa-arrows-h"></i>',
+	  tooltip: '구분선',
+	  fn: function(e) {
+	    this.owner().insert(new context.Separator());
+	  }
+	})
+	.add({
+	  text: '<i class="fa fa-paperclip"></i>',
+	  tooltip: '첨부파일',
+	  fn: function(e) {
+	    var part = this.owner();
+	    part.context().selectFile(function(err, file) {
+	      if( err ) return modal.error(err);
+	      
+	      part.insert(new context.Attachment(file));
+	    });
+	  }
+	});
+	
+	module.exports = items;
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var swal = __webpack_require__(25);
+	var modal = __webpack_require__(34);
+	
+	__webpack_require__(39);
 	
 	module.exports = {
 	  popup: function(options) {
@@ -2904,7 +3096,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2922,35 +3114,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * jQuery-like functions for manipulating the DOM
 	 */
 	
-	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide$isDescendant$getTopMargin$fadeIn$fadeOut$fireClick$stopEventPropagation = __webpack_require__(25);
+	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide$isDescendant$getTopMargin$fadeIn$fadeOut$fireClick$stopEventPropagation = __webpack_require__(26);
 	
 	/*
 	 * Handy utilities
 	 */
 	
-	var _extend$hexToRgb$isIE8$logStr$colorLuminance = __webpack_require__(26);
+	var _extend$hexToRgb$isIE8$logStr$colorLuminance = __webpack_require__(27);
 	
 	/*
 	 *  Handle sweetAlert's DOM elements
 	 */
 	
-	var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$resetInput$fixVerticalPosition = __webpack_require__(27);
+	var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$resetInput$fixVerticalPosition = __webpack_require__(28);
 	
 	// Handle button events and keyboard events
 	
-	var _handleButton$handleConfirm$handleCancel = __webpack_require__(30);
+	var _handleButton$handleConfirm$handleCancel = __webpack_require__(31);
 	
-	var _handleKeyDown = __webpack_require__(31);
+	var _handleKeyDown = __webpack_require__(32);
 	
 	var _handleKeyDown2 = _interopRequireWildcard(_handleKeyDown);
 	
 	// Default values
 	
-	var _defaultParams = __webpack_require__(28);
+	var _defaultParams = __webpack_require__(29);
 	
 	var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 	
-	var _setParameters = __webpack_require__(32);
+	var _setParameters = __webpack_require__(33);
 	
 	var _setParameters2 = _interopRequireWildcard(_setParameters);
 	
@@ -3212,7 +3404,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3408,7 +3600,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.stopEventPropagation = stopEventPropagation;
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3486,7 +3678,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.colorLuminance = colorLuminance;
 
 /***/ },
-/* 27 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3497,11 +3689,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _hexToRgb = __webpack_require__(26);
+	var _hexToRgb = __webpack_require__(27);
 	
-	var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(25);
+	var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(26);
 	
-	var _defaultParams = __webpack_require__(28);
+	var _defaultParams = __webpack_require__(29);
 	
 	var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 	
@@ -3509,7 +3701,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Add modal + overlay to DOM
 	 */
 	
-	var _injectedHTML = __webpack_require__(29);
+	var _injectedHTML = __webpack_require__(30);
 	
 	var _injectedHTML2 = _interopRequireWildcard(_injectedHTML);
 	
@@ -3658,7 +3850,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.fixVerticalPosition = fixVerticalPosition;
 
 /***/ },
-/* 28 */
+/* 29 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3695,7 +3887,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 29 */
+/* 30 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -3742,7 +3934,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports["default"];
 
 /***/ },
-/* 30 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3751,11 +3943,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _colorLuminance = __webpack_require__(26);
+	var _colorLuminance = __webpack_require__(27);
 	
-	var _getModal = __webpack_require__(27);
+	var _getModal = __webpack_require__(28);
 	
-	var _hasClass$isDescendant = __webpack_require__(25);
+	var _hasClass$isDescendant = __webpack_require__(26);
 	
 	/*
 	 * User clicked on "Confirm"/"OK" or "Cancel"
@@ -3882,7 +4074,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 31 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3891,9 +4083,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _stopEventPropagation$fireClick = __webpack_require__(25);
+	var _stopEventPropagation$fireClick = __webpack_require__(26);
 	
-	var _setFocusStyle = __webpack_require__(27);
+	var _setFocusStyle = __webpack_require__(28);
 	
 	var handleKeyDown = function handleKeyDown(event, params, modal) {
 	  var e = event || window.event;
@@ -3966,7 +4158,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 32 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3975,11 +4167,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _isIE8 = __webpack_require__(26);
+	var _isIE8 = __webpack_require__(27);
 	
-	var _getModal$getInput$setFocusStyle = __webpack_require__(27);
+	var _getModal$getInput$setFocusStyle = __webpack_require__(28);
 	
-	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide = __webpack_require__(25);
+	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide = __webpack_require__(26);
 	
 	var alertTypes = ['error', 'warning', 'info', 'success', 'input', 'prompt'];
 	
@@ -4196,11 +4388,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 33 */
+/* 34 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ajax = __webpack_require__(34);
-	__webpack_require__(35);
+	var ajax = __webpack_require__(35);
+	__webpack_require__(36);
 	
 	var z = 200;
 	var mask = (function() {
@@ -4388,7 +4580,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if( shell !== false && (title || icon || btns) ) shell = true;
 	  if( shell ) {
 	    var cls = shell.cls, style = shell.style;
-	    var shellhtml = __webpack_require__(37);
+	    var shellhtml = __webpack_require__(38);
 	    handle.target.innerHTML = shellhtml;
 	    handle.target = handle.body.querySelector('.x-modal-shell-body');
 	    handle.shell = {
@@ -4555,7 +4747,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 34 */
+/* 35 */
 /***/ function(module, exports) {
 
 	module.exports = function(src, done) {
@@ -4572,13 +4764,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 35 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(36);
+	var content = __webpack_require__(37);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -4598,7 +4790,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 36 */
+/* 37 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -4612,19 +4804,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 37 */
+/* 38 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"x-modal-shell\">\n  <div class=\"x-modal-shell-header\"></div>\n  <div class=\"x-modal-shell-body\"></div>\n  <div class=\"x-modal-shell-footer\"></div>\n</div>";
 
 /***/ },
-/* 38 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(39);
+	var content = __webpack_require__(40);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -4644,7 +4836,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 39 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -4658,275 +4850,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 40 */
-/***/ function(module, exports) {
-
-	module.exports = "<div class=\"ff-dialog bs\">\n  <div class=\"p0\">\n    <form class=\"form-horizontal\">\n      <div class=\"panel m0\">\n        <div class=\"panel-heading\">\n          <ul class=\"nav panel-tabs panel-tabs-left\">\n            <li class=\"active\">\n              <a href=\"#style\" data-toggle=\"tab\"><i class=\"fa fa-info-circle\"></i> 스타일/클래스</a>\n            </li>\n            <li>\n              <a href=\"#source\" data-toggle=\"tab\"><i class=\"fa fa-check-circle-o\"></i> HTML 소스</a>\n            </li>\n          </ul>\n        </div>\n        \n        <div class=\"panel-body p15\">\n          <!-- panel body -->\n          <div class=\"tab-content\">\n            <!-- 스타일/클래스 -->\n            <div class=\"tab-pane active p15\" id=\"style\" role=\"tabpanel\">\n              <div class=\"form-group\">\n                <label>스타일</label>\n                <input type=\"text\" name=\"style\" class=\"form-control\" placeholder=\"스타일\">\n              </div>\n              <div class=\"form-group\">\n                <label>클래스</label>\n                <input type=\"text\" name=\"cls\" class=\"form-control\" placeholder=\"클래스\">\n              </div>\n            </div>\n            \n            <!-- HTML -->\n            <div class=\"tab-pane\" id=\"source\" role=\"tabpanel\">\n              <textarea name=\"html\" class=\"form-control\" style=\"height: 400px;\"></textarea>\n            </div>\n          </div>\n        </div>\n        \n        <div class=\"panel-footer\">\n          <div class=\"row\">\n            <div class=\"col-md-6\"></div>\n            <div class=\"col-md-6 text-right\">\n              <button type=\"button\" class=\"btn btn-default\" modal-close>취소</button>\n              <button type=\"submit\" class=\"btn btn-primary\">적용</button>\n            </div>\n          </div>\n        </div>\n      </div>\n    </form>\n  </div>\n</div>";
-
-/***/ },
 /* 41 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
-	var Toolbar = __webpack_require__(13);
-	var components = __webpack_require__(42);
-	var Marker = __webpack_require__(51);
-	var DnD = __webpack_require__(59);
-	
-	__webpack_require__(65);
-	
-	function ArticlePart(el) {
-	  Part.call(this, el);
-	  
-	  var el = this.dom();
-	  
-	  $(el).addClass('ff-article');
-	  
-	  var toolbar = this.toolbar()
-	  .add({
-	    text: '<i class="fa fa-eraser"></i>',
-	    tooltip: '내용 삭제',
-	    fn: function(e) {
-	      this.owner().clear();
-	    }
-	  }, 0)
-	  .always();
-	  
-	  var sidebar = new Toolbar(this)
-	  .position('vertical top right outside');
-	  
-	  components.forEach(function(item) {
-	    sidebar.add(item);
-	  });
-	  
-	  this._marker = new Marker(this);
-	  this._dnd = new DnD(this);
-	  this._sidebar = sidebar;
-	  this.update();
-	}
-	
-	ArticlePart.prototype = Object.create(Part.prototype, {
-	  onmodechange: {
-	    value: function(e) {
-	      var sidebar = this.sidebar();
-	      if( this.editmode() ) sidebar.show();
-	      else sidebar.hide();
-	    }
-	  },
-	  onmousemove: {
-	    value: function(e) {
-	      this.sidebar().update();
-	    }
-	  },
-	  sidebar: {
-	    value: function() {
-	      return this._sidebar;
-	    }
-	  },
-	  update: {
-	    value: function() {
-	      this._dnd.update();
-	    }
-	  },
-	  marker: {
-	    value: function() {
-	      return this._marker;
-	    }
-	  },
-	  oninsert: {
-	    value: function() {
-	      this.update();
-	    }
-	  },
-	  oneditmode: {
-	    value: function() {
-	      this.update();
-	    }
-	  },
-	  onnormalmode: {
-	    value: function() {
-	      this.update();
-	    }
-	  },
-	  clear: {
-	    value: function() {
-	      this.dom().innerHTML = '';
-	      return this;
-	    }
-	  },
-	  get: {
-	    value: function(index) {
-	      return $(this.dom()).children()[index];
-	    }
-	  },
-	  find: {
-	    value: function(selector) {
-	      return $(this.dom()).find(selector);
-	    }
-	  },
-	  indexOf: {
-	    value: function(node) {
-	      if( !node ) return -1;
-	      node = node.dom() || node;
-	      return $(this.dom()).indexOf(node);
-	    }
-	  },
-	  children: {
-	    value: function() {
-	      return $(this.dom()).children().filter(function() {
-	        return !$(this).hc('ff-marker');
-	      });
-	    }
-	  },
-	  insert: {
-	    value: function(node, ref) {
-	      var partel = this.dom();
-	      var marker = this.marker();
-	      //var range = this.range();
-	      var children = this.children();
-	      var markerIndex = -1;
-	      
-	      if( marker.isExpanded() ) {
-	        markerIndex = marker.getIndex();
-	        marker.collapse();
-	      }
-	      
-	      node = $(node);
-	      ref = typeof ref == 'number' ? children[ref] : (ref || children[markerIndex]);
-	      
-	      node.reverse().each(function() {
-	        var el = this.dom() || this;
-	        if( ref ) ref.parentNode.insertBefore(el, ref);
-	        //else if( range ) range.insertNode(el);
-	        else partel.appendChild(el);
-	      });
-	      
-	      this.fire('insert', {
-	        nodes: node,
-	        ref: ref
-	      });
-	      
-	      return this;
-	    }
-	  }
-	});
-	
-	ArticlePart.components = components;
-	ArticlePart.Marker = Marker;
-	
-	module.exports = ArticlePart;
-
-/***/ },
-/* 42 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $ = __webpack_require__(7);
-	var modal = __webpack_require__(23);
-	var URL = __webpack_require__(43);
-	var querystring = __webpack_require__(47);
-	var Items = __webpack_require__(50);
-	var context = __webpack_require__(1);
-	
-	var items = Items();
-	
-	items
-	.add({
-	  text: '<i class="fa fa-font"></i>',
-	  tooltip: '문단',
-	  fn: function(e) {
-	    this.owner().insert(new context.Paragraph());
-	  }
-	})
-	.add({
-	  text: '<i class="fa fa-picture-o"></i>',
-	  tooltip: '이미지 파일',
-	  fn: function(e) {
-	    var part = this.owner();
-	    part.context().selectFiles(function(err, files) {
-	      if( err ) return modal.error(err);
-	      if( !files.length ) return;
-	      
-	      if( files.length === 1 ) {
-	        part.insert(new context.Image(files[0]));
-	      } else {
-	        part.insert(new context.ImageGroup(files));
-	      }
-	    });
-	  }
-	})
-	.add({
-	  text: '<i class="fa fa-instagram"></i>',
-	  tooltip: '이미지',
-	  fn: function(e) {
-	    var part = this.owner();
-	    modal.prompt('이미지 URL을 입력해주세요', function(src) {
-	      if( !src ) return;
-	      
-	      var url = URL.parse(src);
-	      if( !url || !url.hostname ) return modal.error('URL을 정확히 입력해주세요');
-	      
-	      if( ~url.hostname.indexOf('instagram.com') ) {
-	        if( url.pathname.indexOf('/p/') !== 0 ) return modal.error('URL을 정확히 입력해주세요');
-	        var shortid = url.pathname.substring(3).split('/')[0];
-	        src = 'https://www.instagram.com/p/' + shortid + '/media';
-	      }
-	      
-	      part.insert(new context.Image(src));
-	    });
-	  }
-	})
-	.add({
-	  text: '<i class="fa fa-youtube-square"></i>',
-	  tooltip: '동영상',
-	  fn: function(e) {
-	    var part = this.owner();
-	    modal.prompt('동영상 URL을 입력해주세요', function(src) {
-	      if( !src ) return;
-	      
-	      var url = URL.parse(src);
-	      if( !url || !url.hostname ) return modal.error('URL을 정확히 입력해주세요');
-	      
-	      if( ~url.hostname.indexOf('youtube.com') ) {
-	        var qry = url && url.query && querystring.parse(url.query);
-	        if( !qry || !qry.v ) return modal.error('URL을 정확히 입력해주세요');
-	        
-	        src = 'https://www.youtube.com/embed/' + qry.v;
-	      } else if( ~url.hostname.indexOf('vimeo.com') ) {
-	        var videoid = url.pathname.substring(1);
-	        if( !videoid ) return modal.error('URL을 정확히 입력해주세요');
-	        
-	        src = 'https://player.vimeo.com/video/' + videoid;
-	      }
-	      
-	      part.insert(new context.Video(src));
-	    });
-	  }
-	})
-	.add({
-	  text: '<i class="fa fa-arrows-h"></i>',
-	  tooltip: '구분선',
-	  fn: function(e) {
-	    this.owner().insert(new context.Separator());
-	  }
-	})
-	.add({
-	  text: '<i class="fa fa-paperclip"></i>',
-	  tooltip: '첨부파일',
-	  fn: function(e) {
-	    var part = this.owner();
-	    part.context().selectFile(function(err, file) {
-	      if( err ) return modal.error(err);
-	      
-	      part.insert(new context.Attachment(file));
-	    });
-	  }
-	});
-	
-	module.exports = items;
-
-/***/ },
-/* 43 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -4952,8 +4876,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 	
-	var punycode = __webpack_require__(44);
-	var util = __webpack_require__(46);
+	var punycode = __webpack_require__(42);
+	var util = __webpack_require__(44);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -5028,7 +4952,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(47);
+	    querystring = __webpack_require__(45);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && util.isObject(url) && url instanceof Url) return url;
@@ -5664,7 +5588,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 44 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*! https://mths.be/punycode v1.3.2 by @mathias */
@@ -6196,10 +6120,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	}(this));
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(45)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(43)(module), (function() { return this; }())))
 
 /***/ },
-/* 45 */
+/* 43 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -6215,7 +6139,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 46 */
+/* 44 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -6237,17 +6161,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 47 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(48);
-	exports.encode = exports.stringify = __webpack_require__(49);
+	exports.decode = exports.parse = __webpack_require__(46);
+	exports.encode = exports.stringify = __webpack_require__(47);
 
 
 /***/ },
-/* 48 */
+/* 46 */
 /***/ function(module, exports) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -6333,7 +6257,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 49 */
+/* 47 */
 /***/ function(module, exports) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -6403,7 +6327,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 50 */
+/* 48 */
 /***/ function(module, exports) {
 
 	module.exports = function() {
@@ -6425,15 +6349,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 51 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var getOffsetTop = __webpack_require__(52);
-	var components = __webpack_require__(42);
-	var Button = __webpack_require__(53);
+	var getOffsetTop = __webpack_require__(50);
+	var components = __webpack_require__(23);
+	var Button = __webpack_require__(51);
 	
-	__webpack_require__(57);
+	__webpack_require__(55);
 	
 	function Marker(part) {
 	  var el = $(part.dom());
@@ -6524,7 +6448,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Marker;
 
 /***/ },
-/* 52 */
+/* 50 */
 /***/ function(module, exports) {
 
 	module.exports = function(el) {
@@ -6536,13 +6460,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 53 */
+/* 51 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Separator = __webpack_require__(54);
+	var Separator = __webpack_require__(52);
 	
-	__webpack_require__(55);
+	__webpack_require__(53);
 	
 	function Button(options) {
 	  if( options === '-' ) return new Separator();
@@ -6617,7 +6541,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Button;
 
 /***/ },
-/* 54 */
+/* 52 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
@@ -6645,13 +6569,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Separator;
 
 /***/ },
-/* 55 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(56);
+	var content = __webpack_require__(54);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -6671,7 +6595,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 56 */
+/* 54 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -6685,13 +6609,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 57 */
+/* 55 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(58);
+	var content = __webpack_require__(56);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -6711,7 +6635,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 58 */
+/* 56 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -6725,15 +6649,15 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 59 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var modal = __webpack_require__(24);
 	var each = __webpack_require__(2);
 	var $ = __webpack_require__(7);
-	var getOffsetTop = __webpack_require__(52);
-	var ImageGroup = __webpack_require__(60);
+	var getOffsetTop = __webpack_require__(50);
 	
-	__webpack_require__(63);
+	__webpack_require__(58);
 	
 	function DnD(part) {
 	  var el = $(part.dom());
@@ -6765,11 +6689,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	  
 	  var update = function() {
-	    if( part.editmode() ) {
+	    if( part.editmode() )
 	      el.find('.ff-part').attr('draggable', true);
-	    } else {
+	    else
 	      el.find('.ff-part').attr('draggable', false);
-	    }
 	  };
 	  
 	  el.on('dragover', function(e) {
@@ -6790,25 +6713,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    e.preventDefault();
 	    
 	    var dragging = part.context().dragging;
-	    if( dragging ) {
-	      $(dragging.dom()).insertBefore(marker[0]);
-	      update();
-	    } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
-	      var srcs = [];
-	      each(e.dataTransfer.files, function(file, done) {
-	        part.context().upload(file, function(err, src) {
-	          if( err ) return done(err);
-	          srcs.push(src);
-	          done();
-	        });
-	      }, function(err) {
-	        if( err ) return console.error(err);
-	        
-	        var part = new ImageGroup(srcs);
-	        $(part.dom()).insertBefore(marker[0]);
-	        update();
-	      });
-	    }
+	    if( dragging )
+	      part.insert(dragging, marker[0]);
+	    else if( e.dataTransfer && e.dataTransfer.files )
+	      part.insert(e.dataTransfer.files);
 	  });
 	  
 	  this.update = update;
@@ -6817,138 +6725,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = DnD;
 
 /***/ },
-/* 60 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
-	
-	__webpack_require__(61);
-	
-	function ImageGroup(el) {
-	  Part.call(this, el);
-	  
-	  var el = this.dom();
-	  
-	  this.toolbar()
-	  .add({
-	    text: '<i class="fa fa-angle-double-up"></i>',
-	    tooltip: '상단정렬',
-	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-imagegroup-valign-bottom')
-	      .removeClass('ff-imagegroup-valign-middle')
-	      .addClass('ff-imagegroup-valign-top');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-dot-circle-o"></i>',
-	    tooltip: '중앙정렬',
-	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-imagegroup-valign-bottom')
-	      .removeClass('ff-imagegroup-valign-top')
-	      .addClass('ff-imagegroup-valign-middle');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-angle-double-down"></i>',
-	    tooltip: '하단정렬',
-	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-imagegroup-valign-top')
-	      .removeClass('ff-imagegroup-valign-middle')
-	      .addClass('ff-imagegroup-valign-bottom');
-	    }
-	  }, 0);
-	}
-	
-	ImageGroup.prototype = Object.create(Part.prototype, {
-	  create: {
-	    value: function(srcs) {
-	      if( !srcs ) srcs = [];
-	      if( !Array.isArray(srcs) ) srcs = [srcs];
-	      
-	      var wp = 100 / srcs.length;
-	      
-	      var el = document.createElement('div');
-	      el.setAttribute('ff-type', 'imagegroup');
-	      el.setAttribute('class', 'ff-imagegroup');
-	      
-	      var row = document.createElement('div');
-	      row.setAttribute('class', 'ff-imagegroup-row');
-	      
-	      srcs.forEach(function(src) {
-	        var title = src;
-	        if( typeof src === 'object' ) {
-	          title = src.title || src.src;
-	          src = src.src;
-	        }
-	        
-	        row.innerHTML += '<div class="ff-imagegroup-cell" style="width: ' + wp + '%">\
-	          <img src="' + src + '" title="' + title + '">\
-	        </div>';
-	      });
-	      
-	      el.appendChild(row);
-	      console.log('el', el);
-	      return el;
-	    }
-	  }
-	});
-	
-	module.exports = ImageGroup;
-	
-
-
-/***/ },
-/* 61 */
+/* 58 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(62);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./imagegroup.less", function() {
-				var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./imagegroup.less");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 62 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(17)();
-	// imports
-	
-	
-	// module
-	exports.push([module.id, ".ff-imagegroup {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-imagegroup .ff-imagegroup-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-imagegroup .ff-imagegroup-row .ff-imagegroup-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-imagegroup.ff-imagegroup-valign-top .ff-imagegroup-cell {\n  vertical-align: top;\n}\n.ff-imagegroup.ff-imagegroup-valign-middle .ff-imagegroup-cell {\n  vertical-align: middle;\n}\n.ff-imagegroup.ff-imagegroup-valign-bottom .ff-imagegroup-cell {\n  vertical-align: bottom;\n}\n.ff-imagegroup img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
-	
-	// exports
-
-
-/***/ },
-/* 63 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-	
-	// load the styles
-	var content = __webpack_require__(64);
+	var content = __webpack_require__(59);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -6968,7 +6751,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 64 */
+/* 59 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -6982,13 +6765,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 65 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(66);
+	var content = __webpack_require__(61);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -7008,7 +6791,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 66 */
+/* 61 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -7022,13 +6805,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 67 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(21);
 	
-	__webpack_require__(68);
+	__webpack_require__(63);
 	
 	function wrap(range, node) {
 	  
@@ -7111,6 +6894,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	ParagraphPart.prototype = Object.create(Part.prototype, {
+	  ondragstart: {
+	    value: function(e) {
+	      if( this.editmode() ) {
+	        e.stopPropagation();
+	        e.preventDefault();
+	      }
+	    }
+	  },
+	  onfocus: {
+	    value: function() {
+	      if( this.editmode() ) {
+	        
+	      }
+	    }
+	  },
+	  onblur: {
+	    value: function() {
+	      if( this.editmode() ) {
+	      }
+	    }
+	  },
 	  onmodechange: {
 	    value: function(e) {
 	      var el = this.dom();
@@ -7129,6 +6933,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	      el.setAttribute('class', 'ff-paragraph ff-paragraph-align-left ff-paragraph-align-left');
 	      return el;
 	    }
+	  },
+	  focus: {
+	    value: function() {
+	      var el = this.dom();
+	      
+	      // 커서가 다른 곳에 있다면 옮긴다.
+	      var selection = window.getSelection();
+	      var range = selection.rangeCount && selection.getRangeAt(0);
+	      
+	      if( !range || !el.contains(range.startContainer) ) {
+	        var lastindex = el.childNodes.length;
+	        range = document.createRange();
+	        range.setStart(el, lastindex);
+	        range.setEnd(el, lastindex);
+	        selection.removeAllRanges();
+	        selection.addRange(range);
+	      }
+	      
+	      el.focus();
+	      Part.prototype.focus.apply(this, arguments);
+	    }
+	  },
+	  click: {
+	    value: function() {
+	      this.focus();
+	    }
 	  }
 	});
 	
@@ -7138,13 +6968,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 68 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(69);
+	var content = __webpack_require__(64);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -7164,7 +6994,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 69 */
+/* 64 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -7172,19 +7002,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph {\n  font-size: 14px;\n  line-height: 1.5;\n  padding: 8px 0;\n}\n.ff-paragraph.ff-paragraph-align-left {\n  text-align: left;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph h1,\n.ff-paragraph h2,\n.ff-paragraph h3,\n.ff-paragraph h4,\n.ff-paragraph h5,\n.ff-paragraph h6 {\n  font-weight: normal;\n  padding: 0;\n  margin: 0;\n  margin-bottom: 20px;\n}\n.ff-paragraph p {\n  margin: 0;\n  padding: 0;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph {\n  font-size: 14px;\n  line-height: 1.5;\n  padding: 0;\n  padding-bottom: 10px;\n}\n.ff-paragraph.ff-paragraph-align-left {\n  text-align: left;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph h1,\n.ff-paragraph h2,\n.ff-paragraph h3,\n.ff-paragraph h4,\n.ff-paragraph h5,\n.ff-paragraph h6 {\n  font-weight: normal;\n  padding: 0;\n  margin: 0;\n  margin-bottom: 20px;\n}\n.ff-paragraph p {\n  margin: 0;\n  padding: 0;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 70 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(21);
 	
-	__webpack_require__(71);
+	__webpack_require__(66);
 	
 	function Separator(el) {
 	  Part.call(this, el);
@@ -7219,13 +7049,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Separator;
 
 /***/ },
-/* 71 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(72);
+	var content = __webpack_require__(67);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -7245,7 +7075,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 72 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -7259,80 +7089,79 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 73 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(21);
 	
-	__webpack_require__(74);
+	__webpack_require__(69);
 	
 	function ImagePart(el) {
 	  Part.call(this, el);
 	  
-	  var el = this.dom();
-	  
-	  $(el).ac('ff-image');
+	  var el = $(this.dom()).ac('ff-image');
 	  
 	  this.toolbar()
 	  .position('inside top center')
 	  .add({
-	    text: '<i class="fa fa-circle-o"></i>',
-	    tooltip: '원본크기',
-	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-image-size-full')
-	      .removeClass('ff-image-size-medium');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-square-o"></i>',
-	    tooltip: '기본크기',
-	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-image-size-full')
-	      .addClass('ff-image-size-medium');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-arrows-alt"></i>',
-	    tooltip: '풀사이즈',
-	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-image-size-medium')
-	      .addClass('ff-image-size-full');
-	    }
-	  }, 0)
-	  .add({
 	    text: '<i class="fa fa-angle-right"></i>',
 	    tooltip: '우측플로팅',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-image-float-left')
-	      .addClass('ff-image-float-right');
+	      this.owner().floating('right');
 	    }
 	  }, 0)
 	  .add({
 	    text: '<i class="fa fa-angle-up"></i>',
 	    tooltip: '플로팅제거',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-image-float-right')
-	      .removeClass('ff-image-float-left');
+	      this.owner().floating(false);
 	    }
 	  }, 0)
 	  .add({
 	    text: '<i class="fa fa-angle-left"></i>',
 	    tooltip: '좌측플로팅',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-image-float-right')
-	      .addClass('ff-image-float-left');
+	      this.owner().floating('left');
+	    }
+	  }, 0)
+	  .add({
+	    text: '<i class="fa fa-circle-o"></i>',
+	    tooltip: '원본크기',
+	    fn: function(e) {
+	      el
+	      .rc('ff-image-size-full')
+	      .rc('ff-image-size-medium');
+	    }
+	  }, 0)
+	  .add({
+	    text: '<i class="fa fa-square-o"></i>',
+	    tooltip: '기본크기',
+	    fn: function(e) {
+	      el
+	      .rc('ff-image-size-full')
+	      .ac('ff-image-size-medium');
+	    }
+	  }, 0)
+	  .add({
+	    text: '<i class="fa fa-arrows-alt"></i>',
+	    tooltip: '풀사이즈',
+	    fn: function(e) {
+	      el
+	      .rc('ff-image-size-medium')
+	      .ac('ff-image-size-full');
 	    }
 	  }, 0);
 	}
 	
 	ImagePart.prototype = Object.create(Part.prototype, {
+	  ondragend: {
+	    value: function(e) {
+	      if( this.editmode() && !$(this.dom()).parent().hc('ff-image-float-wrap') ) {
+	        this.floating(false);
+	      }
+	    }
+	  },
 	  create: {
 	    value: function(arg) {
 	      var src;
@@ -7345,12 +7174,49 @@ return /******/ (function(modules) { // webpackBootstrap
 	        src = arg;
 	      }
 	      
-	      var el = document.createElement('img');
-	      el.src = src || 'https://goo.gl/KRjd3U';
-	      el.setAttribute('ff-type', 'image');
-	      if( title ) el.setAttribute('title', title);
+	      return $('<img/>')
+	      .attr('ff-type', 'image')
+	      .attr('title', title)
+	      .src(src || 'https://goo.gl/KRjd3U')[0];
+	    }
+	  },
+	  floating: {
+	    value: function(direction) {
+	      if( !arguments.length ) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
 	      
-	      return el;
+	      var ctx = this.context();
+	      var el = $(this.dom()).unwrap('.ff-image-float-wrap');
+	      var paragraph = Part(el[0].nextSibling);
+	      
+	      if( !(paragraph instanceof ctx.Paragraph) ) {
+	        paragraph = new ctx.Paragraph();
+	      }
+	      
+	      if( direction === 'left' ) {
+	        el
+	        .rc('ff-image-float-right')
+	        .ac('ff-image-float-left')
+	        .wrap('<div class="ff-image-float-wrap" />')
+	        .parent()
+	        .on('click', function(e) {
+	          if( e.target !== el[0] ) paragraph.focus();
+	        })
+	        .append(paragraph.dom());
+	      } else if( direction === 'right' ) {
+	        el
+	        .rc('ff-image-float-left')
+	        .ac('ff-image-float-right')
+	        .wrap('<div class="ff-image-float-wrap" />')
+	        .parent()
+	        .on('click', function(e) {
+	          if( e.target !== el[0] ) paragraph.focus();
+	        })
+	        .append(paragraph.dom());
+	      } else {
+	        el
+	        .rc('ff-image-float-right')
+	        .rc('ff-image-float-left');
+	      }
 	    }
 	  }
 	});
@@ -7360,13 +7226,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 74 */
+/* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(75);
+	var content = __webpack_require__(70);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -7386,7 +7252,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 75 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -7394,19 +7260,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n  margin-bottom: 10px;\n}\n.ff-image.ff-image-size-medium {\n  width: 80%;\n}\n.ff-image.ff-image-size-full {\n  width: 100%;\n}\n", ""]);
+	exports.push([module.id, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n  margin-bottom: 10px;\n}\n.ff-image.ff-image-size-medium {\n  width: 80%;\n}\n.ff-image.ff-image-size-full {\n  width: 100%;\n}\n.ff-image.ff-image-float-left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.ff-image.ff-image-float-right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 76 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(21);
 	
-	__webpack_require__(77);
+	__webpack_require__(72);
 	
 	function VideoPart(el) {
 	  el = Part.call(this, el);
@@ -7459,13 +7325,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 77 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(78);
+	var content = __webpack_require__(73);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -7485,7 +7351,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 78 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -7499,48 +7365,110 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 79 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(21);
 	
-	__webpack_require__(80);
+	__webpack_require__(75);
 	
-	function FloaterPart(el) {
+	function RowPart(el) {
 	  Part.call(this, el);
 	  
-	  var el = this.dom();
-	  $(el).attr('class', 'ff-floater');
+	  var el = $(this.dom()).ac('ff-row');
 	  
 	  this.toolbar()
 	  .add({
-	    text: '<i class="fa fa-circle-o"></i>',
+	    text: '<i class="fa fa-angle-double-up"></i>',
+	    tooltip: '상단정렬',
 	    fn: function(e) {
+	      el
+	      .rc('ff-row-valign-bottom')
+	      .rc('ff-row-valign-middle')
+	      .ac('ff-row-valign-top');
+	    }
+	  }, 0)
+	  .add({
+	    text: '<i class="fa fa-dot-circle-o"></i>',
+	    tooltip: '중앙정렬',
+	    fn: function(e) {
+	      el
+	      .rc('ff-row-valign-bottom')
+	      .rc('ff-row-valign-top')
+	      .ac('ff-row-valign-middle');
+	    }
+	  }, 0)
+	  .add({
+	    text: '<i class="fa fa-angle-double-down"></i>',
+	    tooltip: '하단정렬',
+	    fn: function(e) {
+	      el
+	      .rc('ff-row-valign-top')
+	      .rc('ff-row-valign-middle')
+	      .ac('ff-row-valign-bottom');
 	    }
 	  }, 0);
 	}
 	
-	FloaterPart.prototype = Object.create(Part.prototype, {
+	RowPart.prototype = Object.create(Part.prototype, {
 	  create: {
-	    value: function(arg) {
-	      return document.createElement('div');
+	    value: function(items) {
+	      this.items(items);
+	      return $('<div ff-type="row" />')[0];
+	    }
+	  },
+	  items: {
+	    value: function(items) {
+	      if( !arguments.length ) return this._items = this._items || [];
+	      
+	      if( items && !Array.isArray(items) ) items = [items];
+	      this._items = items || [];
+	      this.update();
+	      return this;
+	    }
+	  },
+	  update: {
+	    value: function() {
+	      var items = this.items();
+	      var el = $(this.dom()).empty();
+	      
+	      var wp = 100 / items.length;
+	      var row = $('<div class="ff-row-row" />').appendTo(el);
+	      
+	      items.forEach(function(item) {
+	        $('<div class="ff-row-cell" />')
+	        .css('width', wp + 'px')
+	        .append(function() {
+	          return (item && item.dom && item.dom()) || item;
+	        }).appendTo(row);
+	      });
+	      
+	      return this;
+	    }
+	  },
+	  add: {
+	    value: function(item) {
+	      if( !item ) return this;
+	      this.items().push(item);
+	      this.update();
+	      return this;
 	    }
 	  }
 	});
 	
-	module.exports = FloaterPart;
+	module.exports = RowPart;
 	
 
 
 /***/ },
-/* 80 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(81);
+	var content = __webpack_require__(76);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(18)(content, {});
@@ -7549,8 +7477,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	if(false) {
 		// When the styles change, update the <style> tags
 		if(!content.locals) {
-			module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./floater.less", function() {
-				var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./floater.less");
+			module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+				var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 				update(newContent);
 			});
@@ -7560,7 +7488,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 81 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(17)();
@@ -7568,7 +7496,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-floater {\n  overflow: auto;\n  clear: both;\n}\n.ff-floater .ff-floater-float {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n  margin-bottom: 10px;\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n  text-align: center;\n}\n.ff-floater .ff-floater-float.ff-floater-float-right {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n", ""]);
+	exports.push([module.id, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
 	
 	// exports
 
