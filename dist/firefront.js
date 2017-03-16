@@ -2668,11 +2668,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	ArticlePart.prototype = Object.create(Part.prototype, {
 	  update: {
 	    value: function() {
+	      var ctx = this.context();
 	      var placeholder = $(this.dom()).attr('placeholder');
 	      if( placeholder && !this.children().length ) {
-	        var Paragraph = this.context().Paragraph;
-	        var paragraph = new Paragraph().placeholder(placeholder);
-	        this.insert(paragraph);
+	        this.insert(new ctx.Paragraph().placeholder(placeholder));
 	      }
 	      
 	      if( this.editmode() ) {
@@ -6900,13 +6899,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }, 0);
 	  
-	  this._placeholder = $('<div class="ff-paragraph-placeholder" />').html(ParagraphPart.placeholder || '내용을 입력해주세요');
+	  var placeholder = $('<div class="ff-paragraph-placeholder" />').html(el.attr('placeholder') || ParagraphPart.placeholder || '내용을 입력해주세요');
+	  this._placeholder = {
+	    html: function(html) {
+	      placeholder.html(html);
+	      return this;
+	    },
+	    show: function() {
+	      if( !el.text().split('\n').join().trim() ) el.empty().append(placeholder);
+	      return this;
+	    },
+	    hide: function() {
+	      placeholder.remove();
+	      return this;
+	    }
+	  };
 	}
 	
 	ParagraphPart.prototype = Object.create(Part.prototype, {
 	  oninit: {
 	    value: function(e) {
-	      if( !this.dom().innerHTML.trim() ) this.placeholder().appendTo(this.dom());
+	      this.placeholder().show();
 	    }
 	  },
 	  ondragstart: {
@@ -6919,23 +6932,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  onfocus: {
 	    value: function() {
-	      if( !this.editmode() ) return;
+	      this.placeholder().hide();
 	      
-	      this.placeholder().remove();
+	      if( this.editmode() ) {
+	        var el = this.dom();
 	      
-	      var el = this.dom();
+	        // 커서가 다른 곳에 있다면 옮긴다.
+	        var selection = window.getSelection();
+	        var range = selection.rangeCount && selection.getRangeAt(0);
 	      
-	      // 커서가 다른 곳에 있다면 옮긴다.
-	      var selection = window.getSelection();
-	      var range = selection.rangeCount && selection.getRangeAt(0);
-	      
-	      if( !range || !el.contains(range.startContainer) ) {
-	        var lastindex = el.childNodes.length;
-	        range = document.createRange();
-	        range.setStart(el, lastindex);
-	        range.setEnd(el, lastindex);
-	        selection.removeAllRanges();
-	        selection.addRange(range);
+	        if( !range || !el.contains(range.startContainer) ) {
+	          var lastindex = el.childNodes.length;
+	          range = document.createRange();
+	          range.setStart(el, lastindex);
+	          range.setEnd(el, lastindex);
+	          selection.removeAllRanges();
+	          selection.addRange(range);
+	        }
 	      }
 	      
 	      el.focus();
@@ -6943,9 +6956,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  onblur: {
 	    value: function() {
-	      if( !this.editmode() ) return;
-	      
-	      if( !this.dom().innerHTML.trim() ) this.placeholder().appendTo(this.dom());
+	      this.placeholder().show();
 	    }
 	  },
 	  onmodechange: {
