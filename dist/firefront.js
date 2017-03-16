@@ -2430,7 +2430,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this._toolbar = toolbar;
 	  //this._highlighter = highlighter;
 	  
-	  dispatcher.fire('init');
 	  
 	  var observer;
 	  setTimeout(function() {
@@ -2442,18 +2441,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	            old: mutation.oldValue,
 	            value: el.getAttribute(mutation.attributeName)
 	          });
+	        } else if( mutation.type == 'childList' ) {
+	          dispatcher.fire('childlist', {
+	            added: mutation.added,
+	            removed: mutation.removed
+	          });
 	        }
 	      });
 	    });
 	    
 	    observer.observe(el, {
 	      attributes: true,
-	      attributeOldValue: true
+	      attributeOldValue: true,
+	      childList: true
 	    });
 	  }, 1);
 	  
 	  setTimeout(function() {
 	    if( context.editmode() ) self.editmode(true);
+	    dispatcher.fire('init');
 	  }, 0);
 	}
 	
@@ -2660,17 +2666,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	ArticlePart.prototype = Object.create(Part.prototype, {
+	  update: {
+	    value: function() {
+	      var placeholder = $(this.dom()).attr('placeholder');
+	      if( placeholder && !this.children().length ) {
+	        var Paragraph = this.context().Paragraph;
+	        var paragraph = new Paragraph().placeholder(placeholder);
+	        this.insert(paragraph);
+	      }
+	      
+	      if( this.editmode() ) {
+	        this._dnd.update();
+	      }
+	    }
+	  },
+	  oninit: {
+	    value: function(e) {
+	      this.update();
+	    }
+	  },
+	  onchildlist: {
+	    value: function(e) {
+	      this.update();
+	    }
+	  },
 	  onclick: {
 	    value: function(e) {
 	      if( this.editmode() && e.target === this.dom() ) {
-	        if( !this.children().length ) {
-	          var Paragraph = this.context().Paragraph;
-	          var paragraph = new Paragraph();
-	          this.insert(paragraph);
-	        }
-	        
 	        if( this.children().length === 1 ) {
-	          this.getPart(0).click();
+	          var part = this.getPart(0);
+	          part && part.click();
 	        }
 	      }
 	    }
@@ -2690,11 +2715,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  sidebar: {
 	    value: function() {
 	      return this._sidebar;
-	    }
-	  },
-	  update: {
-	    value: function() {
-	      this._dnd.update();
 	    }
 	  },
 	  marker: {
@@ -6825,46 +6845,34 @@ return /******/ (function(modules) { // webpackBootstrap
 	function ParagraphPart(el) {
 	  Part.call(this, el);
 	  
-	  var el = this.dom();
-	  var context = this.context();
-	  
-	  var part = this.on('modechange', function(e) {
-	    if( e.detail.editmode ) {
-	      el.setAttribute('contenteditable', 'true');
-	    } else if( el.hasAttribute('contenteditable') ) {
-	      el.removeAttribute('contenteditable');
-	    }
-	  });
+	  var el = $(this.dom()).ac('ff-paragraph');
 	  
 	  this.toolbar()
 	  .add({
 	    text: '<i class="fa fa-align-right"></i>',
-	    tooltip: '좌측정렬',
+	    tooltip: '우축정렬',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-paragraph-align-left')
-	      .removeClass('ff-paragraph-align-center')
-	      .addClass('ff-paragraph-align-right');
+	      el
+	      .rc('ff-paragraph-align-center')
+	      .ac('ff-paragraph-align-right');
 	    }
 	  }, 0)
 	  .add({
 	    text: '<i class="fa fa-align-center"></i>',
 	    tooltip: '중앙정렬',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-paragraph-align-right')
-	      .removeClass('ff-paragraph-align-left')
-	      .addClass('ff-paragraph-align-center');
+	      el
+	      .rc('ff-paragraph-align-right')
+	      .ac('ff-paragraph-align-center');
 	    }
 	  }, 0)
 	  .add({
 	    text: '<i class="fa fa-align-left"></i>',
-	    tooltip: '우축정렬',
+	    tooltip: '좌측정렬',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-paragraph-align-right')
-	      .removeClass('ff-paragraph-align-center')
-	      .addClass('ff-paragraph-align-left');
+	      el
+	      .rc('ff-paragraph-align-right')
+	      .rc('ff-paragraph-align-center');
 	    }
 	  }, 0)
 	  .add({
@@ -6891,9 +6899,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	      console.log(range, range.toString());
 	    }
 	  }, 0);
+	  
+	  this._placeholder = $('<div class="ff-paragraph-placeholder" />').html(ParagraphPart.placeholder || '내용을 입력해주세요');
 	}
 	
 	ParagraphPart.prototype = Object.create(Part.prototype, {
+	  oninit: {
+	    value: function(e) {
+	      if( !this.dom().innerHTML.trim() ) this.placeholder().appendTo(this.dom());
+	    }
+	  },
 	  ondragstart: {
 	    value: function(e) {
 	      if( this.editmode() ) {
@@ -6904,38 +6919,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  onfocus: {
 	    value: function() {
-	      if( this.editmode() ) {
-	        
-	      }
-	    }
-	  },
-	  onblur: {
-	    value: function() {
-	      if( this.editmode() ) {
-	      }
-	    }
-	  },
-	  onmodechange: {
-	    value: function(e) {
-	      var el = this.dom();
-	      if( e.detail.editmode ) {
-	        el.setAttribute('contenteditable', 'true');
-	      } else if( el.hasAttribute('contenteditable') ) {
-	        el.removeAttribute('contenteditable');
-	      }
-	    }
-	  },
-	  create: {
-	    value: function(arg) {
-	      var el = document.createElement('div');
-	      el.innerHTML = typeof arg === 'string' ? arg : '<p>내용을 입력해주세요</p>';
-	      el.setAttribute('ff-type', 'paragraph');
-	      el.setAttribute('class', 'ff-paragraph ff-paragraph-align-left ff-paragraph-align-left');
-	      return el;
-	    }
-	  },
-	  focus: {
-	    value: function() {
+	      if( !this.editmode() ) return;
+	      
+	      this.placeholder().remove();
+	      
 	      var el = this.dom();
 	      
 	      // 커서가 다른 곳에 있다면 옮긴다.
@@ -6952,7 +6939,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	      }
 	      
 	      el.focus();
-	      Part.prototype.focus.apply(this, arguments);
+	    }
+	  },
+	  onblur: {
+	    value: function() {
+	      if( !this.editmode() ) return;
+	      
+	      if( !this.dom().innerHTML.trim() ) this.placeholder().appendTo(this.dom());
+	    }
+	  },
+	  onmodechange: {
+	    value: function(e) {
+	      var el = $(this.dom());
+	      if( e.detail.editmode ) {
+	        el.attr('contenteditable', true);
+	      } else if( el.is('[contenteditable]') ) {
+	        el.attr('contenteditable', null);
+	      }
+	    }
+	  },
+	  create: {
+	    value: function(arg) {
+	      var html = typeof arg == 'string' ? arg : '';
+	      return $('<div/>').attr('ff-type', 'paragraph').ac('ff-paragraph').html(html)[0];
+	    }
+	  },
+	  placeholder: {
+	    value: function(placeholder) {
+	      if( !arguments.length ) return this._placeholder;
+	      this._placeholder.html(placeholder);
+	      return this;
 	    }
 	  },
 	  click: {
@@ -7002,7 +7018,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph {\n  font-size: 14px;\n  line-height: 1.5;\n  padding: 0;\n  padding-bottom: 10px;\n}\n.ff-paragraph.ff-paragraph-align-left {\n  text-align: left;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph h1,\n.ff-paragraph h2,\n.ff-paragraph h3,\n.ff-paragraph h4,\n.ff-paragraph h5,\n.ff-paragraph h6 {\n  font-weight: normal;\n  padding: 0;\n  margin: 0;\n  margin-bottom: 20px;\n}\n.ff-paragraph p {\n  margin: 0;\n  padding: 0;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph {\n  font-size: 14px;\n  line-height: 1.5;\n  padding: 0;\n  padding-bottom: 10px;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph h1,\n.ff-paragraph h2,\n.ff-paragraph h3,\n.ff-paragraph h4,\n.ff-paragraph h5,\n.ff-paragraph h6 {\n  font-weight: normal;\n  padding: 0;\n  margin: 0;\n  margin-bottom: 20px;\n}\n.ff-paragraph p {\n  margin: 0;\n  padding: 0;\n}\n", ""]);
 	
 	// exports
 
