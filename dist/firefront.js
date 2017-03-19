@@ -62,51 +62,51 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Context = __webpack_require__(1);
+	var ctx = __webpack_require__(1);
 	var Toolbar = __webpack_require__(13);
 	
-	__webpack_require__(19);
+	__webpack_require__(27);
 	
-	var Part = __webpack_require__(21);
-	var ArticlePart = __webpack_require__(22);
-	var ParagraphPart = __webpack_require__(62);
-	var SeparatorPart = __webpack_require__(65);
-	var ImagePart = __webpack_require__(68);
-	var VideoPart = __webpack_require__(71);
-	var RowPart = __webpack_require__(74);
+	var Part = __webpack_require__(29);
+	var ArticlePart = __webpack_require__(30);
+	var ParagraphPart = __webpack_require__(66);
+	var SeparatorPart = __webpack_require__(69);
+	var ImagePart = __webpack_require__(72);
+	var VideoPart = __webpack_require__(75);
+	var RowPart = __webpack_require__(78);
 	
-	Context.Toolbar = Toolbar;
-	Context.Part = Part;
-	Context.Article = ArticlePart;
-	Context.Paragraph = ParagraphPart;
-	Context.Separator = SeparatorPart;
-	Context.Image = ImagePart;
-	Context.Video = VideoPart;
-	Context.Row = RowPart;
+	ctx.Toolbar = Toolbar;
+	ctx.Part = Part;
+	ctx.Article = ArticlePart;
+	ctx.Paragraph = ParagraphPart;
+	ctx.Separator = SeparatorPart;
+	ctx.Image = ImagePart;
+	ctx.Video = VideoPart;
+	ctx.Row = RowPart;
 	
-	Context.types().define('default', ParagraphPart);
-	Context.types().define('article', ArticlePart);
-	Context.types().define('paragraph', ParagraphPart);
-	Context.types().define('separator', SeparatorPart);
-	Context.types().define('image', ImagePart);
-	Context.types().define('video', VideoPart);
-	Context.types().define('row', RowPart);
+	ctx.type('default', ParagraphPart);
+	ctx.type('article', ArticlePart);
+	ctx.type('paragraph', ParagraphPart);
+	ctx.type('separator', SeparatorPart);
+	ctx.type('image', ImagePart);
+	ctx.type('video', VideoPart);
+	ctx.type('row', RowPart);
 	
 	(function() {
 	  var readyfn;
 	  
 	  document.addEventListener('DOMContentLoaded', function() {
-	    Context.scan();
+	    ctx.scan();
 	    readyfn && readyfn();
 	  });
 	
-	  Context.ready = function(fn) {
+	  ctx.ready = function(fn) {
 	    if( document.body ) fn();
 	    else readyfn = fn;
 	  };
 	})();
 	
-	module.exports = Context;
+	module.exports = ctx;
 
 
 /***/ },
@@ -123,6 +123,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var data = {};
 	var editmode = false;
 	var dispatcher = Events();
+	var uploader;
 	
 	var context = {
 	  connector: function() {
@@ -153,9 +154,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	        var Type = types.get(type);
 	        if( !Type ) return console.warn('[firefront] not found type: ' + type);
 	        part = el.__ff__ = new Type(el);
-	        data[id] && part.data(data[id]);
+	        data && data[id] && part.data(data[id]);
 	      }
 	      
+	      part.id = id;
 	      parts.push(part);
 	      if( id ) parts[id] = part;
 	    });
@@ -165,12 +167,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	    
 	    data = d;
 	    this.scan();
+	    
 	    parts.forEach(function(part) {
-	      data[part.id] && part.data(data[part.id]);
+	      part.data(data && data[part.id]);
 	    });
 	    
 	    dispatcher.fire('reset');
 	    
+	    return this;
+	  },
+	  data: function(data) {
+	    if( !arguments.length ) {
+	      data = {};
+	      parts.forEach(function(part) {
+	        if( part.id ) data[part.id] = part.data();
+	      });
+	      
+	      return data;
+	    }
+	    
+	    this.reset(data);
 	    return this;
 	  },
 	  editmode: function(b) {
@@ -198,100 +214,107 @@ return /******/ (function(modules) { // webpackBootstrap
 	  off: function(type, fn) {
 	    dispatcher.off(type, fn);
 	    return this;
-	  }
-	};
-	
-	context.isElement = function(node) {
-	  return (
-	    typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
-	  );
-	};
-	
-	context.upload = function(file, done) {
-	  if( !window.FileReader ) return done(new Error('not found FileReader'));
-	  var reader = new FileReader(); // NOTE: IE10+
-	  reader.onload = function(e) {
-	    done(null, e.target.result);
-	  };
-	  reader.onerror = function(err) {
-	    done(err);
-	  };
-	  reader.readAsDataURL(file);
-	  
-	  return this;
-	};
-	
-	context.selectFiles = function(done) {
-	  var input = document.createElement('input');
-	  input.type = 'file';
-	  input.setAttribute('multiple', 'true');
-	  input.click();
-	  input.onchange = function() {
-	    var srcs = [];
-	    each([].slice.call(input.files), function(file, done) {
-	      context.upload(file, function(err, src) {
-	        if( err ) return done(err);
-	        srcs.push(src);
-	        done();
-	      });
-	    }, function(err) {
-	      if( err ) return done(err);
-	      done(null, srcs);
-	    });
-	  };
-	  
-	  return this;
-	};
-	
-	context.selectFile = function(done) {
-	  var input = document.createElement('input');
-	  input.type = 'file';
-	  input.click();
-	  input.onchange = function() {
-	    context.upload(file, done);
-	  };
-	  
-	  return this;
-	};
-	
-	context.getRange = function(index) {
-	  if( !window.getSelection ) return null;
-	  
-	  var selection = window.getSelection();
-	  if( selection.rangeCount && selection.rangeCount > (index || 0) ) return selection.getRangeAt(index || 0);
-	  return null;
-	};
-	
-	context.setRange = function(range) {
-	  if( !range || !window.getSelection ) return;
-	  
-	  var selection = window.getSelection();
-	  selection.removeAllRanges();
-	  selection.addRange(range);
-	}
-	
-	context.getCaretPosition = function(node) {
-	  if( !window.getSelection ) return -1;
-	  if( !node ) return -1;
-	  
-	  var position = -1;
-	  var selection = window.getSelection();
-	  
-	  if( selection.rangeCount ) {
-	    var range = selection.getRangeAt(0);
-	    if( range.commonAncestorContainer.parentNode == node ) {
-	      position = range.endOffset;
+	  },
+	  isElement: function(node) {
+	    return (
+	      typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
+	    );
+	  },
+	  uploader: function(fn) {
+	    if( !fn || typeof fn !== 'function' ) throw new TypeError('uploader must be a function');
+	    uploader = fn;
+	    return this;
+	  },
+	  upload: function(file, done) {
+	    if( uploader ) {
+	      uploader.apply(this, arguments);
+	      return this;
 	    }
-	  }
 	  
-	  return position;
-	};
-	
-	context.getPart = function(node) {
-	  var node = $(node).parent(function() {
-	    return this.__ff__;
-	  }, true)[0];
-	  return node && node.__ff__;
+	    if( !window.FileReader ) return done(new Error('not found FileReader'));
+	    var reader = new FileReader(); // NOTE: IE10+
+	    reader.onload = function(e) {
+	      done(null, e.target.result);
+	    };
+	    reader.onerror = function(err) {
+	      done(err);
+	    };
+	    reader.readAsDataURL(file);
+	  
+	    return this;
+	  },
+	  selectFiles: function(done) {
+	    var input = document.createElement('input');
+	    input.type = 'file';
+	    input.setAttribute('multiple', 'true');
+	    input.click();
+	    input.onchange = function() {
+	      var srcs = [];
+	      each([].slice.call(input.files), function(file, done) {
+	        context.upload(file, function(err, src) {
+	          if( err ) return done(err);
+	          srcs.push(src);
+	          done();
+	        });
+	      }, function(err) {
+	        if( err ) return done(err);
+	        done(null, srcs);
+	      });
+	    };
+	  
+	    return this;
+	  },
+	  selectFile: function(done) {
+	    var input = document.createElement('input');
+	    input.type = 'file';
+	    input.click();
+	    input.onchange = function() {
+	      context.upload(file, done);
+	    };
+	  
+	    return this;
+	  },
+	  getRange: function(index) {
+	    if( !window.getSelection ) return null;
+	  
+	    var selection = window.getSelection();
+	    if( selection.rangeCount && selection.rangeCount > (index || 0) ) return selection.getRangeAt(index || 0);
+	    return null;
+	  },
+	  setRange: function(range) {
+	    if( !range || !window.getSelection ) return;
+	  
+	    var selection = window.getSelection();
+	    selection.removeAllRanges();
+	    selection.addRange(range);
+	  },
+	  getCaretPosition: function(node) {
+	    if( !window.getSelection ) return -1;
+	    if( !node ) return -1;
+	  
+	    var position = -1;
+	    var selection = window.getSelection();
+	  
+	    if( selection.rangeCount ) {
+	      var range = selection.getRangeAt(0);
+	      if( range.commonAncestorContainer.parentNode == node ) {
+	        position = range.endOffset;
+	      }
+	    }
+	  
+	    return position;
+	  },
+	  getPart: function(node) {
+	    var node = $(node).parent(function() {
+	      return this.__ff__;
+	    }, true)[0];
+	    return node && node.__ff__;
+	  },
+	  type: function(name, cls) {
+	    if( arguments.length <= 1 ) return types.get(name);
+	    types.define(name, cls);
+	    return this;
+	  }
 	};
 	
 	dispatcher.scope(context);
@@ -1608,9 +1631,22 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var getPosition = __webpack_require__(14);
+	var Toolbar = __webpack_require__(14);
 	
-	__webpack_require__(15);
+	Toolbar.Button = __webpack_require__(18);
+	Toolbar.Separator = __webpack_require__(23);
+	Toolbar.ListButton = __webpack_require__(24);
+	
+	module.exports = Toolbar;
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(7);
+	var getPosition = __webpack_require__(15);
+	var Buttons = __webpack_require__(16);
+	__webpack_require__(25);
 	
 	function clone(o) {
 	  var result = {};
@@ -1620,251 +1656,172 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function Toolbar(owner, options) {
 	  if( !owner || typeof owner.dom !== 'function' ) throw new TypeError('illegal owner(owner.dom() requried)');
-	  options = clone(options);
 	  
-	  var toolbar = document.createElement('div');
-	  var buttonul = document.createElement('ul');
-	  buttonul.className = 'ff-toolbar-actions';
-	  toolbar.appendChild(buttonul);
-	  
-	  var btns = [], visible = false, always = false;
-	  
-	  var instance = {
-	    options: function(o) {
-	      if( !arguments.length ) return options;
-	      options = clone(options || o);
-	      return this;
-	    },
-	    position: function(position) {
-	      options.position = position;
-	      instance.update();
-	      return this;
-	    },
-	    element: function() {
-	      return toolbar;
-	    },
-	    owner: function() {
-	      return owner;
-	    },
-	    update: function() {
-	      if( !btns.length ) return;
-	      if( !visible ) {
-	        if( !always ) toolbar.style.display = 'none';
-	        return;
-	      }
-	      
-	      buttonul.innerHTML = '';
-	      btns.forEach(function(btn) {
-	        if( !btn ) return;
-	        
-	        var li = btn.el = btn.el || document.createElement('li');
-	        var scope = {
-	          toolbar: function() {
-	            return instance;
-	          },
-	          owner: function() {
-	            return owner;
-	          },
-	          text: function(text) {
-	            if( !arguments.length ) return btn.text;
-	            btn.text = text || '';
-	            btn.el.innerHTML = '<a>' + btn.text + '</a>';
-	            return this;
-	          }
-	        };
-	        
-	        if( btn.separator ) {
-	          li.className = (btn.cls || '') + ' ff-separator';
-	        } else {
-	          li.className = (btn.cls || '') + ' ff-toolbar-btn';
-	          li.innerHTML = '<a>' + (btn.text || '') + '</a>';
-	          li.onclick = function(e) {
-	            e.stopImmediatePropagation();
-	            if( typeof btn.fn === 'function' ) btn.fn.call(scope, e);
-	            instance.update();
-	          };
-	        }
-	        
-	        if( typeof btn.show === 'function' ) {
-	          if( btn.show.call(scope) ) buttonul.appendChild(li);
-	        } else {
-	          buttonul.appendChild(li);
-	        }
-	      });
-	      
-	      toolbar.className = 'ff-toolbar';
-	      toolbar.style.position = options.fixed ? 'fixed' : 'absolute';
-	      toolbar.style.display = '';
-	      toolbar.style.zIndex = options.zIndex || 110;
-	      toolbar.style.transition = 'all .25s';
-	      if( options.cls ) toolbar.className += ' ' + options.cls;
-	      if( options.style ) toolbar.setAttribute('style', options.style);
-	      
-	      document.body && document.body.appendChild(toolbar);
-	      
-	      instance.updatePosition();
-	      
-	      return this;
-	    },
-	    updatePosition: function() {
-	      var ownerElement = owner.dom();
-	      if( options.position && ownerElement ) {
-	        var ownerposition = getPosition(ownerElement);
-	        var position = options.position || 'top center outside';
-	        var posarr = position.split(' ');
-	        var inside = ~posarr.indexOf('inside');
-	        var vertical = ~posarr.indexOf('vertical');
-	        var nomargin = ~posarr.indexOf('nomargin');
-	        if( vertical ) toolbar.className += ' ff-toolbar-vertical';
-	        
-	        var width = ownerElement.clientWidth;
-	        var height = ownerElement.clientHeight;
-	        var tbarwidth = toolbar.clientWidth;
-	        var tbarheight = toolbar.clientHeight;
-	        var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
-	        
-	        posarr.forEach(function(pos) {
-	          if( !vertical ) {
-	            if( pos === 'top' ) {
-	              if( inside ) top = ownerposition.top + margin;
-	              else top = ownerposition.top - tbarheight - margin;
-	            } else if( pos == 'bottom' ) {
-	              if( inside ) top = ownerposition.top + height - tbarheight - margin;
-	              else top = ownerposition.top + height + margin;
-	            } else if( pos == 'left' ) {
-	              left = ownerposition.left;
-	              if( inside ) left += margin;
-	            } else if( pos == 'center' ) {
-	              left = ownerposition.left + (width - tbarwidth) / 2;
-	            } else if( pos == 'right' ) {
-	              left = ownerposition.left + width - tbarwidth;
-	              if( inside ) left -= margin;
-	            }
-	          } else {
-	            if( pos === 'top' ) {
-	              top = ownerposition.top;
-	              if( inside ) top += margin;
-	            } else if( pos == 'middle' ) {
-	              top = ownerposition.top + (height - tbarheight) / 2;
-	            } else if( pos == 'bottom' ) {
-	              top = ownerposition.top + height - tbarheight;
-	              if( inside ) top -= margin;
-	            } else if( pos == 'left' ) {
-	              if( inside ) left = ownerposition.left + margin;
-	              else left = ownerposition.left - tbarwidth - margin;
-	            } else if( pos == 'right' ) {
-	              if( inside ) left = ownerposition.left + width - tbarwidth - margin;
-	              else left = ownerposition.left + width + margin;
-	            }
-	          }
-	        });
-	        
-	        if( top <= 5 ) top = 5;
-	        if( left <= 5 ) left = 5;
-	        
-	        if( vertical ) {
-	          //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
-	          if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
-	        }
-	        
-	        toolbar.style.top = top + 'px';
-	        toolbar.style.left = left + 'px';
-	      }
-	      
-	      if( +options.top >= 0 ) toolbar.style.top = options.top + 'px';
-	      if( +options.bottom >= 0 ) toolbar.style.bottom = options.bottom + 'px';
-	      if( +options.left >= 0 ) toolbar.style.left = options.left + 'px';
-	      if( +options.right >= 0 ) toolbar.style.right = options.right + 'px';
-	    },
-	    show: function() {
-	      if( !btns.length ) return this;
-	      visible = true;
-	      instance.update();
-	      return this;
-	    },
-	    hide: function() {
-	      if( !btns.length ) return this;
-	      visible = false;
-	      instance.update();
-	      return this;
-	    },
-	    refresh: function() {
-	      instance.update();
-	      return this;
-	    },
-	    always: function(b) {
-	      if( b === false ) {
-	        always = false;
-	        instance.update();
-	        return this;
-	      }
-	      always = true;
-	      this.show();
-	      return this;
-	    },
-	    clear: function() {
-	      btns = [];
-	      instance.update();
-	      return this;
-	    },
-	    buttons: function(arr) {
-	      if( !Array.isArray(arr) ) throw new TypeError('Argument buttons must be an array');
-	      btns = arr.slice();
-	      instance.update();
-	      return this;
-	    },
-	    first: function(btn) {
-	      return instance.add(btn, 0);
-	    },
-	    add: function(btn, index) {
-	      if( !btn ) return this;
-	      if( !Array.isArray(btn) ) btn = [btn];
-	      
-	      btn.forEach(function(btn) {
-	        if( ~btns.indexOf(btn) ) btns.splice(btns.indexOf(btn), 1);
-	        
-	        if( index >= 0 ) {
-	          btns.splice(index++, 0, btn);
-	        } else btns.push(btn);
-	      });
-	      
-	      instance.update();
-	      return this;
-	    },
-	    remove: function(btn) {
-	      if( !btn ) return this;
-	      if( !Array.isArray(btn) ) btn = [btn];
-	      
-	      btn.forEach(function(btn) {
-	        if( ~btns.indexOf(btn) ) btns.splice(btns.indexOf(btn), 1);
-	      });
-	      
-	      instance.update();
-	      return this;
-	    },
-	    destroy: function() {
-	      if( buttonul && buttonul.parentNode ) buttonul.parentNode.removeChild(buttonul);
-	      if( toolbar && toolbar.parentNode ) toolbar.parentNode.removeChild(toolbar);
-	      window.removeEventListener('scroll', instance.updatePosition);
-	      window.removeEventListener('resize', instance.updatePosition);
-	      btns = null, visible = null, toolbar = null, buttonul = null;
-	      options = null, owner = null;
-	      return this;
-	    }
-	  };
-	  
-	  window.addEventListener('scroll', instance.updatePosition);
-	  window.addEventListener('resize', instance.updatePosition);
-	  
-	  return instance;
+	  this._owner = owner;
+	  this._el = $('<div/>').css('opacity', 0).ac('ff-toolbar').hide();
+	  this._buttons = new Buttons(this);
+	  this._enable = true;
+	  this.options(options);
 	}
+	
+	Toolbar.prototype = {
+	  handleEvent: function(e) {
+	    this.update();
+	  },
+	  options: function(o) {
+	    if( !arguments.length ) return this._options;
+	    this._options = clone(o);
+	    return this;
+	  },
+	  position: function(position) {
+	    this.options().position = position;
+	    this.update();
+	    return this;
+	  },
+	  dom: function() {
+	    return this._el[0];
+	  },
+	  owner: function() {
+	    return this._owner;
+	  },
+	  buttons: function() {
+	    return this._buttons;
+	  },
+	  update: function() {
+	    var options = this.options();
+	    var dom = this.dom();
+	    var ownerElement = this.owner().dom();
+	    var position = options.position || 'top center outside';
+	    
+	    var el = this._el
+	    .css(options.style || {})
+	    .ac(options.cls)
+	    .appendTo(document.body);
+	    
+	    if( position && ownerElement ) {
+	      var ownerposition = getPosition(ownerElement);
+	      var posarr = position.split(' ');
+	      var inside = ~posarr.indexOf('inside');
+	      var vertical = ~posarr.indexOf('vertical');
+	      var nomargin = ~posarr.indexOf('nomargin');
+	      if( vertical ) el.ac('ff-toolbar-vertical');
+	      
+	      var width = ownerElement.clientWidth;
+	      var height = ownerElement.clientHeight;
+	      var tbarwidth = dom.clientWidth;
+	      var tbarheight = dom.clientHeight;
+	      var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
+	      
+	      posarr.forEach(function(pos) {
+	        if( !vertical ) {
+	          if( pos === 'top' ) {
+	            if( inside ) top = ownerposition.top + margin;
+	            else top = ownerposition.top - tbarheight - margin;
+	          } else if( pos == 'bottom' ) {
+	            if( inside ) top = ownerposition.top + height - tbarheight - margin;
+	            else top = ownerposition.top + height + margin;
+	          } else if( pos == 'left' ) {
+	            left = ownerposition.left;
+	            if( inside ) left += margin;
+	          } else if( pos == 'center' ) {
+	            left = ownerposition.left + (width - tbarwidth) / 2;
+	          } else if( pos == 'right' ) {
+	            left = ownerposition.left + width - tbarwidth;
+	            if( inside ) left -= margin;
+	          }
+	        } else {
+	          if( pos === 'top' ) {
+	            top = ownerposition.top;
+	            if( inside ) top += margin;
+	          } else if( pos == 'middle' ) {
+	            top = ownerposition.top + (height - tbarheight) / 2;
+	          } else if( pos == 'bottom' ) {
+	            top = ownerposition.top + height - tbarheight;
+	            if( inside ) top -= margin;
+	          } else if( pos == 'left' ) {
+	            if( inside ) left = ownerposition.left + margin;
+	            else left = ownerposition.left - tbarwidth - margin;
+	          } else if( pos == 'right' ) {
+	            if( inside ) left = ownerposition.left + width - tbarwidth - margin;
+	            else left = ownerposition.left + width + margin;
+	          }
+	        }
+	      });
+	      
+	      if( top <= 5 ) top = 5;
+	      if( left <= 5 ) left = 5;
+	      
+	      if( vertical ) {
+	        //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
+	        if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
+	      }
+	    
+	      dom.style.top = top + 'px';
+	      dom.style.left = left + 'px';
+	    }
+	    
+	    this.buttons().update();
+	    
+	    return this;
+	  },
+	  show: function() {
+	    if( !this.enable() ) return this;
+	    this._el.css('opacity', 0).show();
+	    this.update();
+	    this._el.css('opacity', 1);
+	    $(window).on('scroll resize', this);
+	    return this;
+	  },
+	  hide: function(force) {
+	    if( !force && this.always() ) return this;
+	    $(window).off('scroll resize', this);
+	    this._el.css('opacity', 0).hide();
+	    return this;
+	  },
+	  refresh: function() {
+	    this.update();
+	    return this;
+	  },
+	  always: function(b) {
+	    if( !arguments.length ) return this._always;
+	    this._always = !!b;
+	    this.update();
+	    return this;
+	  },
+	  enable: function(b) {
+	    if( !arguments.length ) return this._enable;
+	    this._enable = !!b;
+	    this.update();
+	    return this;
+	  },
+	  add: function(btn, index) {
+	    this.buttons().add(btn, index);
+	    return this;
+	  },
+	  first: function(btn) {
+	    this.buttons().first(btn);
+	    return this;
+	  },
+	  last: function(btn) {
+	    this.buttons().last(btn);
+	    return this;
+	  },
+	  clear: function(btn) {
+	    this.buttons().clear();
+	    return this;
+	  },
+	  remove: function(btn) {
+	    this.buttons().remove(btn);
+	    return this;
+	  }
+	};
 	
 	
 	module.exports = Toolbar;
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	module.exports = function(el) {
@@ -1886,23 +1843,243 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 15 */
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(7);
+	var Button = __webpack_require__(17);
+	
+	function Buttons(toolbar) {
+	  this._toolbar = toolbar;
+	  this._el = $(toolbar.dom());
+	  this._first = [];
+	  this._buttons = [];
+	  this._last = [];
+	}
+	
+	Buttons.prototype = {
+	  toolbar: function() {
+	    return this._toolbar;
+	  },
+	  update: function() {
+	    var el = this._el[0];
+	    var append = function(btns) {
+	      btns.forEach(function(btn) {
+	        btn.appendTo(el).update();
+	      });
+	    };
+	    
+	    append(this._first);
+	    append(this._buttons);
+	    append(this._last);
+	    return this;
+	  },
+	  add: function(btn, index) {
+	    if( !btn ) return this;
+	    if( !Array.isArray(btn) ) btn = [btn];
+	    
+	    var owner = this._toolbar.owner();
+	    var btns = this._buttons;
+	    btn.forEach(function(btn) {
+	      btn = Button.eval(btn).owner(owner);
+	      
+	      if( btn ) {
+	        if( index >= 0 ) btns.splice(index++, 0, btn);
+	        else btns.push(btn);
+	      }
+	    });
+	    
+	    this.update();
+	    return this;
+	  },
+	  first: function(btn, index) {
+	    if( !btn ) return this;
+	    if( !Array.isArray(btn) ) btn = [btn];
+	    
+	    var owner = this._toolbar.owner();
+	    var btns = this._first;
+	    btn.forEach(function(btn) {
+	      btn = Button.eval(btn).owner(owner);
+	      
+	      if( btn ) {
+	        if( index >= 0 ) btns.splice(index++, 0, btn);
+	        else btns.push(btn);
+	      }
+	    });
+	    
+	    this.update();
+	    return this;
+	  },
+	  last: function(btn, index) {
+	    if( !btn ) return this;
+	    if( !Array.isArray(btn) ) btn = [btn];
+	    
+	    var owner = this._toolbar.owner();
+	    var btns = this._last;
+	    btn.forEach(function(btn) {
+	      btn = Button.eval(btn).owner(owner);
+	      
+	      if( btn ) {
+	        if( index >= 0 ) btns.splice(index++, 0, btn);
+	        else btns.push(btn);
+	      }
+	    });
+	    
+	    this.update();
+	    return this;
+	  },
+	  remove: function(btn) {
+	    if( !btn ) return this;
+	    if( !Array.isArray(btn) ) btn = [btn];
+	    
+	    var remove = function(btns) {
+	      btns.forEach(function(btn) {
+	        if( ~btns.indexOf(btn) ) btns.splice(btns.indexOf(btn), 1);
+	      });
+	    };
+	    
+	    remove(this._last);
+	    remove(this._first);
+	    remove(this._buttons);
+	    
+	    this.update();
+	    return this;
+	  },
+	  clear: function() {
+	    this._el.html();
+	    return this;
+	  }
+	};
+	
+	module.exports = Buttons;
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Button = __webpack_require__(18);
+	var Separator = __webpack_require__(23);
+	var ListButton = __webpack_require__(24);
+	
+	Button.eval = function(o) {
+	  if( !o ) return null;
+	  if( o instanceof Button ) return o;
+	  
+	  if( o == '-' || o.type == 'separator' ) return new Separator(o);
+	  else if( o.type == 'list' ) return new ListButton(o);
+	  
+	  return new Button(o);
+	};
+	
+	Button.Separator = Separator;
+	Button.ListButton = ListButton;
+	
+	module.exports = Button;
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(7);
+	
+	__webpack_require__(19);
+	
+	function Button(options) {
+	  if( typeof options == 'string' ) options = {text:options};
+	  
+	  var self = this;
+	  self.options(options);
+	  self.owner(options.owner);
+	  
+	  self._el = $('<div class="ff-toolbar-btn"></div>')
+	  .ac(options.cls)
+	  .on('click', this);
+	  
+	  this.text(options.text);
+	}
+	
+	Button.prototype = {
+	  handleEvent: function(e) {
+	    if( e.type == 'click' ) {
+	      e.stopPropagation();
+	      this.click(e);
+	      this.update(e);
+	    }
+	  },
+	  options: function(options) {
+	    if( !arguments.length ) return this._options = this._options || {};
+	    this._options = options || {};
+	    return this;
+	  },
+	  dom: function() {
+	    return this._el[0];
+	  },
+	  owner: function(owner) {
+	    if( !arguments.length ) return this._owner;
+	    this._owner = owner;
+	    return this;
+	  },
+	  cls: function(cls) {
+	    this._el.cc().ac('ff-toolbar-btn').ac(cls);
+	    return this;
+	  },
+	  active: function(b) {
+	    if( !arguments.length ) return this._el.hc('ff-toolbar-btn-active');
+	    this._el.tc('ff-toolbar-btn-active', b);
+	    return this;
+	  },
+	  enable: function(b) {
+	    if( !arguments.length ) return !this._el.hc('ff-toolbar-btn-disabled');
+	    this._el.tc('ff-toolbar-btn-disabled', !b);
+	    return this;
+	  },
+	  update: function(e) {
+	    var o = this.options();
+	    var fn = o.onupdate;
+	    fn && fn.call(this, e);
+	    return this;
+	  },
+	  click: function(e) {
+	    var o = this.options();
+	    var fn = o.onclick || o.fn;
+	    fn && fn.call(this, e);
+	    return this;
+	  },
+	  text: function(text) {
+	    if( !arguments.length ) return this._el.html();
+	    this._el.html(text);
+	    return this;
+	  },
+	  appendTo: function(parent, index) {
+	    $(parent).append(this._el[0], index);
+	    return this;
+	  },
+	  remove: function() {
+	    this._el.remove();
+	    return this;
+	  }
+	};
+	
+	module.exports = Button;
+
+/***/ },
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(16);
+	var content = __webpack_require__(20);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
 		// When the styles change, update the <style> tags
 		if(!content.locals) {
-			module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-				var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+			module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+				var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 				update(newContent);
 			});
@@ -1912,21 +2089,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 16 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
 	// module
-	exports.push([module.id, ".ff-toolbar {\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  box-sizing: border-box;\n  user-select: none;\n}\n.ff-toolbar ul {\n  display: block;\n  margin: 0;\n  padding: 0;\n}\n.ff-toolbar ul:after {\n  clear: both;\n  content: \"\";\n  display: table;\n}\n.ff-toolbar ul li {\n  float: left;\n  list-style: none;\n  margin: 0;\n  padding: 0;\n  -moz-user-select: none;\n  -khtml-user-select: none;\n  -webkit-user-select: none;\n  user-select: none;\n}\n.ff-toolbar ul li a:hover,\n.ff-toolbar ul li a:active,\n.ff-toolbar ul li a:focus {\n  text-decoration: none;\n}\n.ff-toolbar ul li a {\n  display: block;\n  cursor: pointer;\n  font-size: 1em;\n  line-height: 1em;\n  background-color: transparent;\n  color: #fff;\n  padding: 12px 12px;\n  text-decoration: none;\n}\n.ff-toolbar ul li a:hover {\n  color: #2796DD;\n}\n.ff-toolbar ul li.active a {\n  color: #2796DD;\n}\n.ff-toolbar ul li:first-child {\n  padding-left: 0;\n}\n.ff-toolbar ul li:last-child {\n  padding-right: 0;\n}\n.ff-toolbar.ff-toolbar-vertical ul li {\n  float: initial;\n}\n.ff-toolbar.ff-toolbar-vertical ul li:first-child {\n  padding-top: 0;\n  padding-left: 0;\n}\n.ff-toolbar.ff-toolbar-vertical ul li:last-child {\n  padding-bottom: 0;\n  padding-right: 0;\n}\n", ""]);
+	exports.push([module.id, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 17 */
+/* 21 */
 /***/ function(module, exports) {
 
 	/*
@@ -1982,7 +2159,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 18 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -2234,16 +2411,123 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 19 */
+/* 23 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(7);
+	
+	function Separator(options) {
+	  self.el = $('<div class="ff-toolbar-separator"></div>')[0];
+	}
+	
+	Separator.prototype = {
+	  owner: function(owner) {
+	    if( !arguments.length ) return this._owner;
+	    this._owner = owner;
+	    return this;
+	  },
+	  appendTo: function(parent) {
+	    $(parent).append(this.el);
+	    return this;
+	  },
+	  remove: function() {
+	    $(this.el).remove();
+	    return this;
+	  }
+	};
+	
+	module.exports = Separator;
+
+/***/ },
+/* 24 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(7);
+	var Button = __webpack_require__(18);
+	
+	function ListButton() {
+	  Button.apply(this, arguments);
+	  
+	  this._el.ac('ff-toolbar-list-btn');
+	}
+	
+	ListButton.prototype = Object.create(Button.prototype, {
+	  handleEvent: {
+	    value: function(e) {
+	      if( e.type == 'click' ) {
+	        e.stopPropagation();
+	        this.click(e);
+	        this.toggleList();
+	        this.update(e);
+	      }
+	    }
+	  },
+	  toggleList: {
+	    value: function() {
+	      console.log('toggle');
+	    }
+	  },
+	  text: {
+	    value: function(txt) {
+	      this._el.html(txt);
+	      return this;
+	    }
+	  }
+	});
+	
+	module.exports = ListButton;
+
+/***/ },
+/* 25 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(20);
+	var content = __webpack_require__(26);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+				var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 26 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(21)();
+	// imports
+	
+	
+	// module
+	exports.push([module.id, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
+	
+	// exports
+
+
+/***/ },
+/* 27 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+	
+	// load the styles
+	var content = __webpack_require__(28);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -2260,21 +2544,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 20 */
+/* 28 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
 	// module
-	exports.push([module.id, ".ff {\n  box-sizing: border-box;\n}\n.ff-part[draggable] {\n  -moz-user-select: none;\n  -khtml-user-select: none;\n  -webkit-user-select: none;\n  user-select: none;\n  -khtml-user-drag: element;\n  -webkit-user-drag: element;\n}\n.ff-part.ff-focus-state {\n  background-color: #eee;\n}\n", ""]);
+	exports.push([module.id, ".ff {\n  box-sizing: border-box;\n}\n.ff-part.ff-focus-state {\n  background-color: #eee;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 21 */
+/* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var context = __webpack_require__(1);
@@ -2282,9 +2566,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Types = __webpack_require__(11);
 	var Toolbar = __webpack_require__(13);
 	var $ = __webpack_require__(7);
-	
-	//var Highlighter = require('./highlighter.js');
-	//var MouseObserver = require('./mouseobserver.js');
 	
 	var focused, currentRange;
 	$(document).on('mouseup', function(e) {
@@ -2303,80 +2584,51 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	  
 	  if( part ) part.focus();
-	  else if( focused && typeof focused.blur == 'function' ) {
-	    focused.blur();
-	  }
+	  else if( focused && typeof focused.blur == 'function' ) focused.blur();
 	});
 	
-	function Part(el) {
-	  if( el && el.__ff__ ) return el.__ff__;
+	function Part(dom) {
+	  if( dom && dom.__ff__ ) return dom.__ff__;
 	  if( !(this instanceof Part) ) return null;
-	  if( !el ) el = this.create();
-	  if( !context.isElement(el) ) el = this.create(el);
-	  if( !context.isElement(el) ) throw new TypeError('illegal argument: el');
-	  el.__ff__ = this;
+	  if( !dom ) dom = this.create();
+	  if( !context.isElement(dom) ) dom = this.create(dom);
+	  if( !context.isElement(dom) ) throw new TypeError('illegal argument: dom');
+	  dom.__ff__ = this;
 	  
-	  $(el).addClass('ff ff-part');
+	  var el = $(dom).addClass('ff ff-part');
 	  
 	  var dispatcher = Events(this);
-	  //var highlighter = Highlighter(el);
 	  var self = this;
 	  
 	  var toolbar = new Toolbar(this, {
 	    position: 'top center',
 	    group: 'part',
 	    cls: 'ff-part-toolbar'
-	  }).add({
-	    text: '<i class="fa fa-undo"></i>',
-	    fn: function(e) {
-	      self.clear();
-	    }
-	  }).add({
-	    text: '<i class="fa fa-remove"></i>',
-	    fn: function(e) {
-	      self.remove();
-	    }
 	  });
 	  
-	  dispatcher.on('mouseenter', function(e) {
-	    if( e.defaultPrevented ) return;
-	    if( !this.editmode() ) return;
-	    
-	    $(el).ac('ff-enter-state');
-	  })
-	  .on('mousedown', function(e) {
-	    if( e.defaultPrevented ) return;
-	    if( !this.editmode() ) return;
-	    
-	    this.toolbar().update();
-	  })
-	  .on('mousemove', function(e) {
-	    if( e.defaultPrevented ) return;
-	    if( !this.editmode() ) return;
-	    
-	    this.toolbar().update();
-	  })
-	  .on('mouseleave', function(e) {
-	    if( e.defaultPrevented ) return;
-	    if( !this.editmode() ) return;
-	    
-	    $(el).removeClass('ff-enter-state');
-	  })
+	  if( dom !== arguments[0] ) {
+	    toolbar.last({
+	      text: '<i class="fa fa-remove"></i>',
+	      fn: function(e) {
+	        self.remove();
+	      }
+	    });
+	  }
+	  
+	  dispatcher
 	  .on('focus', function(e) {
-	    if( e.defaultPrevented ) return;
-	    if( !this.editmode() ) return;
+	    if( e.defaultPrevented || !this.editmode() ) return;
 	    
-	    $(el).ac('ff-focus-state');
+	    el.ac('ff-focus-state');
 	    this.toolbar().show();
 	  })
 	  .on('blur', function(e) {
-	    if( e.defaultPrevented ) return;
-	    if( !this.editmode() ) return;
+	    if( e.defaultPrevented || !this.editmode() ) return;
 	    
-	    $(el).rc('ff-focus-state');
+	    el.rc('ff-focus-state');
 	    this.toolbar().hide();
 	  })
-	  .on('update', function(e) {
+	  .on('data', function(e) {
 	    if( e.defaultPrevented ) return;
 	    
 	    dispatcher.fire('render', {
@@ -2392,25 +2644,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	      originalEvent: e
 	    });
 	  })
-	  .on('dragstart', function(e) {
-	    if( e.defaultPrevented ) return;
-	    
-	    if( !this.editmode() ) return;
-	    
-	    if( e.target === el ) {
-	      this.blur();
-	      context.dragging = this;
-	      $(el).ac('ff-dragging');
-	    }
-	  })
-	  .on('dragend', function(e) {
-	    if( e.defaultPrevented ) return;
-	    
-	    if( e.target === el ) {
-	      context.dragging = null;
-	      $(el).rc('ff-dragging');
-	    }
-	  })
 	  .on('*', function(e) {
 	    if( e.defaultPrevented ) return;
 	    
@@ -2421,15 +2654,43 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( typeof this[name] == 'function' ) this[name](e);
 	  });
 	  
-	  $(el)
-	  .on('click mouseup mousedown mouseenter mouseleave mousemove dragstart dragend', dispatcher);
+	  el
+	  .on('mouseenter', function(e) {
+	    if( !self.editmode() ) return;
+	    
+	    self.toolbar().update();
+	    el.ac('ff-enter-state');
+	  })
+	  .on('mousedown', function(e) {
+	    if( !self.editmode() ) return;
+	  
+	    self.toolbar().update();
+	  })
+	  .on('mouseleave', function(e) {
+	    if( !self.editmode() ) return;
+	  
+	    el.removeClass('ff-enter-state');
+	  })
+	  .on('dragstart', function(e) {
+	    if( !self.editmode() ) return;
+	    
+	    if( e.target === dom ) {
+	      self.blur();
+	      context.dragging = dom;
+	      el.ac('ff-dragging');
+	    }
+	  })
+	  .on('dragend', function(e) {
+	    if( e.target === dom ) {
+	      context.dragging = null;
+	      el.rc('ff-dragging');
+	    }
+	  });
 	  
 	  this._data = null;
-	  this._dom = el;
+	  this._dom = dom;
 	  this._dispatcher = dispatcher;
 	  this._toolbar = toolbar;
-	  //this._highlighter = highlighter;
-	  
 	  
 	  var observer;
 	  setTimeout(function() {
@@ -2439,7 +2700,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	          dispatcher.fire('attr', {
 	            name: mutation.attributeName,
 	            old: mutation.oldValue,
-	            value: el.getAttribute(mutation.attributeName)
+	            value: dom.getAttribute(mutation.attributeName)
 	          });
 	        } else if( mutation.type == 'childList' ) {
 	          dispatcher.fire('childlist', {
@@ -2450,17 +2711,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	      });
 	    });
 	    
-	    observer.observe(el, {
+	    observer.observe(dom, {
 	      attributes: true,
 	      attributeOldValue: true,
 	      childList: true
 	    });
 	  }, 1);
 	  
-	  setTimeout(function() {
-	    if( context.editmode() ) self.editmode(true);
-	    dispatcher.fire('init');
-	  }, 0);
+	  dispatcher.fire('init');
+	  if( context.editmode() ) self.editmode(true);
 	}
 	
 	var proto = Part.prototype = {};
@@ -2473,22 +2732,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this._toolbar;
 	};
 	
-	/*proto.highlighter = function() {
-	  return this._highlighter;
-	};*/
-	
 	proto.dom = function() {
 	  return this._dom;
 	};
 	
 	proto.create = function(arg) {
-	  var el = document.createElement('div');
-	  
-	  if( typeof arg === 'string' ) {
-	    el.innerHTML = arg;
-	  }
-	  
-	  return el;
+	  return $('<div />').html(arg)[0];
 	};
 	
 	proto.remove = function() {
@@ -2513,15 +2762,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 	
 	proto.setData = function(data) {
+	  this._data = data;
+	  this.fire('data', {old: this._data, data: data});
 	  return this;
 	};
 	
 	proto.data = function(data) {
-	  if( !arguments.length ) return this.getData();
-	  if( this._data !== data ) this.fire('update', {prev: this._data, data: data});
-	  this._data = data;
-	  this.setData(data);
-	  return this;
+	  return !arguments.length ? this.getData() : this.setData(data);
 	};
 	
 	proto.fire = function() {
@@ -2552,6 +2799,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	proto.click = function() {
 	  this.dom().click();
+	  return this;
 	};
 	
 	proto.focus = function() {
@@ -2560,6 +2808,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.fire('focus');
 	    focused = this;
 	  }
+	  return this;
 	};
 	
 	proto.blur = function() {
@@ -2567,6 +2816,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.fire('blur');
 	    focused = null;
 	  }
+	  return this;
 	};
 	
 	proto.range = function() {
@@ -2623,65 +2873,65 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Part;
 
 /***/ },
-/* 22 */
+/* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
-	var Toolbar = __webpack_require__(13);
-	var components = __webpack_require__(23);
-	var Marker = __webpack_require__(49);
-	var DnD = __webpack_require__(57);
+	var Part = __webpack_require__(29);
+	var components = __webpack_require__(31);
+	var Marker = __webpack_require__(57);
+	var DnD = __webpack_require__(61);
 	
-	__webpack_require__(60);
+	__webpack_require__(64);
 	
-	function ArticlePart(el) {
-	  Part.call(this, el);
-	  
-	  var el = this.dom();
-	  
-	  $(el).addClass('ff-article');
-	  
-	  var toolbar = this.toolbar()
-	  .add({
-	    text: '<i class="fa fa-eraser"></i>',
-	    tooltip: '내용 삭제',
-	    fn: function(e) {
-	      this.owner().clear();
-	    }
-	  }, 0)
-	  .always();
-	  
-	  var sidebar = new Toolbar(this)
-	  .position('vertical top right outside');
-	  
-	  components.forEach(function(item) {
-	    sidebar.add(item);
-	  });
-	  
-	  this._marker = new Marker(this);
-	  this._dnd = new DnD(this);
-	  this._sidebar = sidebar;
-	  this.update();
+	function ArticlePart() {
+	  Part.apply(this, arguments);
 	}
 	
 	ArticlePart.prototype = Object.create(Part.prototype, {
-	  update: {
-	    value: function() {
-	      var ctx = this.context();
-	      var placeholder = $(this.dom()).attr('placeholder');
-	      if( placeholder && !this.children().length ) {
-	        this.insert(new ctx.Paragraph().placeholder(placeholder));
-	      }
-	      
-	      if( this.editmode() ) {
-	        this._dnd.update();
-	      }
-	    }
-	  },
 	  oninit: {
 	    value: function(e) {
+	      var part = this;
+	      var el = $(this.dom()).ac('ff-article')
+	      .on('click', function(e) {
+	        if( part.editmode() && e.target === part.dom() ) {
+	          part.update();
+	          
+	          if( part.children().length === 1 ) {
+	            var p = part.getPart(0);
+	            p && p.click();
+	          }
+	        }
+	      });
+	      
+	      var toolbar = this.toolbar()
+	      .position('vertical top right outside')
+	      .add({
+	        text: '<i class="fa fa-eraser"></i>',
+	        tooltip: '내용 삭제',
+	        fn: function(e) {
+	          this.owner().clear();
+	        }
+	      }, 0)
+	      .add(components)
+	      .always(true);
+	      
+	      this._marker = new Marker(this);
+	      this._dnd = new DnD(this);
 	      this.update();
+	    }
+	  },
+	  update: {
+	    value: function() {
+	      if( this.editmode() ) {
+	        var ctx = this.context();
+	        var placeholder = $(this.dom()).attr('placeholder');
+	        if( placeholder && !this.children().length ) {
+	          this.insert(new ctx.Paragraph().placeholder(placeholder));
+	        }
+	        
+	        this._dnd.update();
+	      }
 	    }
 	  },
 	  onchildlist: {
@@ -2689,31 +2939,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.update();
 	    }
 	  },
-	  onclick: {
-	    value: function(e) {
-	      if( this.editmode() && e.target === this.dom() ) {
-	        if( this.children().length === 1 ) {
-	          var part = this.getPart(0);
-	          part && part.click();
-	        }
-	      }
-	    }
-	  },
 	  onmodechange: {
 	    value: function(e) {
-	      var sidebar = this.sidebar();
-	      if( this.editmode() ) sidebar.show();
-	      else sidebar.hide();
-	    }
-	  },
-	  onmousemove: {
-	    value: function(e) {
-	      this.sidebar().update();
-	    }
-	  },
-	  sidebar: {
-	    value: function() {
-	      return this._sidebar;
+	      this.update();
 	    }
 	  },
 	  marker: {
@@ -2722,16 +2950,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  },
 	  oninsert: {
-	    value: function() {
-	      this.update();
-	    }
-	  },
-	  oneditmode: {
-	    value: function() {
-	      this.update();
-	    }
-	  },
-	  onnormalmode: {
 	    value: function() {
 	      this.update();
 	    }
@@ -2770,6 +2988,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      return $(this.dom()).children().filter(function() {
 	        return !($(this).hc('ff-marker') || $(this).hc('ff-placeholder'));
 	      });
+	    }
+	  },
+	  getHTML: {
+	    value: function() {
+	      return this.dom().innerHTML;
+	    }
+	  },
+	  setHTML: {
+	    value: function(html) {
+	      this.dom().innerHTML = html;
+	      return this;
 	    }
 	  },
 	  insert: {
@@ -2828,14 +3057,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = ArticlePart;
 
 /***/ },
-/* 23 */
+/* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var modal = __webpack_require__(24);
-	var URL = __webpack_require__(41);
-	var querystring = __webpack_require__(45);
-	var Items = __webpack_require__(48);
+	var modal = __webpack_require__(32);
+	var URL = __webpack_require__(49);
+	var querystring = __webpack_require__(53);
+	var Items = __webpack_require__(56);
 	var context = __webpack_require__(1);
 	
 	var items = Items();
@@ -2940,13 +3169,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = items;
 
 /***/ },
-/* 24 */
+/* 32 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var swal = __webpack_require__(25);
-	var modal = __webpack_require__(34);
+	var swal = __webpack_require__(33);
+	var modal = __webpack_require__(42);
 	
-	__webpack_require__(39);
+	__webpack_require__(47);
 	
 	module.exports = {
 	  popup: function(options) {
@@ -3115,7 +3344,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 25 */
+/* 33 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3133,35 +3362,35 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * jQuery-like functions for manipulating the DOM
 	 */
 	
-	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide$isDescendant$getTopMargin$fadeIn$fadeOut$fireClick$stopEventPropagation = __webpack_require__(26);
+	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide$isDescendant$getTopMargin$fadeIn$fadeOut$fireClick$stopEventPropagation = __webpack_require__(34);
 	
 	/*
 	 * Handy utilities
 	 */
 	
-	var _extend$hexToRgb$isIE8$logStr$colorLuminance = __webpack_require__(27);
+	var _extend$hexToRgb$isIE8$logStr$colorLuminance = __webpack_require__(35);
 	
 	/*
 	 *  Handle sweetAlert's DOM elements
 	 */
 	
-	var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$resetInput$fixVerticalPosition = __webpack_require__(28);
+	var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$resetInput$fixVerticalPosition = __webpack_require__(36);
 	
 	// Handle button events and keyboard events
 	
-	var _handleButton$handleConfirm$handleCancel = __webpack_require__(31);
+	var _handleButton$handleConfirm$handleCancel = __webpack_require__(39);
 	
-	var _handleKeyDown = __webpack_require__(32);
+	var _handleKeyDown = __webpack_require__(40);
 	
 	var _handleKeyDown2 = _interopRequireWildcard(_handleKeyDown);
 	
 	// Default values
 	
-	var _defaultParams = __webpack_require__(29);
+	var _defaultParams = __webpack_require__(37);
 	
 	var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 	
-	var _setParameters = __webpack_require__(33);
+	var _setParameters = __webpack_require__(41);
 	
 	var _setParameters2 = _interopRequireWildcard(_setParameters);
 	
@@ -3423,7 +3652,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 26 */
+/* 34 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3619,7 +3848,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.stopEventPropagation = stopEventPropagation;
 
 /***/ },
-/* 27 */
+/* 35 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3697,7 +3926,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.colorLuminance = colorLuminance;
 
 /***/ },
-/* 28 */
+/* 36 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3708,11 +3937,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _hexToRgb = __webpack_require__(27);
+	var _hexToRgb = __webpack_require__(35);
 	
-	var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(26);
+	var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(34);
 	
-	var _defaultParams = __webpack_require__(29);
+	var _defaultParams = __webpack_require__(37);
 	
 	var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 	
@@ -3720,7 +3949,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * Add modal + overlay to DOM
 	 */
 	
-	var _injectedHTML = __webpack_require__(30);
+	var _injectedHTML = __webpack_require__(38);
 	
 	var _injectedHTML2 = _interopRequireWildcard(_injectedHTML);
 	
@@ -3869,7 +4098,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	exports.fixVerticalPosition = fixVerticalPosition;
 
 /***/ },
-/* 29 */
+/* 37 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -3906,7 +4135,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 30 */
+/* 38 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -3953,7 +4182,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports["default"];
 
 /***/ },
-/* 31 */
+/* 39 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -3962,11 +4191,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _colorLuminance = __webpack_require__(27);
+	var _colorLuminance = __webpack_require__(35);
 	
-	var _getModal = __webpack_require__(28);
+	var _getModal = __webpack_require__(36);
 	
-	var _hasClass$isDescendant = __webpack_require__(26);
+	var _hasClass$isDescendant = __webpack_require__(34);
 	
 	/*
 	 * User clicked on "Confirm"/"OK" or "Cancel"
@@ -4093,7 +4322,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 32 */
+/* 40 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4102,9 +4331,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _stopEventPropagation$fireClick = __webpack_require__(26);
+	var _stopEventPropagation$fireClick = __webpack_require__(34);
 	
-	var _setFocusStyle = __webpack_require__(28);
+	var _setFocusStyle = __webpack_require__(36);
 	
 	var handleKeyDown = function handleKeyDown(event, params, modal) {
 	  var e = event || window.event;
@@ -4177,7 +4406,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 33 */
+/* 41 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -4186,11 +4415,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	  value: true
 	});
 	
-	var _isIE8 = __webpack_require__(27);
+	var _isIE8 = __webpack_require__(35);
 	
-	var _getModal$getInput$setFocusStyle = __webpack_require__(28);
+	var _getModal$getInput$setFocusStyle = __webpack_require__(36);
 	
-	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide = __webpack_require__(26);
+	var _hasClass$addClass$removeClass$escapeHtml$_show$show$_hide$hide = __webpack_require__(34);
 	
 	var alertTypes = ['error', 'warning', 'info', 'success', 'input', 'prompt'];
 	
@@ -4407,11 +4636,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = exports['default'];
 
 /***/ },
-/* 34 */
+/* 42 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var ajax = __webpack_require__(35);
-	__webpack_require__(36);
+	var ajax = __webpack_require__(43);
+	__webpack_require__(44);
 	
 	var z = 200;
 	var mask = (function() {
@@ -4599,7 +4828,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if( shell !== false && (title || icon || btns) ) shell = true;
 	  if( shell ) {
 	    var cls = shell.cls, style = shell.style;
-	    var shellhtml = __webpack_require__(38);
+	    var shellhtml = __webpack_require__(46);
 	    handle.target.innerHTML = shellhtml;
 	    handle.target = handle.body.querySelector('.x-modal-shell-body');
 	    handle.shell = {
@@ -4766,7 +4995,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 35 */
+/* 43 */
 /***/ function(module, exports) {
 
 	module.exports = function(src, done) {
@@ -4783,16 +5012,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 36 */
+/* 44 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(37);
+	var content = __webpack_require__(45);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -4809,10 +5038,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 37 */
+/* 45 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -4823,22 +5052,22 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 38 */
+/* 46 */
 /***/ function(module, exports) {
 
 	module.exports = "<div class=\"x-modal-shell\">\n  <div class=\"x-modal-shell-header\"></div>\n  <div class=\"x-modal-shell-body\"></div>\n  <div class=\"x-modal-shell-footer\"></div>\n</div>";
 
 /***/ },
-/* 39 */
+/* 47 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(40);
+	var content = __webpack_require__(48);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -4855,10 +5084,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 40 */
+/* 48 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -4869,7 +5098,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 41 */
+/* 49 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -4895,8 +5124,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	'use strict';
 	
-	var punycode = __webpack_require__(42);
-	var util = __webpack_require__(44);
+	var punycode = __webpack_require__(50);
+	var util = __webpack_require__(52);
 	
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -4971,7 +5200,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(45);
+	    querystring = __webpack_require__(53);
 	
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && util.isObject(url) && url instanceof Url) return url;
@@ -5607,7 +5836,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 42 */
+/* 50 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global) {/*! https://mths.be/punycode v1.3.2 by @mathias */
@@ -6139,10 +6368,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	}(this));
 	
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(43)(module), (function() { return this; }())))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(51)(module), (function() { return this; }())))
 
 /***/ },
-/* 43 */
+/* 51 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -6158,7 +6387,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 44 */
+/* 52 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -6180,17 +6409,17 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 45 */
+/* 53 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	exports.decode = exports.parse = __webpack_require__(46);
-	exports.encode = exports.stringify = __webpack_require__(47);
+	exports.decode = exports.parse = __webpack_require__(54);
+	exports.encode = exports.stringify = __webpack_require__(55);
 
 
 /***/ },
-/* 46 */
+/* 54 */
 /***/ function(module, exports) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -6276,7 +6505,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 47 */
+/* 55 */
 /***/ function(module, exports) {
 
 	// Copyright Joyent, Inc. and other Node contributors.
@@ -6346,7 +6575,7 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 48 */
+/* 56 */
 /***/ function(module, exports) {
 
 	module.exports = function() {
@@ -6368,15 +6597,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 49 */
+/* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var getOffsetTop = __webpack_require__(50);
-	var components = __webpack_require__(23);
-	var Button = __webpack_require__(51);
+	var getOffsetTop = __webpack_require__(58);
+	var components = __webpack_require__(31);
+	var Button = __webpack_require__(13).Button;
 	
-	__webpack_require__(55);
+	__webpack_require__(59);
 	
 	function Marker(part) {
 	  var el = $(part.dom());
@@ -6428,9 +6657,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  
 	  el.on('click', function(e) {
 	    if( !marker[0].contains(e.target) ) marker.rc('ff-marker-open');
-	  });
-	  
-	  el.on('mousemove', function(e) {
+	  }).on('mousemove', function(e) {
 	    if( part.editmode() ) {
 	      var target = e.target;
 	      var y = e.pageY;
@@ -6467,7 +6694,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Marker;
 
 /***/ },
-/* 50 */
+/* 58 */
 /***/ function(module, exports) {
 
 	module.exports = function(el) {
@@ -6479,165 +6706,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	};
 
 /***/ },
-/* 51 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $ = __webpack_require__(7);
-	var Separator = __webpack_require__(52);
-	
-	__webpack_require__(53);
-	
-	function Button(options) {
-	  if( options === '-' ) return new Separator();
-	  if( typeof options == 'string' ) options = {text:options};
-	  
-	  var self = this;
-	  self.options(options);
-	  self.owner(options.owner);
-	  
-	  self.el = $('<div class="ff-toolbar-btn"></div>')
-	  .html(options.text)
-	  .ac(options.cls)
-	  .on('click', function(e) {
-	    e.stopPropagation();
-	    self.click(e);
-	    self.update(e);
-	  })[0];
-	}
-	
-	Button.prototype = {
-	  options: function(options) {
-	    if( !arguments.length ) return this._options = this._options || {};
-	    this._options = options || {};
-	    return this;
-	  },
-	  cls: function(cls) {
-	    $(this.el).cc().ac('ff-toolbar-btn').ac(cls);
-	    return this;
-	  },
-	  active: function(b) {
-	    if( !arguments.length ) return $(this.el).hc('ff-toolbar-btn-active');
-	    $(this.el).tc('ff-toolbar-btn-active', !b);
-	    return this;
-	  },
-	  enable: function(b) {
-	    if( !arguments.length ) return !$(this.el).hc('ff-toolbar-btn-disabled');
-	    $(this.el).tc('ff-toolbar-btn-disabled', !b);
-	    return this;
-	  },
-	  owner: function(owner) {
-	    if( !arguments.length ) return this._owner;
-	    this._owner = owner;
-	    return this;
-	  },
-	  update: function(e) {
-	    var o = this.options();
-	    var fn = o.update;
-	    fn && fn.call(this, e);
-	    return this;
-	  },
-	  click: function(e) {
-	    var o = this.options();
-	    var fn = o.click || o.fn;
-	    fn && fn.call(this, e);
-	    return this;
-	  },
-	  text: function(text) {
-	    if( !arguments.length ) return this.el.innerHTML;
-	    this.el.innerHTML = text;
-	    return this;
-	  },
-	  appendTo: function(parent) {
-	    $(parent).append(this.el);
-	    return this;
-	  },
-	  remove: function() {
-	    $(this.el).remove();
-	    return this;
-	  }
-	};
-	
-	module.exports = Button;
-
-/***/ },
-/* 52 */
-/***/ function(module, exports, __webpack_require__) {
-
-	var $ = __webpack_require__(7);
-	
-	function Separator(options) {
-	  self.el = $('<div class="ff-toolbar-separator"></div>')[0];
-	}
-	
-	Separator.prototype = {
-	  owner: function(owner) {
-	    if( !arguments.length ) return this._owner;
-	    this._owner = owner;
-	    return this;
-	  },
-	  appendTo: function(parent) {
-	    $(parent).append(this.el);
-	    return this;
-	  },
-	  remove: function() {
-	    $(this.el).remove();
-	    return this;
-	  }
-	};
-	
-	module.exports = Separator;
-
-/***/ },
-/* 53 */
+/* 59 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(54);
+	var content = __webpack_require__(60);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
-	if(content.locals) module.exports = content.locals;
-	// Hot Module Replacement
-	if(false) {
-		// When the styles change, update the <style> tags
-		if(!content.locals) {
-			module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./button.less", function() {
-				var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./button.less");
-				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-				update(newContent);
-			});
-		}
-		// When the module is disposed, remove the <style> tags
-		module.hot.dispose(function() { update(); });
-	}
-
-/***/ },
-/* 54 */
-/***/ function(module, exports, __webpack_require__) {
-
-	exports = module.exports = __webpack_require__(17)();
-	// imports
-	
-	
-	// module
-	exports.push([module.id, ".ff-toolbar-btn {\n  display: block;\n  cursor: pointer;\n  font-size: 1em;\n  line-height: 1em;\n  background-color: transparent;\n  color: #232323;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #ccc;\n}\n", ""]);
-	
-	// exports
-
-
-/***/ },
-/* 55 */
-/***/ function(module, exports, __webpack_require__) {
-
-	// style-loader: Adds some css to the DOM by adding a <style> tag
-	
-	// load the styles
-	var content = __webpack_require__(56);
-	if(typeof content === 'string') content = [[module.id, content, '']];
-	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -6654,29 +6732,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 56 */
+/* 60 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
 	// module
-	exports.push([module.id, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -50px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n", ""]);
+	exports.push([module.id, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -50px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 57 */
+/* 61 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var modal = __webpack_require__(24);
+	var modal = __webpack_require__(32);
 	var each = __webpack_require__(2);
 	var $ = __webpack_require__(7);
-	var getOffsetTop = __webpack_require__(50);
+	var getOffsetTop = __webpack_require__(58);
 	
-	__webpack_require__(58);
+	__webpack_require__(62);
 	
 	function DnD(part) {
 	  var el = $(part.dom());
@@ -6711,7 +6789,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( part.editmode() )
 	      el.find('.ff-part').attr('draggable', true);
 	    else
-	      el.find('.ff-part').attr('draggable', false);
+	      el.find('.ff-part').attr('draggable', null);
 	  };
 	  
 	  el.on('dragover', function(e) {
@@ -6719,8 +6797,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    e.stopPropagation();
 	    e.preventDefault();
 	    
-	    // show marker
-	    move(current(e.target), e.pageY);
+	    var dragging = part.context().dragging;
+	    if( !e.target.contains(dragging) ) {
+	      move(current(e.target), e.pageY);
+	    } else {
+	      hide();
+	    }
 	  })
 	  .on('dragend', function(e) {
 	    // hide marker
@@ -6732,10 +6814,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    e.preventDefault();
 	    
 	    var dragging = part.context().dragging;
-	    if( dragging )
+	    if( dragging && !e.target.contains(dragging) ) {
 	      part.insert(dragging, marker[0]);
-	    else if( e.dataTransfer && e.dataTransfer.files )
+	    } else if( e.dataTransfer && e.dataTransfer.files ) {
 	      part.insert(e.dataTransfer.files);
+	    }
 	  });
 	  
 	  this.update = update;
@@ -6744,16 +6827,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = DnD;
 
 /***/ },
-/* 58 */
+/* 62 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(59);
+	var content = __webpack_require__(63);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -6770,10 +6853,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 59 */
+/* 63 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -6784,16 +6867,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 60 */
+/* 64 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(61);
+	var content = __webpack_require__(65);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -6810,10 +6893,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 61 */
+/* 65 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -6824,131 +6907,213 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 62 */
+/* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
+	var Part = __webpack_require__(29);
 	
-	__webpack_require__(63);
+	__webpack_require__(67);
 	
 	function wrap(range, node) {
-	  
+	  range.surroundContents(node);
 	}
 	
 	function unwrap(range, selector) {
-	  
+	  console.log('unwrap', range);
+	}
+	
+	function iswrapped(range, selector) {
+	  return false;
 	}
 	
 	
-	function ParagraphPart(el) {
-	  Part.call(this, el);
-	  
-	  var el = $(this.dom()).ac('ff-paragraph');
-	  
-	  this.toolbar()
-	  .add({
-	    text: '<i class="fa fa-align-right"></i>',
-	    tooltip: '우축정렬',
-	    fn: function(e) {
-	      el
-	      .rc('ff-paragraph-align-center')
-	      .ac('ff-paragraph-align-right');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-align-center"></i>',
-	    tooltip: '중앙정렬',
-	    fn: function(e) {
-	      el
-	      .rc('ff-paragraph-align-right')
-	      .ac('ff-paragraph-align-center');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-align-left"></i>',
-	    tooltip: '좌측정렬',
-	    fn: function(e) {
-	      el
-	      .rc('ff-paragraph-align-right')
-	      .rc('ff-paragraph-align-center');
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-strikethrough"></i>',
-	    tooltip: '가로줄',
-	    fn: function(e) {
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-underline"></i>',
-	    tooltip: '밑줄',
-	    fn: function(e) {
-	    }
-	  }, 0)
-	  .add({
-	    text: '<i class="fa fa-bold"></i>',
-	    tooltip: '굵게',
-	    fn: function(e) {
-	      var range = this.owner().range();
-	      if( !range ) return;
-	      
-	      var bold = document.createElement('b');
-	      range.surroundContents(bold);
-	      console.log(range, range.toString());
-	    }
-	  }, 0);
-	  
-	  var placeholder = $('<div class="ff-paragraph-placeholder" />').html(el.attr('placeholder') || ParagraphPart.placeholder || '내용을 입력해주세요');
-	  this._placeholder = {
-	    html: function(html) {
-	      placeholder.html(html);
-	      return this;
-	    },
-	    show: function() {
-	      if( !el.text().split('\n').join().trim() ) el.empty().append(placeholder);
-	      return this;
-	    },
-	    hide: function() {
-	      placeholder.remove();
-	      return this;
-	    }
-	  };
+	function ParagraphPart() {
+	  Part.apply(this, arguments);
 	}
 	
 	ParagraphPart.prototype = Object.create(Part.prototype, {
 	  oninit: {
 	    value: function(e) {
-	      this.placeholder().show();
-	    }
-	  },
-	  ondragstart: {
-	    value: function(e) {
-	      if( this.editmode() ) {
-	        e.stopPropagation();
-	        e.preventDefault();
-	      }
+	      var part = this;
+	      var el = $(part.dom()).ac('ff-paragraph');
+	      
+	      part.toolbar()
+	      .add({
+	        type: 'list',
+	        text: '기본폰트',
+	        onselect: function() {
+	          
+	        },
+	        onupdate: function() {
+	          
+	        },
+	        fn: function(e) {
+	          
+	        },
+	        list: [
+	          '기본폰트',
+	          '나눔고딕',
+	          '나눔명조',
+	          'Helvetica',
+	          'Times New Roman'
+	        ]
+	      })
+	      .add({
+	        text: '<i class="fa fa-bold"></i>',
+	        tooltip: '굵게',
+	        onupdate: function() {
+	          var range = this.owner().range();
+	          if( !range ) return this.enable(false);
+	          
+	          this.enable(true);
+	          if( iswrapped(range, 'b') ) this.active(true);
+	        },
+	        fn: function(e) {
+	          var range = this.owner().range();
+	          if( !range ) return;
+	          
+	          if( iswrapped(range, 'b') ) unwrap(range, 'b');
+	          else wrap(range, $('<b/>')[0]);
+	        }
+	      })
+	      .add({
+	        text: '<i class="fa fa-underline"></i>',
+	        tooltip: '밑줄',
+	        onupdate: function() {
+	          var range = this.owner().range();
+	          if( !range ) return this.active(false);
+	          
+	          if( iswrapped(range, 'span.underline') ) this.active(true);
+	        },
+	        fn: function(e) {
+	          var range = this.owner().range();
+	          if( !range ) return;
+	          
+	          if( iswrapped(range, 'span.underline') ) unwrap(range, 'span.underline');
+	          else wrap(range, $('<span class="underline" style="text-decoration:underline;" />')[0]);
+	        }
+	      })
+	      .add({
+	        text: '<i class="fa fa-italic"></i>',
+	        tooltip: '이탤릭',
+	        onupdate: function() {
+	          var range = this.owner().range();
+	          if( !range ) return this.active(false);
+	          
+	          if( iswrapped(range, 'i') ) this.active(true);
+	        },
+	        fn: function(e) {
+	          var range = this.owner().range();
+	          if( !range ) return;
+	          
+	          if( iswrapped(range, 'i') ) unwrap(range, 'i');
+	          else wrap(range, $('<i />')[0]);
+	        }
+	      })
+	      .add({
+	        text: '<i class="fa fa-strikethrough"></i>',
+	        tooltip: '가로줄',
+	        onupdate: function() {
+	          var range = this.owner().range();
+	          if( !range ) return this.active(false);
+	          
+	          if( iswrapped(range, 'span.strikethrough') ) this.active(true);
+	        },
+	        fn: function(e) {
+	          var range = this.owner().range();
+	          if( !range ) return;
+	          
+	          if( iswrapped(range, 'span.strikethrough') ) unwrap(range, 'span.strikethrough');
+	          else wrap(range, $('<span class="strikethrough" style="text-decoration:line-through;" />')[0]);
+	        }
+	      })
+	      .add({
+	        text: '<i class="fa fa-link"></i>',
+	        tooltip: '링크',
+	        onupdate: function() {
+	          var range = this.owner().range();
+	          if( !range ) return this.active(false);
+	          
+	          if( iswrapped(range, 'a') ) this.active(true);
+	        },
+	        fn: function(e) {
+	          var range = this.owner().range();
+	          if( !range ) return;
+	          
+	          if( iswrapped(range, 'a') ) unwrap(range, 'a');
+	          else wrap(range, $('<a href="" />').html('link')[0]);
+	        }
+	      })
+	      .add({
+	        text: '<i class="fa fa-align-left"></i>',
+	        tooltip: '정렬',
+	        onupdate: function() {
+	          var btn = this;
+	          if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
+	          else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+	          else  btn.text('<i class="fa fa-align-left"></i>');
+	        },
+	        fn: function(e) {
+	          var btn = this;
+	          if( btn.align == 'center' ) {
+	            el.css('text-align', 'right');
+	            btn.align = 'right';
+	          } else if( btn.align == 'right' ) {
+	            el.css('text-align', 'left');
+	            btn.align = 'left';
+	          } else {
+	            el.css('text-align', 'center');
+	            btn.align = 'center';
+	          }
+	        }
+	      });
+	      
+	      var placeholder = $('<div class="ff-paragraph-placeholder" />').html(el.attr('placeholder') || ParagraphPart.placeholder || '내용을 입력해주세요');
+	      
+	      part._placeholder = {
+	        html: function(html) {
+	          placeholder.html(html);
+	          return part;
+	        },
+	        show: function() {
+	          if( !el.text().split('\n').join().trim() ) el.empty().append(placeholder);
+	          return part;
+	        },
+	        hide: function() {
+	          placeholder.remove();
+	          return part;
+	        }
+	      };
+	      
+	      placeholder.show();
+	      
+	      el.on('dragstart', function(e) {
+	        if( part.editmode() ) {
+	          e.stopPropagation();
+	          e.preventDefault();
+	        }
+	      });
 	    }
 	  },
 	  onfocus: {
 	    value: function() {
+	      if( !this.editmode() ) return;
+	        
+	      var el = this.dom();
 	      this.placeholder().hide();
 	      
-	      if( this.editmode() ) {
-	        var el = this.dom();
+	      // 커서가 다른 곳에 있다면 옮긴다.
+	      var selection = window.getSelection();
+	      var range = selection.rangeCount && selection.getRangeAt(0);
 	      
-	        // 커서가 다른 곳에 있다면 옮긴다.
-	        var selection = window.getSelection();
-	        var range = selection.rangeCount && selection.getRangeAt(0);
-	      
-	        if( !range || !el.contains(range.startContainer) ) {
-	          var lastindex = el.childNodes.length;
-	          range = document.createRange();
-	          range.setStart(el, lastindex);
-	          range.setEnd(el, lastindex);
-	          selection.removeAllRanges();
-	          selection.addRange(range);
-	        }
+	      if( !range || !el.contains(range.startContainer) ) {
+	        var lastindex = el.childNodes.length;
+	        range = document.createRange();
+	        range.setStart(el, lastindex);
+	        range.setEnd(el, lastindex);
+	        selection.removeAllRanges();
+	        selection.addRange(range);
 	      }
 	      
 	      el.focus();
@@ -6956,6 +7121,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  onblur: {
 	    value: function() {
+	      if( !this.editmode() ) return;
+	      
 	      this.placeholder().show();
 	    }
 	  },
@@ -6964,15 +7131,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	      var el = $(this.dom());
 	      if( e.detail.editmode ) {
 	        el.attr('contenteditable', true);
-	      } else if( el.is('[contenteditable]') ) {
+	        this.placeholder().show();
+	      } else {
 	        el.attr('contenteditable', null);
+	        this.placeholder().hide();
 	      }
 	    }
 	  },
 	  create: {
 	    value: function(arg) {
 	      var html = typeof arg == 'string' ? arg : '';
-	      return $('<div/>').attr('ff-type', 'paragraph').ac('ff-paragraph').html(html)[0];
+	      return $('<p/>').attr('ff-type', 'paragraph').ac('ff-paragraph').html(html)[0];
 	    }
 	  },
 	  placeholder: {
@@ -6995,16 +7164,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 63 */
+/* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(64);
+	var content = __webpack_require__(68);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -7021,30 +7190,30 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 64 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph {\n  font-size: 14px;\n  line-height: 1.5;\n  padding: 0;\n  padding-bottom: 10px;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph h1,\n.ff-paragraph h2,\n.ff-paragraph h3,\n.ff-paragraph h4,\n.ff-paragraph h5,\n.ff-paragraph h6 {\n  font-weight: normal;\n  padding: 0;\n  margin: 0;\n  margin-bottom: 20px;\n}\n.ff-paragraph p {\n  margin: 0;\n  padding: 0;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 65 */
+/* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
+	var Part = __webpack_require__(29);
 	
-	__webpack_require__(66);
+	__webpack_require__(70);
 	
-	function Separator(el) {
-	  Part.call(this, el);
+	function Separator() {
+	  Part.apply(this, arguments);
 	  
 	  var el = $(this.dom()).ac('ff-separator');
 	  
@@ -7055,14 +7224,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    fn: function(e) {
 	      el.tc('ff-separator-dashed');
 	    }
-	  }, 0)
+	  })
 	  .add({
 	    text: '<i class="fa fa-arrows-h"></i>',
 	    tooltip: '넓게',
 	    fn: function(e) {
 	      el.tc('ff-separator-wide');
 	    }
-	  }, 0);
+	  });
 	}
 	
 	Separator.prototype = Object.create(Part.prototype, {
@@ -7076,16 +7245,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Separator;
 
 /***/ },
-/* 66 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(67);
+	var content = __webpack_require__(71);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -7102,10 +7271,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 67 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -7116,13 +7285,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 68 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
+	var Part = __webpack_require__(29);
 	
-	__webpack_require__(69);
+	__webpack_require__(73);
 	
 	function ImagePart(el) {
 	  Part.call(this, el);
@@ -7253,16 +7422,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 69 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(70);
+	var content = __webpack_require__(74);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -7279,10 +7448,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 70 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -7293,56 +7462,51 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 71 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
+	var Part = __webpack_require__(29);
 	
-	__webpack_require__(72);
+	__webpack_require__(76);
 	
-	function VideoPart(el) {
-	  el = Part.call(this, el);
+	function VideoPart() {
+	  Part.apply(this, arguments);
 	  
-	  this.on('modechange', function(e) {
-	    if( e.detail.editmode ) {
-	      el.querySelector('.mask').style.display = 'block';
-	    } else {
-	      el.querySelector('.mask').style.display = '';
-	    }
-	  });
+	  var el = $(this.dom()).ac('ff-video');
 	  
 	  this.toolbar()
 	  .add({
 	    text: '<i class="fa fa-circle-o"></i>',
 	    tooltip: '작은크기',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-video-size-fit')
-	      .addClass('ff-video-size-narrow');
+	      el
+	      .rc('ff-video-size-fit')
+	      .ac('ff-video-size-narrow');
 	    }
 	  }, 0)
 	  .add({
 	    text: '<i class="fa fa-arrows-alt"></i>',
 	    tooltip: '화면에 맞춤',
 	    fn: function(e) {
-	      $(el)
-	      .removeClass('ff-video-size-narrow')
-	      .addClass('ff-video-size-fit');
+	      el
+	      .rc('ff-video-size-narrow')
+	      .ac('ff-video-size-fit');
 	    }
 	  }, 0);
 	}
 	
 	VideoPart.prototype = Object.create(Part.prototype, {
+	  onmodechange: {
+	    value: function() {
+	      var el = $(this.dom());
+	      if( this.editmode() ) el.find('.mask').show();
+	      else el.find('.mask').hide();
+	    }
+	  },
 	  create: {
 	    value: function(arg) {
-	      var el = document.createElement('div');
-	      
-	      el.innerHTML = '<div class="ff-video-embed-responsive ff-video-embed-responsive-16by9"><iframe class="ff-video-embed-responsive-item" src="' + (arg || 'https://www.youtube.com/embed/aoKNQF2a4xY') + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div><div class="mask"></div>';
-	      el.setAttribute('ff-type', 'video');
-	      el.setAttribute('class', 'ff-video');
-	      
-	      return el;
+	      return $('<div ff-type="video" />').html('<div class="ff-video-embed-responsive ff-video-embed-responsive-16by9"><iframe class="ff-video-embed-responsive-item" src="' + (arg || 'https://www.youtube.com/embed/aoKNQF2a4xY') + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div><div class="mask"></div>')[0];
 	    }
 	  }
 	});
@@ -7352,16 +7516,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 72 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(73);
+	var content = __webpack_require__(77);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -7378,10 +7542,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 73 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
@@ -7392,13 +7556,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 74 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(21);
+	var Part = __webpack_require__(29);
 	
-	__webpack_require__(75);
+	__webpack_require__(79);
 	
 	function RowPart(el) {
 	  Part.call(this, el);
@@ -7436,49 +7600,54 @@ return /******/ (function(modules) { // webpackBootstrap
 	      .ac('ff-row-valign-bottom');
 	    }
 	  }, 0);
+	  
+	  this.on('click', function() {
+	    this.toolbar().show();
+	  })
+	  .on('dragend', function(e) {
+	    this.validate();
+	  });
 	}
 	
 	RowPart.prototype = Object.create(Part.prototype, {
 	  create: {
 	    value: function(items) {
-	      this.items(items);
-	      return $('<div ff-type="row" />')[0];
+	      var el = $('<div ff-type="row" />')[0];
+	      this.add(items);
+	      return el;
 	    }
 	  },
-	  items: {
-	    value: function(items) {
-	      if( !arguments.length ) return this._items = this._items || [];
-	      
-	      if( items && !Array.isArray(items) ) items = [items];
-	      this._items = items || [];
-	      this.update();
-	      return this;
-	    }
-	  },
-	  update: {
+	  validate: {
 	    value: function() {
-	      var items = this.items();
-	      var el = $(this.dom()).empty();
+	      var el = $(this.dom());
+	      el.find('.ff-row-cell').each(function() {
+	        if( !this.children.length ) this.parentNode.removeChild(this);
+	      });
 	      
-	      var wp = 100 / items.length;
-	      var row = $('<div class="ff-row-row" />').appendTo(el);
-	      
-	      items.forEach(function(item) {
-	        $('<div class="ff-row-cell" />')
-	        .css('width', wp + 'px')
-	        .append(function() {
-	          return (item && item.dom && item.dom()) || item;
-	        }).appendTo(row);
+	      var cells = el.find('.ff-row-row').children('.ff-row-cell');
+	      var cellwidth = 100 / cells.length;
+	      cells.each(function() {
+	        $(this).css('width', cellwidth + '%');
 	      });
 	      
 	      return this;
 	    }
 	  },
 	  add: {
-	    value: function(item) {
-	      if( !item ) return this;
-	      this.items().push(item);
-	      this.update();
+	    value: function(items) {
+	      var el = $(this.dom());
+	      var row = el.find('.ff-row-row');
+	      
+	      if( !row.length ) row = $('<div class="ff-row-row" />').appendTo(el);
+	      
+	      $(items).each(function(i, item) {
+	        $('<div class="ff-row-cell" />')
+	        .append(function() {
+	          return (item && item.dom && item.dom()) || item;
+	        })
+	        .appendTo(row);
+	      });
+	      
 	      return this;
 	    }
 	  }
@@ -7489,16 +7658,16 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 75 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(76);
+	var content = __webpack_require__(80);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(18)(content, {});
+	var update = __webpack_require__(22)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(false) {
@@ -7515,10 +7684,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 76 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(17)();
+	exports = module.exports = __webpack_require__(21)();
 	// imports
 	
 	
