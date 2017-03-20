@@ -1,6 +1,6 @@
 {
   "name": "firefront",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Extensible WYSIWYG Web Contents Editor",
   "main": "lib/index.js",
   "homepage": "https://github.com/attrs/firefront",
