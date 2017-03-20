@@ -7,7 +7,7 @@
   "repository": "attrs/firefront",
   "author": "joje <joje.attrs@gmail.com>",
   "scripts": {
-    "demo": "node node_modules/webmodules/bin/wpm.js up 9999 demo -s",
+    "demo": "node node_modules/webmodules/bin/wpm.js up 9999 docs -s",
     "build": "gulp build"
   },
   "license": "MIT",

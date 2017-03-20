@@ -38,9 +38,9 @@ module.exports = [
     },
     devtool: 'source-map'
   }, {
-    entry: path.join(__dirname, 'demo/src/app.js'),
+    entry: path.join(__dirname, 'docs/src/app.js'),
     output: {
-      path: path.join(__dirname, 'demo/js'),
+      path: path.join(__dirname, 'docs/js'),
       filename: 'app.js',
     },
     module: {

@@ -15,7 +15,7 @@ const webpack = require('webpack');
 const pkg = require('./package.json');
 
 gulp.task('build.js.clean', () => {
-  return gulp.src(['dist', 'demo/js', 'demo/css'], { read: false })
+  return gulp.src(['dist', 'docs/js', 'docs/css'], { read: false })
     .pipe(rimraf());
 });
 
@@ -32,21 +32,21 @@ gulp.task('build.webpack', ['build.js.clean'], (done) => {
   });
 });
 
-gulp.task('build.demo', ['build.webpack'], () => {
-  return gulp.src(path.join('demo/less/index.less'))
+gulp.task('build.docs', ['build.webpack'], () => {
+  return gulp.src(path.join('docs/less/index.less'))
     .pipe(less({
-      paths: ['demo']
+      paths: ['docs']
     }))
     .pipe(autoprefixer())
-    .pipe(gulp.dest('demo/css'))
+    .pipe(gulp.dest('docs/css'))
     .pipe(csso())
     .pipe(rename({
       suffix: '.min'
     }))
-    .pipe(gulp.dest('demo/css'));
+    .pipe(gulp.dest('docs/css'));
 });
 
-gulp.task('build', ['build.demo'], () => {
+gulp.task('build', ['build.docs'], () => {
   return gulp.src(path.join('dist/ff.js'))
     .pipe(header([
       '/*!',
