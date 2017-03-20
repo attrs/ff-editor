@@ -1,20 +1,26 @@
 var ff = require('firefront');
-var $ = require('jquery');
-var bootstrap = require('bootstrap');
+var $ = require('tinyselector');
 var Part = ff.Part;
 var CustomPart = require('./custom/').default;
 
-ff.editmode(true).ready(function() {
-  var article = Part($('#article')[0]);
+ff.ready(function() {
+  console.log('Ready!');
   
-  console.log('Ready!', article);
+  $('.dropdown').on('click', function() {
+    $(this).tc('open');
+  });
   
-  window.editmode = function() {
+  var article = Part(document.getElementById('article'));
+  
+  window.toggleMode = function(el) {
+    var editmode = ff.editmode();
+    if( editmode ) ff.editmode(false);
+    else ff.editmode(true);
     
-  };
-  
-  window.viewmode = function() {
-    
+    if( el ) {
+      if( editmode ) el.innerHTML = 'Edit Mode';
+      else el.innerHTML = 'View Mode';
+    }
   };
   
   window.reload = function() {
@@ -22,7 +28,7 @@ ff.editmode(true).ready(function() {
   };
   
   window.save = function() {
-    
+    console.log('html', article.html());
   };
   
   window.load = function(tpl) {

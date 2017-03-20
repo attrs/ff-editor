@@ -4,7 +4,6 @@
 <head>
   <meta charset="utf-8">
   <title>FF Editor</title>
-  <meta name="webmodules.loader.global" match="**/bootstrap/**/*.js" loader="jquery">
   <meta name="webmodules.loader.global" match="/src/custom/**/*.js" loader="es2015">
   <meta name="webmodules.forced" packages="tinyevent, tinyselector">
   
@@ -18,7 +17,7 @@
     <div class="logo pullleft">
       <a><b>FF</b>Editor</a>
     </div>
-    <ul class="nav nav-pills pullright mr10">
+    <ul class="nav nav-pills pullright">
       <li>
         <a href="javascript:reload();">Reload</a>
       </li>
@@ -26,21 +25,11 @@
         <a href="javascript:save();">Save</a>
       </li>
       <li>
-        <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-          Mode <span class="caret caret-tp"></span>
-        </a>
-        <ul class="dropdown-menu dropdown-menu-right" role="menu">
-          <li>
-            <a href="javascript:editmode();" route>Edit</a>
-          </li>
-          <li>
-            <a href="javascript:viewmode();" route>Preview</a>
-          </li>
-        </ul>
+        <a href="javascript:;" onclick="toggleMode(this);">Edit Mode</a>
       </li>
       <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
-          Load Template <span class="caret caret-tp"></span>
+          Presets <span class="caret caret-tp"></span>
         </a>
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
           <li>
@@ -57,7 +46,7 @@
   <div class="contents">
     <h1 ff-id="title">Title</h1>
     <div id="article" class="article" ff-type="article" placeholder="Please enter the content.">
-      <img src="https://goo.gl/cbUVH8" style="width:50%;" />
+      <img src="https://goo.gl/cbUVH8" />
       <hr />
       <p>This is default paragraph</p>
     </div>

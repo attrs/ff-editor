@@ -1,0 +1,35 @@
+@text-color: #2796DD;
+@border-color: #2796DD;
+
+.ff-file {
+  margin: 15px 0;
+    
+  a {
+    display: inline-block;
+    cursor: pointer;
+    color: lighten(@text-color, 10%);
+    border: 1px solid lighten(@border-color, 10%);
+    text-decoration: none;
+    padding: 6px 20px;
+    border-radius: 34px;
+    font-size: 14px;
+    line-height: 1.42857143;
+    text-align: center;
+    vertical-align: middle;
+  
+    &:hover, &:active {
+      color: @text-color;
+      border-color: @border-color;
+      outline: 0;
+      text-decoration: none;
+    }
+  }
+  
+  &.ff-file-align-right {
+    text-align: right;
+  }
+  
+  &.ff-file-align-center {
+    text-align: center;
+  }
+}

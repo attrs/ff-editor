@@ -32,7 +32,7 @@ gulp.task('build.webpack', ['build.js.clean'], (done) => {
   });
 });
 
-gulp.task('build.demo', () => {
+gulp.task('build.demo', ['build.webpack'], () => {
   return gulp.src(path.join('demo/less/index.less'))
     .pipe(less({
       paths: ['demo']
@@ -46,7 +46,7 @@ gulp.task('build.demo', () => {
     .pipe(gulp.dest('demo/css'));
 });
 
-gulp.task('build', ['build.webpack', 'build.demo'], () => {
+gulp.task('build', ['build.demo'], () => {
   return gulp.src(path.join('dist/ff.js'))
     .pipe(header([
       '/*!',

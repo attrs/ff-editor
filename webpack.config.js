@@ -54,12 +54,6 @@ module.exports = [
       },
       extensions: ['', '.js', '.css']
     },
-    devtool: 'source-map',
-    plugins: [
-      new webpack.ProvidePlugin({
-        $: 'jquery',
-        jQuery: 'jquery'
-      })
-    ]
+    devtool: 'source-map'
   }
 ];

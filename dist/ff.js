@@ -76,6 +76,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	var ImagePart = __webpack_require__(72);
 	var VideoPart = __webpack_require__(75);
 	var RowPart = __webpack_require__(78);
+	var FilePart = __webpack_require__(81);
 	
 	ctx.Toolbar = Toolbar;
 	ctx.Part = Part;
@@ -85,6 +86,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	ctx.Image = ImagePart;
 	ctx.Video = VideoPart;
 	ctx.Row = RowPart;
+	ctx.File = FilePart;
 	
 	ctx.type('default', ParagraphPart);
 	ctx.type('article', ArticlePart);
@@ -93,6 +95,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	ctx.type('image', ImagePart);
 	ctx.type('video', VideoPart);
 	ctx.type('row', RowPart);
+	ctx.type('file', FilePart);
 	
 	(function () {
 	  var readyfn;
@@ -161,9 +164,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	        data && data[id] && part.data(data[id]);
 	      }
 	
-	      part.id = id;
 	      _parts.push(part);
-	      if (id) _parts[id] = part;
+	      if (id) part.id = id, _parts[id] = part;
 	    });
 	  },
 	  reset: function reset(d) {
@@ -236,7 +238,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (!window.FileReader) return done(new Error('not found FileReader'));
 	    var reader = new FileReader(); // NOTE: IE10+
 	    reader.onload = function (e) {
-	      done(null, e.target.result);
+	      done(null, {
+	        src: e.target.result,
+	        name: file.name
+	      });
 	    };
 	    reader.onerror = function (err) {
 	      done(err);
@@ -271,40 +276,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    input.type = 'file';
 	    input.click();
 	    input.onchange = function () {
-	      context.upload(file, done);
+	      context.upload(input.files[0], done);
 	    };
 	
 	    return this;
-	  },
-	  getRange: function getRange(index) {
-	    if (!window.getSelection) return null;
-	
-	    var selection = window.getSelection();
-	    if (selection.rangeCount && selection.rangeCount > (index || 0)) return selection.getRangeAt(index || 0);
-	    return null;
-	  },
-	  setRange: function setRange(range) {
-	    if (!range || !window.getSelection) return;
-	
-	    var selection = window.getSelection();
-	    selection.removeAllRanges();
-	    selection.addRange(range);
-	  },
-	  getCaretPosition: function getCaretPosition(node) {
-	    if (!window.getSelection) return -1;
-	    if (!node) return -1;
-	
-	    var position = -1;
-	    var selection = window.getSelection();
-	
-	    if (selection.rangeCount) {
-	      var range = selection.getRangeAt(0);
-	      if (range.commonAncestorContainer.parentNode == node) {
-	        position = range.endOffset;
-	      }
-	    }
-	
-	    return position;
 	  },
 	  getPart: function getPart(node) {
 	    var node = $(node).parent(function () {
@@ -321,7 +296,36 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	dispatcher.scope(context);
 	
+	$(document).on('mousedown', function (e) {
+	  var part = context.getPart(e.target);
+	  var focused = context.focused;
+	
+	  var isToolbar = $(e.target).parent('.ff-toolbar')[0];
+	  if (isToolbar) return;
+	
+	  if (part) part.focus();else if (focused && typeof focused.blur == 'function') focused.blur();
+	});
+	
 	module.exports = context;
+	
+	/*
+	
+	getCaretPosition: function(node) {
+	  if( !window.getSelection ) return -1;
+	  if( !node ) return -1;
+
+	  var position = -1;
+	  var selection = window.getSelection();
+
+	  if( selection.rangeCount ) {
+	    var range = selection.getRangeAt(0);
+	    if( range.commonAncestorContainer.parentNode == node ) {
+	      position = range.endOffset;
+	    }
+	  }
+
+	  return position;
+	},*/
 
 /***/ },
 /* 2 */
@@ -1155,7 +1159,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	  if( !html || typeof html != 'string' ) return null;
 	  var div = document.createElement('div');
 	  div.innerHTML = html.trim();
-	  return div.childNodes;
+	  
+	  var arr = [];
+	  [].forEach.call(div.childNodes, function(node) {
+	    var p = node.parentNode;
+	    p && p.removeChild(node);
+	    arr.push(node);
+	  });
+	  
+	  return arr;
 	}
 	
 	function isHTML(html) {
@@ -1625,8 +1637,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	        [].forEach.call(children, function(el) {
 	          matches(el, selector) && arr.push(el);
 	        });
+	      } else {
+	        arr.add(children);
 	      }
-	      arr.add(children);
 	    });
 	    return arr;
 	  };
@@ -1976,6 +1989,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.buttons().add(btn, index);
 	    return this;
 	  },
+	  get: function get(id) {
+	    return this.buttons().get(id);
+	  },
 	  first: function first(btn) {
 	    this.buttons().first(btn);
 	    return this;
@@ -2026,6 +2042,8 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
 	var $ = __webpack_require__(7);
 	var Button = __webpack_require__(17);
 	
@@ -2043,9 +2061,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  update: function update() {
 	    var el = this._el[0];
+	    var list = this._list = [];
 	    var append = function append(btns) {
 	      btns.forEach(function (btn) {
 	        btn.appendTo(el).update();
+	        list.push(btn);
+	        if (btn.id) list[btn.id] = btn;
 	      });
 	    };
 	
@@ -2053,6 +2074,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    append(this._buttons);
 	    append(this._last);
 	    return this;
+	  },
+	  get: function get(id) {
+	    return this._list && this._list[id];
 	  },
 	  add: function add(btn, index) {
 	    if (!btn) return this;
@@ -2105,13 +2129,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    this.update();
 	    return this;
 	  },
-	  remove: function remove(btn) {
-	    if (!btn) return this;
-	    if (!Array.isArray(btn)) btn = [btn];
+	  remove: function remove(target) {
+	    if (~['string', 'number'].indexOf(typeof target === 'undefined' ? 'undefined' : _typeof(target))) target = this.get(target);
+	    if (!target) return this;
 	
 	    var remove = function remove(btns) {
 	      btns.forEach(function (btn) {
-	        if (~btns.indexOf(btn)) btns.splice(btns.indexOf(btn), 1);
+	        if (btn === target) btns.splice(btns.indexOf(btn), 1);
 	      });
 	    };
 	
@@ -2187,6 +2211,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  options: function options(_options) {
 	    if (!arguments.length) return this._options = this._options || {};
 	    this._options = _options || {};
+	    this.id = this._options.id;
 	    return this;
 	  },
 	  dom: function dom() {
@@ -2734,7 +2759,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-part.ff-focus-state {\n  background-color: #eee;\n}\n.ff-part[contenteditable] {\n  outline: none;\n}\n", ""]);
+	exports.push([module.id, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n", ""]);
 	
 	// exports
 
@@ -2745,43 +2770,21 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 	
-	var context = __webpack_require__(1);
+	var _context = __webpack_require__(1);
 	var Events = __webpack_require__(6);
 	var Types = __webpack_require__(11);
 	var Toolbar = __webpack_require__(13);
 	var $ = __webpack_require__(7);
 	
-	var focused, currentRange;
-	$(document).on('mouseup', function (e) {
-	  currentRange = context.getRange();
-	
-	  var part = context.getPart(e.target);
-	  var isToolbar = $(e.target).parent('.ff-toolbar')[0];
-	  if (isToolbar) {
-	    e.preventDefault();
-	    e.stopPropagation();
-	
-	    setTimeout(function () {
-	      context.setRange(currentRange);
-	    }, 0);
-	    return;
-	  }
-	
-	  if (part) part.focus();else if (focused && typeof focused.blur == 'function') focused.blur();
-	});
-	
-	function Part(dom) {
+	function Part(arg) {
+	  var dom = arg;
 	  if (dom && dom.__ff__) return dom.__ff__;
 	  if (!(this instanceof Part)) return null;
-	  if (!dom) dom = this.create();
-	  if (!context.isElement(dom)) dom = this.create(dom);
-	  if (!context.isElement(dom)) throw new TypeError('illegal argument: dom');
-	  dom.__ff__ = this;
+	  if (!dom || !_context.isElement(dom)) dom = this.create.apply(this, arguments);
+	  if (!_context.isElement(dom)) throw new TypeError('illegal arguments: dom');
 	
-	  var el = $(dom).addClass('ff ff-part');
-	
-	  var dispatcher = Events(this);
-	  var self = this;
+	  var el = $(dom);
+	  var self = dom.__ff__ = this;
 	
 	  var toolbar = new Toolbar(this, {
 	    position: 'top center',
@@ -2789,16 +2792,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    cls: 'ff-part-toolbar'
 	  });
 	
-	  if (dom !== arguments[0]) {
-	    toolbar.last({
-	      text: '<i class="fa fa-remove"></i>',
-	      fn: function fn(e) {
-	        self.remove();
-	      }
-	    });
-	  }
-	
-	  dispatcher.on('focus', function (e) {
+	  var dispatcher = Events(this).on('focus', function (e) {
 	    if (e.defaultPrevented || !this.editmode()) return;
 	
 	    el.ac('ff-focus-state');
@@ -2812,13 +2806,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (e.defaultPrevented) return;
 	
 	    dispatcher.fire('render', {
-	      type: 'update',
+	      type: 'data',
 	      originalEvent: e
 	    });
 	  }).on('modechange', function (e) {
 	    if (e.defaultPrevented) return;
 	
-	    if (self.editmode()) el.ac('ff-edit-state');else el.rc('ff-edit-state');
+	    var toolbar = this.toolbar();
+	    if (this.editmode()) {
+	      if (toolbar.always()) toolbar.show();
+	      el.attr('draggable', true).ac('ff-part').ac('ff-edit-state');
+	      dispatcher.fire('editmode');
+	    } else {
+	      toolbar.hide(true);
+	      el.attr('draggable', null).rc('ff-part').rc('ff-edit-state');
+	      dispatcher.fire('viewmode');
+	    }
 	
 	    dispatcher.fire('render', {
 	      type: 'modechange',
@@ -2852,197 +2855,141 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	    if (e.target === dom) {
 	      self.blur();
-	      context.dragging = dom;
+	      _context.dragging = dom;
 	      el.ac('ff-dragging');
 	    }
 	  }).on('dragend', function (e) {
 	    if (e.target === dom) {
-	      context.dragging = null;
+	      _context.dragging = null;
 	      el.rc('ff-dragging');
 	    }
 	  });
 	
-	  this._data = null;
-	  this._dom = dom;
-	  this._dispatcher = dispatcher;
-	  this._toolbar = toolbar;
+	  this._d = null;
+	  this._n = dom;
+	  this._e = dispatcher;
+	  this._t = toolbar;
 	
-	  var observer;
-	  setTimeout(function () {
-	    observer = new MutationObserver(function (mutations) {
-	      mutations.forEach(function (mutation) {
-	        if (mutation.type == 'attributes') {
-	          dispatcher.fire('attr', {
-	            name: mutation.attributeName,
-	            old: mutation.oldValue,
-	            value: dom.getAttribute(mutation.attributeName)
-	          });
-	        } else if (mutation.type == 'childList') {
-	          dispatcher.fire('childlist', {
-	            added: mutation.added,
-	            removed: mutation.removed
-	          });
-	        }
-	      });
-	    });
-	
-	    observer.observe(dom, {
-	      attributes: true,
-	      attributeOldValue: true,
-	      childList: true
-	    });
-	  }, 1);
-	
+	  if (dom !== arg) this.removable(true);
 	  dispatcher.fire('init');
-	  if (context.editmode()) self.editmode(true);
+	  if (_context.editmode()) self.editmode(true);
 	}
 	
-	var proto = Part.prototype = {};
-	
-	proto.context = function () {
-	  return context;
-	};
-	
-	proto.toolbar = function () {
-	  return this._toolbar;
-	};
-	
-	proto.dom = function () {
-	  return this._dom;
-	};
-	
-	proto.create = function (arg) {
-	  return $('<div />').html(arg)[0];
-	};
-	
-	proto.remove = function () {
-	  this.blur();
-	  this.toolbar().hide();
-	  this.fire('remove');
-	  $(this.dom()).remove();
-	  return this;
-	};
-	
-	proto.editmode = function (b) {
-	  if (!arguments.length) return !!this._editmode;
-	  var prev = this._editmode;
-	  var editmode = this._editmode = !!b;
-	
-	  if (editmode !== prev) this.fire('modechange', { editmode: editmode });
-	  return this;
-	};
-	
-	proto.getData = function () {
-	  return this._data;
-	};
-	
-	proto.setData = function (data) {
-	  this._data = data;
-	  this.fire('data', { old: this._data, data: data });
-	  return this;
-	};
-	
-	proto.data = function (data) {
-	  return !arguments.length ? this.getData() : this.setData(data);
-	};
-	
-	proto.fire = function () {
-	  this._dispatcher.fire.apply(this._dispatcher, arguments);
-	  return this;
-	};
-	
-	proto.on = function (type, fn) {
-	  this._dispatcher.on(type, fn);
-	  return this;
-	};
-	
-	proto.once = function (type, fn) {
-	  this._dispatcher.once(type, fn);
-	  return this;
-	};
-	
-	proto.off = function (type, fn) {
-	  this._dispatcher.off(type, fn);
-	  return this;
-	};
-	
-	proto.clear = function () {
-	  this.setData(null);
-	  this.fire('clear');
-	  return this;
-	};
-	
-	proto.click = function () {
-	  this.dom().click();
-	  return this;
-	};
-	
-	proto.focus = function () {
-	  if (this !== focused) {
-	    if (focused && typeof focused.blur == 'function') focused.blur();
-	    this.fire('focus');
-	    focused = this;
-	  }
-	  return this;
-	};
-	
-	proto.blur = function () {
-	  if (this === focused) {
-	    this.fire('blur');
-	    focused = null;
-	  }
-	  return this;
-	};
-	
-	proto.range = function () {
-	  var el = this.dom();
-	  var range = currentRange;
-	  if (range && el.contains(range.startContainer) && el.contains(range.endContainer)) return range;
-	
-	  return null;
-	};
-	
-	Part.getFocused = function () {
-	  return focused;
-	};
-	
-	Part.getCurrentRange = function () {
-	  return currentRange;
-	};
-	
-	/*
-	destroy: function() {
-	  this.clear();
-	  this.fire('destroy');
-	  this.mouseobserver().disconnect();
-	  this.toolbar().destroy();
-	  this.highlighter().destroy();
-	  this._dispatcher.destroy();
-	  return this;
-	},
-	markRange: function() {
-	  var el = this.dom();
-	  var range = Part.getRange();
-	  if( range && el.contains(range.startContainer) && el.contains(range.endContainer) ) {
-	    this._range = range;
-	  } else {
-	    this._range = null;
-	  }
-	  return this;
-	},
-	editor: function(editor) {
-	  if( !arguments.length ) return this._editor;
-	  if( !editor ) {
-	    this._editor = null;
+	Part.prototype = {
+	  context: function context() {
+	    return _context;
+	  },
+	  toolbar: function toolbar() {
+	    return this._t;
+	  },
+	  dom: function dom() {
+	    return this._n;
+	  },
+	  create: function create(arg) {
+	    return $('<div/>').html(arg)[0];
+	  },
+	  remove: function remove() {
+	    this.blur();
+	    this.toolbar().hide();
+	    this.fire('remove');
+	    $(this.dom()).remove();
 	    return this;
+	  },
+	  editmode: function editmode(b) {
+	    if (!arguments.length) return !!this._md;
+	    var prev = this._md;
+	    var editmode = this._md = !!b;
+	
+	    if (editmode !== prev) this.fire('modechange', { editmode: editmode });
+	    return this;
+	  },
+	  removable: function removable(_removable) {
+	    var toolbar = this.toolbar();
+	    var removebtn = toolbar.get('remove');
+	
+	    if (!arguments.length) return removebtn ? true : false;
+	
+	    if (!_removable) {
+	      toolbar.remove('remove');
+	    }
+	
+	    if (!removebtn) {
+	      toolbar.last({
+	        id: 'remove',
+	        text: '<i class="fa fa-remove"></i>',
+	        fn: function fn(e) {
+	          this.owner().remove();
+	        }
+	      });
+	    }
+	
+	    return this;
+	  },
+	  data: function data(_data) {
+	    if (!arguments.length) {
+	      if (this.getData) return this.getData();
+	      return this._d;
+	    }
+	
+	    if (this.setData) this.setData(_data);else this._d = _data;
+	
+	    this.fire('data', { old: this._d, data: _data });
+	    return this;
+	  },
+	  fire: function fire() {
+	    this._e.fire.apply(this._e, arguments);
+	    return this;
+	  },
+	  on: function on(type, fn) {
+	    this._e.on(type, fn);
+	    return this;
+	  },
+	  once: function once(type, fn) {
+	    this._e.once(type, fn);
+	    return this;
+	  },
+	  off: function off(type, fn) {
+	    this._e.off(type, fn);
+	    return this;
+	  },
+	  clear: function clear() {
+	    this.data(null);
+	    this.fire('clear');
+	    return this;
+	  },
+	  click: function click() {
+	    this.dom().click();
+	    return this;
+	  },
+	  focus: function focus() {
+	    if (this !== _context.focused) {
+	      if (_context.focused && typeof _context.focused.blur == 'function') _context.focused.blur();
+	      this.fire('focus');
+	      _context.focused = this;
+	    }
+	    return this;
+	  },
+	  blur: function blur() {
+	    if (this === _context.focused) {
+	      this.fire('blur');
+	      _context.focused = null;
+	    }
+	    return this;
+	  },
+	  range: function range() {
+	    var el = this.dom();
+	    var selection = window.getSelection();
+	
+	    if (selection.rangeCount) {
+	      for (var i = 0; i < selection.rangeCount; i++) {
+	        var range = selection.getRangeAt(i);
+	        if (range && el.contains(range.startContainer) && el.contains(range.endContainer)) return range;
+	      }
+	    }
+	
+	    return null;
 	  }
-	  
-	  this._editor = editor;
-	  this.editmode(editor.editmode());
-	  
-	  return this;
-	},
-	*/
+	};
 	
 	module.exports = Part;
 
@@ -3052,6 +2999,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	'use strict';
 	
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+	
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+	
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	var components = __webpack_require__(31);
@@ -3060,128 +3015,204 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	__webpack_require__(64);
 	
-	function ArticlePart() {
-	  Part.apply(this, arguments);
-	}
+	var ArticlePart = function (_Part) {
+	  _inherits(ArticlePart, _Part);
 	
-	ArticlePart.prototype = Object.create(Part.prototype, {
-	  oninit: {
-	    value: function value(e) {
-	      var part = this;
-	      var el = $(this.dom()).ac('ff-article').on('click', function (e) {
-	        if (part.editmode() && e.target === part.dom()) {
-	          part.update();
+	  function ArticlePart() {
+	    var _ref;
 	
-	          if (part.children().length === 1) {
-	            var p = part.getPart(0);
+	    _classCallCheck(this, ArticlePart);
+	
+	    for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
+	      args[_key] = arguments[_key];
+	    }
+	
+	    return _possibleConstructorReturn(this, (_ref = ArticlePart.__proto__ || Object.getPrototypeOf(ArticlePart)).call.apply(_ref, [this].concat(args)));
+	  }
+	
+	  _createClass(ArticlePart, [{
+	    key: 'oninit',
+	    value: function oninit(e) {
+	      $(this.dom()).ac('ff-article').on('click', function (e) {
+	        if (this.editmode() && e.target === this.dom()) {
+	          this.validate();
+	
+	          if (this.children().length === 1) {
+	            var p = this.getPart(0);
 	            p && p.click();
 	          }
 	        }
-	      });
+	      }.bind(this));
 	
-	      var toolbar = this.toolbar().position('vertical top right outside').add({
+	      this.toolbar().position('vertical top right outside').add({
 	        text: '<i class="fa fa-eraser"></i>',
 	        tooltip: '내용 삭제',
 	        fn: function fn(e) {
 	          this.owner().clear();
 	        }
 	      }, 0).add(components).always(true);
-	
-	      this._marker = new Marker(this);
-	      this._dnd = new DnD(this);
-	      this.update();
 	    }
-	  },
-	  update: {
-	    value: function value() {
+	  }, {
+	    key: 'validate',
+	    value: function validate() {
+	      var dom = this.dom();
+	      var el = $(dom);
+	
 	      if (this.editmode()) {
+	        var context = this.context();
+	        var viewport = el.children('.ff-article-viewport');
+	        if (!viewport.length) {
+	          viewport = $('<div class="ff-article-viewport"/>');
+	
+	          el.nodes().each(function () {
+	            viewport.append(this);
+	          });
+	
+	          el.append(viewport);
+	          this._viewport = viewport[0];
+	
+	          if (this._mk) this._mk.destroy();
+	          if (this._dnd) this._dnd.destroy();
+	          this._mk = Marker(this, viewport[0]);
+	          this._dnd = DnD(this, viewport[0]);
+	        }
+	
 	        var ctx = this.context();
-	        var placeholder = $(this.dom()).attr('placeholder');
+	        var placeholder = el.attr('placeholder');
 	        if (placeholder && !this.children().length) {
 	          this.insert(new ctx.Paragraph().placeholder(placeholder));
 	        }
 	
-	        this._dnd.update();
+	        viewport.children().each(function () {
+	          if (this.__marker__) return;
+	          var tag = this.tagName;
+	          var part = this.__ff__;
+	
+	          if (!part) {
+	            if (tag == 'IMG') {
+	              part = new context.Image(this);
+	            } else if (tag == 'HR') {
+	              part = new context.Separator(this);
+	            } else {
+	              part = new context.Paragraph(this);
+	            }
+	          }
+	
+	          part.editmode(true).removable(true);
+	        });
+	      } else {
+	        el.empty();
+	        $(this._viewport).nodes().each(function () {
+	          el.append(this);
+	        });
+	
+	        el.find('.ff-part').each(function () {
+	          var part = Part(this);
+	          if (part && part.editmode()) part.editmode(false);
+	        });
+	
+	        this._mk && this._mk.destroy();
+	        this._dnd && this._dnd.destroy();
+	        delete this._mk;
+	        delete this._dnd;
+	        delete this._viewport;
 	      }
 	    }
-	  },
-	  onchildlist: {
-	    value: function value(e) {
-	      this.update();
+	  }, {
+	    key: 'onmodechange',
+	    value: function onmodechange(e) {
+	      this.validate();
 	    }
-	  },
-	  onmodechange: {
-	    value: function value(e) {
-	      this.update();
+	  }, {
+	    key: 'marker',
+	    value: function marker() {
+	      return this._mk;
 	    }
-	  },
-	  marker: {
-	    value: function value() {
-	      return this._marker;
+	  }, {
+	    key: 'oninsert',
+	    value: function oninsert() {
+	      this.validate();
 	    }
-	  },
-	  oninsert: {
-	    value: function value() {
-	      this.update();
-	    }
-	  },
-	  clear: {
-	    value: function value() {
-	      this.dom().innerHTML = '';
+	  }, {
+	    key: 'clear',
+	    value: function clear() {
+	      this.viewport().innerHTML = '';
 	      return this;
 	    }
-	  },
-	  get: {
-	    value: function value(index) {
+	  }, {
+	    key: 'get',
+	    value: function get(index) {
 	      return this.children()[index];
 	    }
-	  },
-	  getPart: {
-	    value: function value(index) {
+	  }, {
+	    key: 'getPart',
+	    value: function getPart(index) {
 	      var el = $(this.dom()).children('.ff-part')[index];
 	      return el && el.__ff__;
 	    }
-	  },
-	  find: {
-	    value: function value(selector) {
+	  }, {
+	    key: 'find',
+	    value: function find(selector) {
 	      return $(this.dom()).find(selector);
 	    }
-	  },
-	  indexOf: {
-	    value: function value(node) {
+	  }, {
+	    key: 'indexOf',
+	    value: function indexOf(node) {
 	      if (!node) return -1;
 	      node = node.dom() || node;
 	      return $(this.dom()).indexOf(node);
 	    }
-	  },
-	  children: {
-	    value: function value() {
+	  }, {
+	    key: 'children',
+	    value: function children() {
 	      return $(this.dom()).children().filter(function () {
 	        return !($(this).hc('ff-marker') || $(this).hc('ff-placeholder'));
 	      });
 	    }
-	  },
-	  getHTML: {
-	    value: function value() {
-	      return this.dom().innerHTML;
+	  }, {
+	    key: 'viewport',
+	    value: function viewport() {
+	      return this._viewport || this.dom();
 	    }
-	  },
-	  setHTML: {
-	    value: function value(html) {
-	      this.dom().innerHTML = html;
+	  }, {
+	    key: 'html',
+	    value: function html(html) {
+	      if (!arguments.length) {
+	        var editmode = this.editmode();
+	        this.editmode(false);
+	        var html = this.dom().innerHTML;
+	        this.editmode(editmode);
+	        return html;
+	      }
+	
+	      this.viewport().innerHTML = html || '';
+	      this.validate();
 	      return this;
 	    }
-	  },
-	  insert: {
-	    value: function value(node, ref) {
+	  }, {
+	    key: 'getData',
+	    value: function getData() {
+	      return {
+	        html: this.html()
+	      };
+	    }
+	  }, {
+	    key: 'setData',
+	    value: function setData(data) {
+	      this.html(data && data.html);
+	      return this;
+	    }
+	  }, {
+	    key: 'insert',
+	    value: function insert(node, ref) {
 	      var context = this.context();
 	      var part = this;
-	      var target = $(this.dom());
+	      var target = $(this.viewport());
 	      var marker = this.marker();
 	      var children = this.children();
 	
 	      if (arguments.length <= 1 && marker.isExpanded()) {
-	        ref = children[marker.getIndex()];
+	        ref = marker.getRef();
 	        marker.collapse();
 	      } else if (typeof ref == 'number') {
 	        ref = children[ref];
@@ -3196,14 +3227,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if (type) {
 	            context.upload(this, function (err, result) {
 	              if (type.indexOf('image/') === 0) {
-	                part.insert(new context.Image(result));
+	                part.insert(new context.Image(result), ref);
 	              } else {
-	                part.insert(new Attachment(result));
+	                part.insert(new context.File(result), ref);
 	              }
 	            });
 	          }
 	        } else if (ref) {
-	          ref.parentNode.insertBefore(el, ref);
+	          ref.parentNode && ref.parentNode.insertBefore(el, ref);
 	        } else {
 	          target.append(el);
 	        }
@@ -3215,15 +3246,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	        target: target
 	      });
 	
-	      this.update();
-	
 	      return this;
 	    }
-	  }
-	});
+	  }]);
+	
+	  return ArticlePart;
+	}(Part);
 	
 	ArticlePart.components = components;
 	ArticlePart.Marker = Marker;
+	ArticlePart.DnD = DnD;
 	
 	module.exports = ArticlePart;
 
@@ -3329,7 +3361,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    part.context().selectFile(function (err, file) {
 	      if (err) return modal.error(err);
 	
-	      part.insert(new context.Attachment(file));
+	      part.insert(new context.File(file));
 	    });
 	  }
 	});
@@ -6780,21 +6812,23 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	__webpack_require__(59);
 	
-	function Marker(part) {
-	  var el = $(part.dom());
+	function Marker(part, dom) {
+	  var el = $(dom);
 	  var marker = $('<div class="ff-marker"><div class="ff-marker-head"></div><div class="ff-marker-tools"></div></div>');
 	  var lastref;
 	
-	  var update = function update() {
+	  marker[0].__marker__ = true;
+	
+	  function update() {
 	    var tools = marker.find('.ff-marker-tools').empty();
 	    components.forEach(function (item) {
 	      if (!item || !item.text) return;
 	
 	      new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
 	    });
-	  };
+	  }
 	
-	  var show = function show(ref) {
+	  function show(ref) {
 	    ref = typeof ref == 'number' ? el.children()[ref] : ref;
 	
 	    if (lastref === ref) return this;
@@ -6804,62 +6838,71 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if (ref) marker.insertBefore(ref);else marker.appendTo(el);
 	
 	    return this;
-	  };
+	  }
 	
-	  var hide = function hide() {
+	  function hide() {
 	    collapse();
 	    marker.remove();
 	    return this;
-	  };
+	  }
 	
-	  var expand = function expand() {
+	  function expand() {
 	    marker.ac('ff-marker-open');
 	    return this;
-	  };
+	  }
 	
-	  var collapse = function collapse() {
+	  function collapse() {
 	    marker.rc('ff-marker-open');
 	    return this;
-	  };
+	  }
+	
+	  function onclick(e) {
+	    if (!marker[0].contains(e.target)) marker.rc('ff-marker-open');
+	  }
+	
+	  function onmousemove(e) {
+	    var target = e.target;
+	    var y = e.pageY;
+	
+	    if (target === el || target === marker) return;
+	    var children = el.children();
+	    var current;
+	    children.each(function () {
+	      if (this.contains(target)) current = this;
+	    });
+	
+	    if (!current) return;
+	
+	    var index = children.indexOf(current);
+	    if (y > getOffsetTop(current) + current.offsetHeight / 2) index = index + 1;
+	    show(index);
+	  }
 	
 	  marker.find('.ff-marker-head').on('click', function () {
 	    update();
 	    marker.tc('ff-marker-open');
 	  });
 	
-	  el.on('click', function (e) {
-	    if (!marker[0].contains(e.target)) marker.rc('ff-marker-open');
-	  }).on('mousemove', function (e) {
-	    if (part.editmode()) {
-	      var target = e.target;
-	      var y = e.pageY;
+	  el.on('click', onclick).on('mousemove', onmousemove);
 	
-	      if (target === el || target === marker) return;
-	      var children = el.children();
-	      var current;
-	      children.each(function () {
-	        if (this.contains(target)) current = this;
-	      });
-	
-	      if (!current) return;
-	
-	      var index = children.indexOf(current);
-	      if (y > getOffsetTop(current) + current.offsetHeight / 2) index = index + 1;
-	      show(index);
-	    } else {
-	      hide();
+	  return {
+	    show: show,
+	    hide: hide,
+	    expand: expand,
+	    collapse: collapse,
+	    getIndex: function getIndex() {
+	      return el.children().indexOf(marker[0]);
+	    },
+	    getRef: function getRef() {
+	      return marker[0].nextSibling;
+	    },
+	    isExpanded: function isExpanded() {
+	      return marker.hc('ff-marker-open');
+	    },
+	    destroy: function destroy() {
+	      el.off('click', onclick).off('mousemove', onmousemove);
+	      marker.remove();
 	    }
-	  });
-	
-	  this.show = show;
-	  this.hide = hide;
-	  this.expand = expand;
-	  this.collapse = collapse;
-	  this.getIndex = function () {
-	    return el.children().indexOf(marker[0]);
-	  };
-	  this.isExpanded = function () {
-	    return marker.hc('ff-marker-open');
 	  };
 	}
 	
@@ -6932,11 +6975,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	__webpack_require__(62);
 	
-	function DnD(part) {
-	  var el = $(part.dom());
+	function DnD(part, dom) {
+	  var el = $(dom);
 	  var marker = $('<div class="ff-dnd-marker"></div>');
 	
-	  var move = function move(target, y) {
+	  marker[0].__marker__ = true;
+	
+	  function move(target, y) {
 	    if (!target) return;
 	
 	    if (y < getOffsetTop(target) + target.offsetHeight / 2) {
@@ -6944,13 +6989,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    } else {
 	      marker.insertAfter(target);
 	    }
-	  };
+	  }
 	
-	  var hide = function hide() {
+	  function hide() {
 	    marker.remove();
-	  };
+	  }
 	
-	  var current = function current(target) {
+	  function current(target) {
 	    if (target === el || target === marker) return;
 	    var children = el.children();
 	    var current;
@@ -6959,40 +7004,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	
 	    return current;
-	  };
+	  }
 	
-	  var update = function update() {
-	    if (part.editmode()) el.find('.ff-part').attr('draggable', true);else el.find('.ff-part').attr('draggable', null);
-	  };
-	
-	  el.on('dragover', function (e) {
-	    if (!part.editmode()) return;
+	  function ondragover(e) {
 	    e.stopPropagation();
 	    e.preventDefault();
 	
 	    var dragging = part.context().dragging;
 	    if (!e.target.contains(dragging)) {
 	      move(current(e.target), e.pageY);
-	    } else {
-	      hide();
 	    }
-	  }).on('dragend', function (e) {
-	    // hide marker
+	  }
+	
+	  function ondragend(e) {
 	    hide();
-	  }).on('drop', function (e) {
-	    if (!part.editmode()) return;
+	  }
+	
+	  function ondrop(e) {
 	    e.stopPropagation();
 	    e.preventDefault();
 	
 	    var dragging = part.context().dragging;
-	    if (dragging && !e.target.contains(dragging)) {
-	      part.insert(dragging, marker[0]);
+	    var ref = marker[0] && marker[0].nextSibling;
+	    if (dragging) {
+	      part.insert(dragging, ref);
 	    } else if (e.dataTransfer && e.dataTransfer.files) {
-	      part.insert(e.dataTransfer.files);
+	      part.insert(e.dataTransfer.files, ref);
 	    }
-	  });
+	    hide();
+	  }
 	
-	  this.update = update;
+	  el.on('dragover', ondragover).on('dragend', ondragend).on('drop', ondrop);
+	
+	  return {
+	    move: move,
+	    hide: hide,
+	    destroy: function destroy() {
+	      el.off('dragover', ondragover).off('dragend', ondragend).off('drop', ondrop);
+	
+	      marker.remove();
+	    }
+	  };
 	}
 	
 	module.exports = DnD;
@@ -7072,7 +7124,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n", ""]);
+	exports.push([module.id, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.ff-article img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-article hr {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-article hr:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-article hr:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n", ""]);
 	
 	// exports
 
@@ -7194,11 +7246,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	          if (iswrapped(range, 'a')) unwrap(range, 'a');else wrap(range, $('<a href="" />').html('link')[0]);
 	        }
 	      }).add({
-	        text: '<i class="fa fa-align-left"></i>',
+	        text: '<i class="fa fa-align-justify"></i>',
 	        tooltip: '정렬',
 	        onupdate: function onupdate() {
 	          var btn = this;
-	          if (btn.align == 'center') btn.text('<i class="fa fa-align-center"></i>');else if (btn.align == 'right') btn.text('<i class="fa fa-align-right"></i>');else btn.text('<i class="fa fa-align-left"></i>');
+	          if (btn.align == 'center') btn.text('<i class="fa fa-align-center"></i>');else if (btn.align == 'right') btn.text('<i class="fa fa-align-right"></i>');else if (btn.align == 'left') btn.text('<i class="fa fa-align-left"></i>');else btn.text('<i class="fa fa-align-justify"></i>');
 	        },
 	        fn: function fn(e) {
 	          var btn = this;
@@ -7208,6 +7260,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	          } else if (btn.align == 'right') {
 	            el.css('text-align', 'left');
 	            btn.align = 'left';
+	          } else if (btn.align == 'left') {
+	            el.css('text-align', '');
+	            btn.align = '';
 	          } else {
 	            el.css('text-align', 'center');
 	            btn.align = 'center';
@@ -7287,7 +7342,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  create: {
 	    value: function value(arg) {
 	      var html = typeof arg == 'string' ? arg : '';
-	      return $('<p/>').attr('ff-type', 'paragraph').ac('ff-paragraph').html(html)[0];
+	      return $('<p/>').html(html)[0];
 	    }
 	  },
 	  placeholder: {
@@ -7341,7 +7396,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph .ff-paragraph-placeholder {\n  min-height: 30px;\n  line-height: 30px;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph {\n  margin: 0;\n  padding: 0.5em 0;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph .ff-paragraph-placeholder {\n  min-height: 30px;\n  line-height: 30px;\n}\n", ""]);
 	
 	// exports
 
@@ -7370,9 +7425,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  }).add({
 	    text: '<i class="fa fa-arrows-h"></i>',
-	    tooltip: '넓게',
+	    tooltip: '좁게',
 	    fn: function fn(e) {
-	      el.tc('ff-separator-wide');
+	      el.tc('ff-separator-narrow');
 	    }
 	  });
 	}
@@ -7380,7 +7435,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	Separator.prototype = Object.create(Part.prototype, {
 	  create: {
 	    value: function value(arg) {
-	      return $('<div ff-type="separator" />')[0];
+	      return $('<hr />')[0];
 	    }
 	  }
 	});
@@ -7422,7 +7477,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  max-width: 150px;\n  margin: 0 auto;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-wide:before {\n  max-width: 100%;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
+	exports.push([module.id, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 150px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
 	
 	// exports
 
@@ -7441,47 +7496,47 @@ return /******/ (function(modules) { // webpackBootstrap
 	__webpack_require__(73);
 	
 	function ImagePart(el) {
-	  Part.call(this, el);
+	  Part.apply(this, arguments);
 	
 	  var el = $(this.dom()).ac('ff-image');
 	
 	  this.toolbar().position('inside top center').add({
-	    text: '<i class="fa fa-angle-right"></i>',
-	    tooltip: '우측플로팅',
-	    fn: function fn(e) {
-	      this.owner().floating('right');
-	    }
-	  }, 0).add({
-	    text: '<i class="fa fa-angle-up"></i>',
-	    tooltip: '플로팅제거',
-	    fn: function fn(e) {
-	      this.owner().floating(false);
-	    }
-	  }, 0).add({
 	    text: '<i class="fa fa-angle-left"></i>',
 	    tooltip: '좌측플로팅',
 	    fn: function fn(e) {
 	      this.owner().floating('left');
 	    }
-	  }, 0).add({
+	  }).add({
+	    text: '<i class="fa fa-angle-up"></i>',
+	    tooltip: '플로팅제거',
+	    fn: function fn(e) {
+	      this.owner().floating(false);
+	    }
+	  }).add({
+	    text: '<i class="fa fa-angle-right"></i>',
+	    tooltip: '우측플로팅',
+	    fn: function fn(e) {
+	      this.owner().floating('right');
+	    }
+	  }).add({
 	    text: '<i class="fa fa-circle-o"></i>',
 	    tooltip: '원본크기',
 	    fn: function fn(e) {
 	      el.rc('ff-image-size-full').rc('ff-image-size-medium');
 	    }
-	  }, 0).add({
+	  }).add({
 	    text: '<i class="fa fa-square-o"></i>',
 	    tooltip: '기본크기',
 	    fn: function fn(e) {
 	      el.rc('ff-image-size-full').ac('ff-image-size-medium');
 	    }
-	  }, 0).add({
+	  }).add({
 	    text: '<i class="fa fa-arrows-alt"></i>',
 	    tooltip: '풀사이즈',
 	    fn: function fn(e) {
 	      el.rc('ff-image-size-medium').ac('ff-image-size-full');
 	    }
-	  }, 0);
+	  });
 	}
 	
 	ImagePart.prototype = Object.create(Part.prototype, {
@@ -7504,7 +7559,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        src = arg;
 	      }
 	
-	      return $('<img/>').attr('ff-type', 'image').attr('title', title).src(src || 'https://goo.gl/KRjd3U')[0];
+	      return $('<img/>').attr('title', title).src(src || 'https://goo.gl/KRjd3U')[0];
 	    }
 	  },
 	  floating: {
@@ -7571,7 +7626,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n  margin-bottom: 10px;\n}\n.ff-image.ff-image-size-medium {\n  width: 80%;\n}\n.ff-image.ff-image-size-full {\n  width: 100%;\n}\n.ff-image.ff-image-float-left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.ff-image.ff-image-float-right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
+	exports.push([module.id, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
 	
 	// exports
 
@@ -7791,6 +7846,339 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	// module
 	exports.push([module.id, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
+	
+	// exports
+
+
+/***/ },
+/* 81 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var $ = __webpack_require__(7);
+	var Part = __webpack_require__(29);
+	var path = __webpack_require__(82);
+	
+	__webpack_require__(83);
+	
+	function FilePart() {
+	  Part.apply(this, arguments);
+	
+	  var el = $(this.dom()).ac('ff-file');
+	
+	  this.toolbar().add({
+	    text: '<i class="fa fa-align-justify"></i>',
+	    tooltip: '정렬',
+	    onupdate: function onupdate() {
+	      var btn = this;
+	      if (btn.align == 'center') btn.text('<i class="fa fa-align-center"></i>');else if (btn.align == 'right') btn.text('<i class="fa fa-align-right"></i>');else if (btn.align == 'left') btn.text('<i class="fa fa-align-left"></i>');else btn.text('<i class="fa fa-align-justify"></i>');
+	    },
+	    fn: function fn(e) {
+	      var btn = this;
+	      if (btn.align == 'center') {
+	        el.css('text-align', 'right');
+	        btn.align = 'right';
+	      } else if (btn.align == 'right') {
+	        el.css('text-align', 'left');
+	        btn.align = 'left';
+	      } else if (btn.align == 'left') {
+	        el.css('text-align', '');
+	        btn.align = '';
+	      } else {
+	        el.css('text-align', 'center');
+	        btn.align = 'center';
+	      }
+	    }
+	  });
+	}
+	
+	FilePart.prototype = Object.create(Part.prototype, {
+	  create: {
+	    value: function value(arg) {
+	      var def = FilePart.defaultLabel;
+	      var href = arg && (arg.src || arg.href);
+	      var label = arg && (arg.name || arg.title || arg.label) || def;
+	
+	      if (typeof href != 'string') href = null;
+	      if (typeof label != 'string') label = def;
+	
+	      return $('<div/>').append($('<a/>').attr('href', href).html(label))[0];
+	    }
+	  }
+	});
+	
+	FilePart.defaultLabel = 'Download';
+	
+	module.exports = FilePart;
+
+/***/ },
+/* 82 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(process) {// Copyright Joyent, Inc. and other Node contributors.
+	//
+	// Permission is hereby granted, free of charge, to any person obtaining a
+	// copy of this software and associated documentation files (the
+	// "Software"), to deal in the Software without restriction, including
+	// without limitation the rights to use, copy, modify, merge, publish,
+	// distribute, sublicense, and/or sell copies of the Software, and to permit
+	// persons to whom the Software is furnished to do so, subject to the
+	// following conditions:
+	//
+	// The above copyright notice and this permission notice shall be included
+	// in all copies or substantial portions of the Software.
+	//
+	// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+	// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+	// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+	// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+	// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+	// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+	// USE OR OTHER DEALINGS IN THE SOFTWARE.
+	
+	// resolves . and .. elements in a path array with directory names there
+	// must be no slashes, empty elements, or device names (c:\) in the array
+	// (so also no leading and trailing slashes - it does not distinguish
+	// relative and absolute paths)
+	function normalizeArray(parts, allowAboveRoot) {
+	  // if the path tries to go above the root, `up` ends up > 0
+	  var up = 0;
+	  for (var i = parts.length - 1; i >= 0; i--) {
+	    var last = parts[i];
+	    if (last === '.') {
+	      parts.splice(i, 1);
+	    } else if (last === '..') {
+	      parts.splice(i, 1);
+	      up++;
+	    } else if (up) {
+	      parts.splice(i, 1);
+	      up--;
+	    }
+	  }
+	
+	  // if the path is allowed to go above the root, restore leading ..s
+	  if (allowAboveRoot) {
+	    for (; up--; up) {
+	      parts.unshift('..');
+	    }
+	  }
+	
+	  return parts;
+	}
+	
+	// Split a filename into [root, dir, basename, ext], unix version
+	// 'root' is just a slash, or nothing.
+	var splitPathRe =
+	    /^(\/?|)([\s\S]*?)((?:\.{1,2}|[^\/]+?|)(\.[^.\/]*|))(?:[\/]*)$/;
+	var splitPath = function(filename) {
+	  return splitPathRe.exec(filename).slice(1);
+	};
+	
+	// path.resolve([from ...], to)
+	// posix version
+	exports.resolve = function() {
+	  var resolvedPath = '',
+	      resolvedAbsolute = false;
+	
+	  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
+	    var path = (i >= 0) ? arguments[i] : process.cwd();
+	
+	    // Skip empty and invalid entries
+	    if (typeof path !== 'string') {
+	      throw new TypeError('Arguments to path.resolve must be strings');
+	    } else if (!path) {
+	      continue;
+	    }
+	
+	    resolvedPath = path + '/' + resolvedPath;
+	    resolvedAbsolute = path.charAt(0) === '/';
+	  }
+	
+	  // At this point the path should be resolved to a full absolute path, but
+	  // handle relative paths to be safe (might happen when process.cwd() fails)
+	
+	  // Normalize the path
+	  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
+	    return !!p;
+	  }), !resolvedAbsolute).join('/');
+	
+	  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
+	};
+	
+	// path.normalize(path)
+	// posix version
+	exports.normalize = function(path) {
+	  var isAbsolute = exports.isAbsolute(path),
+	      trailingSlash = substr(path, -1) === '/';
+	
+	  // Normalize the path
+	  path = normalizeArray(filter(path.split('/'), function(p) {
+	    return !!p;
+	  }), !isAbsolute).join('/');
+	
+	  if (!path && !isAbsolute) {
+	    path = '.';
+	  }
+	  if (path && trailingSlash) {
+	    path += '/';
+	  }
+	
+	  return (isAbsolute ? '/' : '') + path;
+	};
+	
+	// posix version
+	exports.isAbsolute = function(path) {
+	  return path.charAt(0) === '/';
+	};
+	
+	// posix version
+	exports.join = function() {
+	  var paths = Array.prototype.slice.call(arguments, 0);
+	  return exports.normalize(filter(paths, function(p, index) {
+	    if (typeof p !== 'string') {
+	      throw new TypeError('Arguments to path.join must be strings');
+	    }
+	    return p;
+	  }).join('/'));
+	};
+	
+	
+	// path.relative(from, to)
+	// posix version
+	exports.relative = function(from, to) {
+	  from = exports.resolve(from).substr(1);
+	  to = exports.resolve(to).substr(1);
+	
+	  function trim(arr) {
+	    var start = 0;
+	    for (; start < arr.length; start++) {
+	      if (arr[start] !== '') break;
+	    }
+	
+	    var end = arr.length - 1;
+	    for (; end >= 0; end--) {
+	      if (arr[end] !== '') break;
+	    }
+	
+	    if (start > end) return [];
+	    return arr.slice(start, end - start + 1);
+	  }
+	
+	  var fromParts = trim(from.split('/'));
+	  var toParts = trim(to.split('/'));
+	
+	  var length = Math.min(fromParts.length, toParts.length);
+	  var samePartsLength = length;
+	  for (var i = 0; i < length; i++) {
+	    if (fromParts[i] !== toParts[i]) {
+	      samePartsLength = i;
+	      break;
+	    }
+	  }
+	
+	  var outputParts = [];
+	  for (var i = samePartsLength; i < fromParts.length; i++) {
+	    outputParts.push('..');
+	  }
+	
+	  outputParts = outputParts.concat(toParts.slice(samePartsLength));
+	
+	  return outputParts.join('/');
+	};
+	
+	exports.sep = '/';
+	exports.delimiter = ':';
+	
+	exports.dirname = function(path) {
+	  var result = splitPath(path),
+	      root = result[0],
+	      dir = result[1];
+	
+	  if (!root && !dir) {
+	    // No dirname whatsoever
+	    return '.';
+	  }
+	
+	  if (dir) {
+	    // It has a dirname, strip trailing slash
+	    dir = dir.substr(0, dir.length - 1);
+	  }
+	
+	  return root + dir;
+	};
+	
+	
+	exports.basename = function(path, ext) {
+	  var f = splitPath(path)[2];
+	  // TODO: make this comparison case-insensitive on windows?
+	  if (ext && f.substr(-1 * ext.length) === ext) {
+	    f = f.substr(0, f.length - ext.length);
+	  }
+	  return f;
+	};
+	
+	
+	exports.extname = function(path) {
+	  return splitPath(path)[3];
+	};
+	
+	function filter (xs, f) {
+	    if (xs.filter) return xs.filter(f);
+	    var res = [];
+	    for (var i = 0; i < xs.length; i++) {
+	        if (f(xs[i], i, xs)) res.push(xs[i]);
+	    }
+	    return res;
+	}
+	
+	// String.prototype.substr - negative index don't work in IE8
+	var substr = 'ab'.substr(-1) === 'b'
+	    ? function (str, start, len) { return str.substr(start, len) }
+	    : function (str, start, len) {
+	        if (start < 0) start = str.length + start;
+	        return str.substr(start, len);
+	    }
+	;
+	
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
+
+/***/ },
+/* 83 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+	
+	// load the styles
+	var content = __webpack_require__(84);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(22)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
+				var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 84 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(21)();
+	// imports
+	
+	
+	// module
+	exports.push([module.id, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
 	
 	// exports
 

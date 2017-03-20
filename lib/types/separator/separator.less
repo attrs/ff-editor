@@ -4,14 +4,16 @@
   display: block;
   margin: 0;
   padding: 0;
+  height: auto;
+  border-top: 0;
   
   &:before {
     content: "";
     display: block;
     border-bottom: 1px solid @border-color;
     padding-top: 20px;
-    max-width: 150px;
     margin: 0 auto;
+    max-width: 100%;
   }
   
   &:after {
@@ -20,9 +22,9 @@
     padding-bottom: 20px;
   }
   
-  &.ff-separator-wide {
+  &.ff-separator-narrow {
     &:before {
-      max-width: 100%;
+      max-width: 150px;
     }
   }
   

@@ -1,10 +1,6 @@
 import {Part} from 'firefront';
 
 class CustomPart extends Part {
-  static get matches() {
-    return ['x-custom'];
-  }
-  
   constructor(el) {
     super(el);
     
