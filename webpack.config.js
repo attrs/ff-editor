@@ -15,9 +15,8 @@ var loaders = [
     test: /\.html$/,
     loader: 'html'
   }, {
-    test: /\.js$/,
+    test: /\.es6.js$/,
     loader: 'babel',
-    exclude: /(node_modules|bower_components)/,
     query: {
       presets: ['es2015']
     }

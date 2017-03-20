@@ -1,7 +1,7 @@
 var ff = require('firefront');
 var $ = require('tinyselector');
 var Part = ff.Part;
-var CustomPart = require('./custom/').default;
+var CustomPart = require('./custom/index.es6.js').default;
 
 ff.ready(function() {
   console.log('Ready!');
