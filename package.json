@@ -52,7 +52,6 @@
     "webmodules": "^0.1.32"
   },
   "files": [
-    "package.json",
     "lib",
     "dist",
     "LICENSE",

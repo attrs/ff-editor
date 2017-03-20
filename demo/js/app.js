@@ -1878,6 +1878,8 @@
 	  this._buttons = new Buttons(this);
 	  this._enable = true;
 	  this.options(options);
+	
+	  $(window).on('scroll resize', this);
 	}
 	
 	Toolbar.prototype = {
@@ -1908,6 +1910,15 @@
 	    var dom = this.dom();
 	    var ownerElement = this.owner().dom();
 	    var position = options.position || 'top center outside';
+	
+	    if (!document.body.contains(ownerElement)) {
+	      $(window).off('scroll resize', this);
+	      var p = dom.parentNode;
+	      p && p.removeChild(dom);
+	      return;
+	    }
+	
+	    $(window).on('scroll resize', this);
 	
 	    var el = this._el.css(options.style || {}).ac(options.cls).appendTo(document.body);
 	
@@ -1980,7 +1991,6 @@
 	    this._el.css('opacity', 0).show();
 	    this.update();
 	    this._el.css('opacity', 1);
-	    $(window).on('scroll resize', this);
 	    return this;
 	  },
 	  hide: function hide(force) {
@@ -3080,6 +3090,7 @@
 	
 	      if (this.editmode()) {
 	        var context = this.context();
+	        var marker = this.marker();
 	        var viewport = el.children('.ff-article-viewport');
 	        if (!viewport.length) {
 	          viewport = $('<div class="ff-article-viewport"/>');
@@ -3167,7 +3178,7 @@
 	  }, {
 	    key: 'getPart',
 	    value: function getPart(index) {
-	      var el = $(this.dom()).children('.ff-part')[index];
+	      var el = $(this.viewport()).children('.ff-part')[index];
 	      return el && el.__ff__;
 	    }
 	  }, {
@@ -3180,12 +3191,12 @@
 	    value: function indexOf(node) {
 	      if (!node) return -1;
 	      node = node.dom() || node;
-	      return $(this.dom()).indexOf(node);
+	      return $(this.viewport()).indexOf(node);
 	    }
 	  }, {
 	    key: 'children',
 	    value: function children() {
-	      return $(this.dom()).children().filter(function () {
+	      return $(this.viewport()).children().filter(function () {
 	        return !($(this).hc('ff-marker') || $(this).hc('ff-placeholder'));
 	      });
 	    }
@@ -7574,7 +7585,7 @@
 	
 	      if ((typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object') {
 	        src = arg.src;
-	        title = arg.title;
+	        title = arg.name || arg.title;
 	      } else {
 	        src = arg;
 	      }
@@ -7920,10 +7931,10 @@
 	      var href = arg && (arg.src || arg.href);
 	      var label = arg && (arg.name || arg.title || arg.label) || def;
 	
-	      if (typeof href != 'string') href = null;
-	      if (typeof label != 'string') label = def;
+	      if (typeof href !== 'string') href = null;
+	      if (typeof label !== 'string') label = def;
 	
-	      return $('<div/>').append($('<a/>').attr('href', href).html(label))[0];
+	      return $('<div/>').append($('<a href="' + (href || 'javascript:;') + '" target="_blank"/>').html(label))[0];
 	    }
 	  }
 	});
