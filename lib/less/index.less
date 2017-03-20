@@ -1,9 +1,12 @@
 .ff {
-  box-sizing: border-box;
 }
 
 .ff-part {
   &.ff-focus-state {
     background-color: #eee;
+  }
+  
+  &[contenteditable] {
+    outline: none;
   }
 }

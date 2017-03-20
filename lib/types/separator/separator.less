@@ -1,12 +1,15 @@
 @border-color: #ccc;
 
 .ff-separator {
+  display: block;
+  margin: 0;
+  padding: 0;
   
   &:before {
     content: "";
     display: block;
     border-bottom: 1px solid @border-color;
-    padding-top: 15px;
+    padding-top: 20px;
     max-width: 150px;
     margin: 0 auto;
   }
@@ -14,7 +17,7 @@
   &:after {
     content: "";
     display: block;
-    padding-bottom: 15px;
+    padding-bottom: 20px;
   }
   
   &.ff-separator-wide {

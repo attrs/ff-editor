@@ -62,6 +62,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var ctx = __webpack_require__(1);
 	var Toolbar = __webpack_require__(13);
 	
@@ -92,227 +94,227 @@ return /******/ (function(modules) { // webpackBootstrap
 	ctx.type('video', VideoPart);
 	ctx.type('row', RowPart);
 	
-	(function() {
+	(function () {
 	  var readyfn;
-	  
-	  document.addEventListener('DOMContentLoaded', function() {
+	
+	  document.addEventListener('DOMContentLoaded', function () {
 	    ctx.scan();
 	    readyfn && readyfn();
 	  });
 	
-	  ctx.ready = function(fn) {
-	    if( document.body ) fn();
-	    else readyfn = fn;
+	  ctx.ready = function (fn) {
+	    if (document.body) fn();else readyfn = fn;
 	  };
 	})();
 	
 	module.exports = ctx;
 
-
 /***/ },
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
 	var each = __webpack_require__(2);
 	var Events = __webpack_require__(6);
 	var $ = __webpack_require__(7);
-	var types = __webpack_require__(11);
-	var connector = __webpack_require__(12);
+	var _types = __webpack_require__(11);
+	var _connector = __webpack_require__(12);
 	
-	var parts = [];
+	var _parts = [];
 	var data = {};
-	var editmode = false;
+	var _editmode = false;
 	var dispatcher = Events();
-	var uploader;
+	var _uploader;
 	
 	var context = {
-	  connector: function() {
-	    return connector;
+	  connector: function connector() {
+	    return _connector;
 	  },
-	  types: function() {
-	    return types;
+	  types: function types() {
+	    return _types;
 	  },
-	  parts: function() {
-	    return parts.slice();
+	  parts: function parts() {
+	    return _parts.slice();
 	  },
-	  part: function(id) {
-	    return parts[id];
+	  part: function part(id) {
+	    return _parts[id];
 	  },
-	  clear: function(id) {
-	    parts.forEach(function(part) {
+	  clear: function clear(id) {
+	    _parts.forEach(function (part) {
 	      part.data(null);
 	    });
 	    return this;
 	  },
-	  scan: function() {
-	    [].slice.call(document.querySelectorAll('[ff-id], [ff-type]')).reverse().forEach(function(el) {
+	  scan: function scan() {
+	    [].slice.call(document.querySelectorAll('[ff-id], [ff-type]')).reverse().forEach(function (el) {
 	      var id = el.getAttribute('ff-id');
 	      var type = el.getAttribute('ff-type') || 'default';
 	      var part = el.__ff__;
-	      
-	      if( !part ) {
-	        var Type = types.get(type);
-	        if( !Type ) return console.warn('[firefront] not found type: ' + type);
+	
+	      if (!part) {
+	        var Type = _types.get(type);
+	        if (!Type) return console.warn('[firefront] not found type: ' + type);
 	        part = el.__ff__ = new Type(el);
 	        data && data[id] && part.data(data[id]);
 	      }
-	      
+	
 	      part.id = id;
-	      parts.push(part);
-	      if( id ) parts[id] = part;
+	      _parts.push(part);
+	      if (id) _parts[id] = part;
 	    });
 	  },
-	  reset: function(d) {
-	    if( !arguments.length ) d = data;
-	    
+	  reset: function reset(d) {
+	    if (!arguments.length) d = data;
+	
 	    data = d;
 	    this.scan();
-	    
-	    parts.forEach(function(part) {
+	
+	    _parts.forEach(function (part) {
 	      part.data(data && data[part.id]);
 	    });
-	    
+	
 	    dispatcher.fire('reset');
-	    
+	
 	    return this;
 	  },
-	  data: function(data) {
-	    if( !arguments.length ) {
-	      data = {};
-	      parts.forEach(function(part) {
-	        if( part.id ) data[part.id] = part.data();
+	  data: function data(_data) {
+	    if (!arguments.length) {
+	      _data = {};
+	      _parts.forEach(function (part) {
+	        if (part.id) _data[part.id] = part.data();
 	      });
-	      
-	      return data;
+	
+	      return _data;
 	    }
-	    
-	    this.reset(data);
+	
+	    this.reset(_data);
 	    return this;
 	  },
-	  editmode: function(b) {
-	    if( !arguments.length ) return editmode;
-	    
-	    editmode = !!b;
-	    parts.forEach(function(part) {
+	  editmode: function editmode(b) {
+	    if (!arguments.length) return _editmode;
+	
+	    _editmode = !!b;
+	    _parts.forEach(function (part) {
 	      part.editmode(!!b);
 	    });
-	    
+	
 	    dispatcher.fire('editmode', {
-	      editmode: editmode
+	      editmode: _editmode
 	    });
-	    
+	
 	    return this;
 	  },
-	  on: function(type, fn) {
+	  on: function on(type, fn) {
 	    dispatcher.on(type, fn);
 	    return this;
 	  },
-	  once: function(type, fn) {
+	  once: function once(type, fn) {
 	    dispatcher.once(type, fn);
 	    return this;
 	  },
-	  off: function(type, fn) {
+	  off: function off(type, fn) {
 	    dispatcher.off(type, fn);
 	    return this;
 	  },
-	  isElement: function(node) {
-	    return (
-	      typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
-	    );
+	  isElement: function isElement(node) {
+	    return (typeof HTMLElement === 'undefined' ? 'undefined' : _typeof(HTMLElement)) === 'object' ? node instanceof HTMLElement : node && (typeof node === 'undefined' ? 'undefined' : _typeof(node)) === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string';
 	  },
-	  uploader: function(fn) {
-	    if( !fn || typeof fn !== 'function' ) throw new TypeError('uploader must be a function');
-	    uploader = fn;
+	  uploader: function uploader(fn) {
+	    if (!fn || typeof fn !== 'function') throw new TypeError('uploader must be a function');
+	    _uploader = fn;
 	    return this;
 	  },
-	  upload: function(file, done) {
-	    if( uploader ) {
-	      uploader.apply(this, arguments);
+	  upload: function upload(file, done) {
+	    if (_uploader) {
+	      _uploader.apply(this, arguments);
 	      return this;
 	    }
-	  
-	    if( !window.FileReader ) return done(new Error('not found FileReader'));
+	
+	    if (!window.FileReader) return done(new Error('not found FileReader'));
 	    var reader = new FileReader(); // NOTE: IE10+
-	    reader.onload = function(e) {
+	    reader.onload = function (e) {
 	      done(null, e.target.result);
 	    };
-	    reader.onerror = function(err) {
+	    reader.onerror = function (err) {
 	      done(err);
 	    };
 	    reader.readAsDataURL(file);
-	  
+	
 	    return this;
 	  },
-	  selectFiles: function(done) {
+	  selectFiles: function selectFiles(done) {
 	    var input = document.createElement('input');
 	    input.type = 'file';
 	    input.setAttribute('multiple', 'true');
 	    input.click();
-	    input.onchange = function() {
+	    input.onchange = function () {
 	      var srcs = [];
-	      each([].slice.call(input.files), function(file, done) {
-	        context.upload(file, function(err, src) {
-	          if( err ) return done(err);
+	      each([].slice.call(input.files), function (file, done) {
+	        context.upload(file, function (err, src) {
+	          if (err) return done(err);
 	          srcs.push(src);
 	          done();
 	        });
-	      }, function(err) {
-	        if( err ) return done(err);
+	      }, function (err) {
+	        if (err) return done(err);
 	        done(null, srcs);
 	      });
 	    };
-	  
+	
 	    return this;
 	  },
-	  selectFile: function(done) {
+	  selectFile: function selectFile(done) {
 	    var input = document.createElement('input');
 	    input.type = 'file';
 	    input.click();
-	    input.onchange = function() {
+	    input.onchange = function () {
 	      context.upload(file, done);
 	    };
-	  
+	
 	    return this;
 	  },
-	  getRange: function(index) {
-	    if( !window.getSelection ) return null;
-	  
+	  getRange: function getRange(index) {
+	    if (!window.getSelection) return null;
+	
 	    var selection = window.getSelection();
-	    if( selection.rangeCount && selection.rangeCount > (index || 0) ) return selection.getRangeAt(index || 0);
+	    if (selection.rangeCount && selection.rangeCount > (index || 0)) return selection.getRangeAt(index || 0);
 	    return null;
 	  },
-	  setRange: function(range) {
-	    if( !range || !window.getSelection ) return;
-	  
+	  setRange: function setRange(range) {
+	    if (!range || !window.getSelection) return;
+	
 	    var selection = window.getSelection();
 	    selection.removeAllRanges();
 	    selection.addRange(range);
 	  },
-	  getCaretPosition: function(node) {
-	    if( !window.getSelection ) return -1;
-	    if( !node ) return -1;
-	  
+	  getCaretPosition: function getCaretPosition(node) {
+	    if (!window.getSelection) return -1;
+	    if (!node) return -1;
+	
 	    var position = -1;
 	    var selection = window.getSelection();
-	  
-	    if( selection.rangeCount ) {
+	
+	    if (selection.rangeCount) {
 	      var range = selection.getRangeAt(0);
-	      if( range.commonAncestorContainer.parentNode == node ) {
+	      if (range.commonAncestorContainer.parentNode == node) {
 	        position = range.endOffset;
 	      }
 	    }
-	  
+	
 	    return position;
 	  },
-	  getPart: function(node) {
-	    var node = $(node).parent(function() {
+	  getPart: function getPart(node) {
+	    var node = $(node).parent(function () {
 	      return this.__ff__;
 	    }, true)[0];
 	    return node && node.__ff__;
 	  },
-	  type: function(name, cls) {
-	    if( arguments.length <= 1 ) return types.get(name);
-	    types.define(name, cls);
+	  type: function type(name, cls) {
+	    if (arguments.length <= 1) return _types.get(name);
+	    _types.define(name, cls);
 	    return this;
 	  }
 	};
@@ -1068,8 +1070,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var util = __webpack_require__(9);
 	var isArrayLike = util.isArrayLike;
+	var isElement = util.isElement;
 	var create = util.create;
 	var isHTML = util.isHTML;
+	var each = util.each;
 	
 	var Context = function(document) {
 	  if( !document ) {
@@ -1116,6 +1120,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Selector.isArrayLike = isArrayLike;
 	  Selector.create = create;
 	  Selector.isHTML = isHTML;
+	  Selector.isElement = isElement;
+	  Selector.each = each;
 	  Selection.prototype = extensions;
 	  Selection.prototype.document = document;
 	  Selection.prototype.Selection = Selection;
@@ -1137,11 +1143,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	function isArrayLike(o) {
-	  if( !o || typeof o != 'object' || o === window || typeof o.length != 'number' ) return false;
+	  return !!(o && typeof o == 'object' && typeof o.length == 'number');
+	  /*if( !o || typeof o != 'object' || o === window || typeof o.length != 'number' ) return false;
 	  if( o instanceof Array || (Array.isArray && Array.isArray(o)) ) return true;
 	  
 	  var type = Object.prototype.toString.call(o);
-	  return /^\[object (HTMLCollection|NodeList|Array|Arguments)\]$/.test(type);
+	  return /^\[object (HTMLCollection|NodeList|Array|FileList|Arguments)\]$/.test(type);*/
 	}
 	
 	function create(html) {
@@ -1166,12 +1173,48 @@ return /******/ (function(modules) { // webpackBootstrap
 	  }
 	}
 	
+	function each(arr, fn) {
+	  var i = 0;
+	  [].every.call(arr, function(el) {
+	    i = i + 1;
+	    if( !el ) return true;
+	    return ( fn && fn.apply(el, [i, el]) === false ) ? false : true;
+	  });
+	  return arr;
+	}
+	
+	function offset(el, abs) {
+	  if( !el || !el.offsetTop ) return null;
+	  
+	  var top = el.offsetTop, left = el.offsetLeft;
+	  if( abs !== false ) {
+	    while( el = el.offsetParent ) {
+	      top += el.offsetTop;
+	      left += el.offsetLeft;
+	    }
+	  }
+	  
+	  return {
+	    top: top,
+	    left: left
+	  };
+	}
+	
+	function isElement(node) {
+	  return (
+	    typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
+	  );
+	}
+	
 	module.exports = {
 	  isNull: isNull,
 	  isArrayLike: isArrayLike,
 	  create: create,
 	  isHTML: isHTML,
-	  matches: matches
+	  matches: matches,
+	  each: each,
+	  offset: offset,
+	  isElement: isElement
 	};
 
 /***/ },
@@ -1180,20 +1223,19 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var util = __webpack_require__(9);
 	
-	module.exports = function($) {
-	  var fn = $.fn;
+	module.exports = function(ctx) {
+	  var fn = ctx.fn;
+	  var create = util.create;
+	  var isHTML = util.isHTML;
+	  var isElement = util.isElement;
 	  var isArrayLike = util.isArrayLike;
 	  var isNull = util.isNull;
 	  var matches = util.matches;
+	  var each = util.each;
+	  var offset = util.offset;
 	  
 	  fn.each = function(fn) {
-	    var i = 0;
-	    this.every(function(el) {
-	      i = i + 1;
-	      if( !el ) return true;
-	      return ( fn.apply(el, [i, el]) === false ) ? false : true;
-	    });
-	    return this;
+	    return each(this, fn);
 	  };
 	  
 	  fn.add = function(arr) {
@@ -1253,8 +1295,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	  
 	  fn.html = function(html) {
+	    if( !arguments.length ) return this[0] && this[0].innerHTML;
+	    
 	    return this.each(function() {
-	      this.innerHTML = html;
+	      this.innerHTML = html || '';
+	    });
+	  };
+	  
+	  fn.text = function(text) {
+	    if( !arguments.length ) return this[0] && this[0].textContent;
+	    
+	    return this.each(function() {
+	      this.textContent = text || '';
 	    });
 	  };
 	  
@@ -1273,8 +1325,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	  };
 	  
 	  fn.css = function(key, value) {
-	    if( !artuments.length ) return null;
-	    if( arguments.length === 1 ) return this[0] && this[0].style && this[0].style[key];
+	    if( !arguments.length ) return this;
+	    if( arguments.length === 1 ) {
+	      if( typeof key == 'string' ) return this[0] && this[0].style && this[0].style[key];
+	      for(var k in key) this.css(k, key[k]);
+	      return this;
+	    }
 	    
 	    return this.each(function() {
 	      if( isNull(value) ) this.style[key] = null;
@@ -1349,9 +1405,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return exists;
 	  };
 	  
-	  fn.toggleClass = fn.tc = function(cls) {
+	  fn.toggleClass = fn.tc = function(cls, bool) {
 	    if( typeof cls == 'string' ) cls = cls.split(' ');
 	    if( !isArrayLike(cls) || !cls.length ) return this;
+	    if( arguments.length >= 2 ) {
+	      if( bool ) this.ac(cls);
+	      else this.rc(cls);
+	      return this;
+	    }
 	    
 	    return this.each(function() {
 	      if( 'className' in this ) {
@@ -1367,29 +1428,40 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	  };
 	  
-	  fn.append = function(node) {
+	  fn.append = function(node, index) {
 	    if( !node ) return this;
-	    if( !isArrayLike(node) ) node = [node];
 	    
-	    return this.each(function() {
+	    return this.each(function(i) {
+	      if( !isElement(this) ) return;
+	      
 	      var el = this;
-	      if( el.appendChild ) {
+	      var ref = this.children[index];
+	      
+	      if( typeof node == 'function' ) node = node.call(this, i);
+	      if( isHTML(node) ) node = create(node);
+	      if( !isArrayLike(node) ) node = [node];
+	      
+	      if( ref && ref.nextSibling && el.insertBefore ) {
 	        [].forEach.call(node, function(node) {
+	          if( typeof node == 'string' ) node = document.createTextNode(node);
+	          el.insertBefore(node, ref.nextSibling);
+	          ref = node;
+	        });
+	      } else if( el.appendChild ) {
+	        [].forEach.call(node, function(node) {
+	          if( typeof node == 'string' ) node = document.createTextNode(node);
 	          el.appendChild(node);
 	        });
 	      }
 	    });
 	  };
 	  
-	  fn.appendTo = function(target) {
+	  fn.appendTo = function(target, index) {
 	    if( !target ) return this;
 	    
+	    var $ = this.$;
 	    return this.each(function() {
-	      if( target.append ) {
-	        target.append(this);
-	      } else if( target.appendChild ) {
-	        target.appendChild(this);
-	      } 
+	      $(target).append(this, index);
 	    });
 	  };
 	  
@@ -1418,11 +1490,27 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( !parent ) return this;
 	    
 	    return this.each(function() {
+	      if( !isElement(this) ) return;
+	      
 	      if( !sib ) {
 	        parent.appendChild(this);
 	      } else if( parent.insertBefore ) {
 	        parent.insertBefore(this, sib);
 	      }
+	    });
+	  };
+	  
+	  fn.before = function(node) {
+	    var $ = this.$;
+	    return this.each(function() {
+	      $(this).insertBefore(node);
+	    });
+	  };
+	  
+	  fn.after = function(node) {
+	    var $ = this.$;
+	    return this.each(function() {
+	      $(node).insertAfter(this);
 	    });
 	  };
 	  
@@ -1435,10 +1523,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( !node ) return;
 	    if( !isArrayLike(node) ) node = [node];
 	    
+	    var $ = this.$;
 	    return this.each(function() {
 	      if( this.removeChild ) {
+	        var el = this;
 	        [].forEach.call(node, function(node) {
-	          this.removeChild(node);
+	          if( typeof node == 'string' ) return $(el).find(node).remove();
+	          el.removeChild(node);
 	        });
 	      }
 	    });
@@ -1540,6 +1631,41 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return arr;
 	  };
 	  
+	  fn.wrap = function(html) {
+	    var $ = this.$;
+	    return this.each(function(i) {
+	      if( !isElement(this) ) return;
+	      
+	      var wrapper = html;
+	      if( typeof wrapper == 'function' ) {
+	        wrapper = wrapper.call(this, i);
+	      }
+	      
+	      if( isHTML(wrapper) ) {
+	        wrapper = create(wrapper)[0];
+	      }
+	      
+	      if( !isElement(wrapper) ) return;
+	      
+	      var parent = this.parentNode;
+	      var ref = this.nextSibling;
+	      wrapper = $(wrapper).append(this);
+	      
+	      if( ref ) wrapper.insertBefore(ref);
+	      else wrapper.appendTo(parent);
+	    });
+	  };
+	  
+	  fn.unwrap = function(selector) {
+	    var $ = this.$;
+	    return this.each(function() {
+	      if( !isElement(this) ) return;
+	      
+	      var p = this.parentNode;
+	      $(this).parent(selector).after(p && p.childNodes).remove();
+	    });
+	  };
+	  
 	  fn.filter = function(fn) {
 	    if( typeof fn == 'string' ) {
 	      var selector = fn;
@@ -1564,7 +1690,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return arr;
 	  };
 	  
-	  fn.contains = function(selector) {
+	  fn.has = function(selector) {
 	    if( !selector ) return false;
 	    
 	    var contains = false;
@@ -1587,27 +1713,77 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	    return arr;
 	  };
+	  
+	  fn.src = function(src) {
+	    return this.each(function() {
+	      if( 'src' in this ) this.src = src;
+	    });
+	  };
+	  
+	  fn.position = function(fn) {
+	    if( typeof fn == 'function' ) {
+	      return this.each(function(i) {
+	        fn.call(this, i, offset(this, false));
+	      })
+	    } else if( fn ) {
+	      return console.error('unsupported');
+	    } else {
+	      return offset(this[0]);
+	    }
+	  };
+	  
+	  fn.offset = function(fn) {
+	    if( typeof fn == 'function' ) {
+	      return this.each(function(i) {
+	        fn.call(this, i, offset(this));
+	      })
+	    } else if( fn ) {
+	      return console.error('unsupported');
+	    } else {
+	      return offset(this[0]);
+	    }
+	  };
+	  
+	  fn.show = function() {
+	    return this.each(function() {
+	      if( this.style ) {
+	        this.style.display = '';
+	        var computed = this.style.display || window.getComputedStyle(this, null).display;
+	        if( !computed || computed == 'none' ) this.style.display = 'block';
+	      }
+	    });
+	  };
+	  
+	  fn.hide = function() {
+	    return this.each(function() {
+	      if( this.style ) {
+	        this.style.display = 'none';
+	      }
+	    });
+	  };
 	};
 
 /***/ },
 /* 11 */
 /***/ function(module, exports) {
 
+	'use strict';
+	
 	var types = {};
 	
 	module.exports = {
-	  get: function(id) {
+	  get: function get(id) {
 	    return types[id];
 	  },
-	  define: function(id, handler) {
-	    if( !id ) throw new TypeError('missing id');
-	    if( typeof id !== 'string' ) throw new TypeError('id must be a string');
-	    if( typeof handler !== 'function' ) throw new TypeError('type plugin must be a function');
-	    
+	  define: function define(id, handler) {
+	    if (!id) throw new TypeError('missing id');
+	    if (typeof id !== 'string') throw new TypeError('id must be a string');
+	    if (typeof handler !== 'function') throw new TypeError('type plugin must be a function');
+	
 	    types[id] = handler;
 	    return this;
 	  },
-	  exists: function(id) {
+	  exists: function exists(id) {
 	    return !!types[id];
 	  }
 	};
@@ -1616,21 +1792,25 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 12 */
 /***/ function(module, exports) {
 
-	var endpoint;
+	"use strict";
+	
+	var _endpoint;
 	
 	module.exports = {
-	  endpoint: function(url) {
-	    endpoint = url;
+	  endpoint: function endpoint(url) {
+	    _endpoint = url;
 	  },
-	  load: function(url, done) {
+	  load: function load(url, done) {
 	    done();
 	  }
-	}
+	};
 
 /***/ },
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var Toolbar = __webpack_require__(14);
 	
 	Toolbar.Button = __webpack_require__(18);
@@ -1643,6 +1823,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var getPosition = __webpack_require__(15);
 	var Buttons = __webpack_require__(16);
@@ -1650,13 +1832,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function clone(o) {
 	  var result = {};
-	  for(var k in o) result[k] = o[k];
-	  return result; 
+	  for (var k in o) {
+	    result[k] = o[k];
+	  }return result;
 	}
 	
 	function Toolbar(owner, options) {
-	  if( !owner || typeof owner.dom !== 'function' ) throw new TypeError('illegal owner(owner.dom() requried)');
-	  
+	  if (!owner || typeof owner.dom !== 'function') throw new TypeError('illegal owner(owner.dom() requried)');
+	
 	  this._owner = owner;
 	  this._el = $('<div/>').css('opacity', 0).ac('ff-toolbar').hide();
 	  this._buttons = new Buttons(this);
@@ -1665,175 +1848,170 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	Toolbar.prototype = {
-	  handleEvent: function(e) {
+	  handleEvent: function handleEvent(e) {
 	    this.update();
 	  },
-	  options: function(o) {
-	    if( !arguments.length ) return this._options;
+	  options: function options(o) {
+	    if (!arguments.length) return this._options;
 	    this._options = clone(o);
 	    return this;
 	  },
-	  position: function(position) {
-	    this.options().position = position;
+	  position: function position(_position) {
+	    this.options().position = _position;
 	    this.update();
 	    return this;
 	  },
-	  dom: function() {
+	  dom: function dom() {
 	    return this._el[0];
 	  },
-	  owner: function() {
+	  owner: function owner() {
 	    return this._owner;
 	  },
-	  buttons: function() {
+	  buttons: function buttons() {
 	    return this._buttons;
 	  },
-	  update: function() {
+	  update: function update() {
 	    var options = this.options();
 	    var dom = this.dom();
 	    var ownerElement = this.owner().dom();
 	    var position = options.position || 'top center outside';
-	    
-	    var el = this._el
-	    .css(options.style || {})
-	    .ac(options.cls)
-	    .appendTo(document.body);
-	    
-	    if( position && ownerElement ) {
+	
+	    var el = this._el.css(options.style || {}).ac(options.cls).appendTo(document.body);
+	
+	    if (position && ownerElement) {
 	      var ownerposition = getPosition(ownerElement);
 	      var posarr = position.split(' ');
 	      var inside = ~posarr.indexOf('inside');
 	      var vertical = ~posarr.indexOf('vertical');
 	      var nomargin = ~posarr.indexOf('nomargin');
-	      if( vertical ) el.ac('ff-toolbar-vertical');
-	      
+	      if (vertical) el.ac('ff-toolbar-vertical');
+	
 	      var width = ownerElement.clientWidth;
 	      var height = ownerElement.clientHeight;
 	      var tbarwidth = dom.clientWidth;
 	      var tbarheight = dom.clientHeight;
-	      var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
-	      
-	      posarr.forEach(function(pos) {
-	        if( !vertical ) {
-	          if( pos === 'top' ) {
-	            if( inside ) top = ownerposition.top + margin;
-	            else top = ownerposition.top - tbarheight - margin;
-	          } else if( pos == 'bottom' ) {
-	            if( inside ) top = ownerposition.top + height - tbarheight - margin;
-	            else top = ownerposition.top + height + margin;
-	          } else if( pos == 'left' ) {
+	      var top = 0,
+	          left = 0,
+	          margin = nomargin ? 0 : +options.margin || 10;
+	
+	      posarr.forEach(function (pos) {
+	        if (!vertical) {
+	          if (pos === 'top') {
+	            if (inside) top = ownerposition.top + margin;else top = ownerposition.top - tbarheight - margin;
+	          } else if (pos == 'bottom') {
+	            if (inside) top = ownerposition.top + height - tbarheight - margin;else top = ownerposition.top + height + margin;
+	          } else if (pos == 'left') {
 	            left = ownerposition.left;
-	            if( inside ) left += margin;
-	          } else if( pos == 'center' ) {
+	            if (inside) left += margin;
+	          } else if (pos == 'center') {
 	            left = ownerposition.left + (width - tbarwidth) / 2;
-	          } else if( pos == 'right' ) {
+	          } else if (pos == 'right') {
 	            left = ownerposition.left + width - tbarwidth;
-	            if( inside ) left -= margin;
+	            if (inside) left -= margin;
 	          }
 	        } else {
-	          if( pos === 'top' ) {
+	          if (pos === 'top') {
 	            top = ownerposition.top;
-	            if( inside ) top += margin;
-	          } else if( pos == 'middle' ) {
+	            if (inside) top += margin;
+	          } else if (pos == 'middle') {
 	            top = ownerposition.top + (height - tbarheight) / 2;
-	          } else if( pos == 'bottom' ) {
+	          } else if (pos == 'bottom') {
 	            top = ownerposition.top + height - tbarheight;
-	            if( inside ) top -= margin;
-	          } else if( pos == 'left' ) {
-	            if( inside ) left = ownerposition.left + margin;
-	            else left = ownerposition.left - tbarwidth - margin;
-	          } else if( pos == 'right' ) {
-	            if( inside ) left = ownerposition.left + width - tbarwidth - margin;
-	            else left = ownerposition.left + width + margin;
+	            if (inside) top -= margin;
+	          } else if (pos == 'left') {
+	            if (inside) left = ownerposition.left + margin;else left = ownerposition.left - tbarwidth - margin;
+	          } else if (pos == 'right') {
+	            if (inside) left = ownerposition.left + width - tbarwidth - margin;else left = ownerposition.left + width + margin;
 	          }
 	        }
 	      });
-	      
-	      if( top <= 5 ) top = 5;
-	      if( left <= 5 ) left = 5;
-	      
-	      if( vertical ) {
+	
+	      if (top <= 5) top = 5;
+	      if (left <= 5) left = 5;
+	
+	      if (vertical) {
 	        //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
-	        if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
+	        if (top > ownerElement.offsetTop + height - tbarheight) top = ownerElement.offsetTop + height - tbarheight;
 	      }
-	    
+	
 	      dom.style.top = top + 'px';
 	      dom.style.left = left + 'px';
 	    }
-	    
+	
 	    this.buttons().update();
-	    
+	
 	    return this;
 	  },
-	  show: function() {
-	    if( !this.enable() ) return this;
+	  show: function show() {
+	    if (!this.enable()) return this;
 	    this._el.css('opacity', 0).show();
 	    this.update();
 	    this._el.css('opacity', 1);
 	    $(window).on('scroll resize', this);
 	    return this;
 	  },
-	  hide: function(force) {
-	    if( !force && this.always() ) return this;
+	  hide: function hide(force) {
+	    if (!force && this.always()) return this;
 	    $(window).off('scroll resize', this);
 	    this._el.css('opacity', 0).hide();
 	    return this;
 	  },
-	  refresh: function() {
+	  refresh: function refresh() {
 	    this.update();
 	    return this;
 	  },
-	  always: function(b) {
-	    if( !arguments.length ) return this._always;
+	  always: function always(b) {
+	    if (!arguments.length) return this._always;
 	    this._always = !!b;
 	    this.update();
 	    return this;
 	  },
-	  enable: function(b) {
-	    if( !arguments.length ) return this._enable;
+	  enable: function enable(b) {
+	    if (!arguments.length) return this._enable;
 	    this._enable = !!b;
 	    this.update();
 	    return this;
 	  },
-	  add: function(btn, index) {
+	  add: function add(btn, index) {
 	    this.buttons().add(btn, index);
 	    return this;
 	  },
-	  first: function(btn) {
+	  first: function first(btn) {
 	    this.buttons().first(btn);
 	    return this;
 	  },
-	  last: function(btn) {
+	  last: function last(btn) {
 	    this.buttons().last(btn);
 	    return this;
 	  },
-	  clear: function(btn) {
+	  clear: function clear(btn) {
 	    this.buttons().clear();
 	    return this;
 	  },
-	  remove: function(btn) {
+	  remove: function remove(btn) {
 	    this.buttons().remove(btn);
 	    return this;
 	  }
 	};
 	
-	
 	module.exports = Toolbar;
-
 
 /***/ },
 /* 15 */
 /***/ function(module, exports) {
 
-	module.exports = function(el) {
+	"use strict";
+	
+	module.exports = function (el) {
 	  var top = 0;
 	  var left = 0;
-	  
+	
 	  var c = el;
 	  do {
-	    if ( +c.offsetTop ) top += c.offsetTop;
-	    if ( +c.offsetLeft ) left += c.offsetLeft;
-	  } while( c = c.offsetParent );
-	  
+	    if (+c.offsetTop) top += c.offsetTop;
+	    if (+c.offsetLeft) left += c.offsetLeft;
+	  } while (c = c.offsetParent);
+	
 	  return {
 	    top: top,
 	    left: left,
@@ -1846,6 +2024,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Button = __webpack_require__(17);
 	
@@ -1858,94 +2038,91 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	Buttons.prototype = {
-	  toolbar: function() {
+	  toolbar: function toolbar() {
 	    return this._toolbar;
 	  },
-	  update: function() {
+	  update: function update() {
 	    var el = this._el[0];
-	    var append = function(btns) {
-	      btns.forEach(function(btn) {
+	    var append = function append(btns) {
+	      btns.forEach(function (btn) {
 	        btn.appendTo(el).update();
 	      });
 	    };
-	    
+	
 	    append(this._first);
 	    append(this._buttons);
 	    append(this._last);
 	    return this;
 	  },
-	  add: function(btn, index) {
-	    if( !btn ) return this;
-	    if( !Array.isArray(btn) ) btn = [btn];
-	    
+	  add: function add(btn, index) {
+	    if (!btn) return this;
+	    if (!Array.isArray(btn)) btn = [btn];
+	
 	    var owner = this._toolbar.owner();
 	    var btns = this._buttons;
-	    btn.forEach(function(btn) {
+	    btn.forEach(function (btn) {
 	      btn = Button.eval(btn).owner(owner);
-	      
-	      if( btn ) {
-	        if( index >= 0 ) btns.splice(index++, 0, btn);
-	        else btns.push(btn);
+	
+	      if (btn) {
+	        if (index >= 0) btns.splice(index++, 0, btn);else btns.push(btn);
 	      }
 	    });
-	    
+	
 	    this.update();
 	    return this;
 	  },
-	  first: function(btn, index) {
-	    if( !btn ) return this;
-	    if( !Array.isArray(btn) ) btn = [btn];
-	    
+	  first: function first(btn, index) {
+	    if (!btn) return this;
+	    if (!Array.isArray(btn)) btn = [btn];
+	
 	    var owner = this._toolbar.owner();
 	    var btns = this._first;
-	    btn.forEach(function(btn) {
+	    btn.forEach(function (btn) {
 	      btn = Button.eval(btn).owner(owner);
-	      
-	      if( btn ) {
-	        if( index >= 0 ) btns.splice(index++, 0, btn);
-	        else btns.push(btn);
+	
+	      if (btn) {
+	        if (index >= 0) btns.splice(index++, 0, btn);else btns.push(btn);
 	      }
 	    });
-	    
+	
 	    this.update();
 	    return this;
 	  },
-	  last: function(btn, index) {
-	    if( !btn ) return this;
-	    if( !Array.isArray(btn) ) btn = [btn];
-	    
+	  last: function last(btn, index) {
+	    if (!btn) return this;
+	    if (!Array.isArray(btn)) btn = [btn];
+	
 	    var owner = this._toolbar.owner();
 	    var btns = this._last;
-	    btn.forEach(function(btn) {
+	    btn.forEach(function (btn) {
 	      btn = Button.eval(btn).owner(owner);
-	      
-	      if( btn ) {
-	        if( index >= 0 ) btns.splice(index++, 0, btn);
-	        else btns.push(btn);
+	
+	      if (btn) {
+	        if (index >= 0) btns.splice(index++, 0, btn);else btns.push(btn);
 	      }
 	    });
-	    
+	
 	    this.update();
 	    return this;
 	  },
-	  remove: function(btn) {
-	    if( !btn ) return this;
-	    if( !Array.isArray(btn) ) btn = [btn];
-	    
-	    var remove = function(btns) {
-	      btns.forEach(function(btn) {
-	        if( ~btns.indexOf(btn) ) btns.splice(btns.indexOf(btn), 1);
+	  remove: function remove(btn) {
+	    if (!btn) return this;
+	    if (!Array.isArray(btn)) btn = [btn];
+	
+	    var remove = function remove(btns) {
+	      btns.forEach(function (btn) {
+	        if (~btns.indexOf(btn)) btns.splice(btns.indexOf(btn), 1);
 	      });
 	    };
-	    
+	
 	    remove(this._last);
 	    remove(this._first);
 	    remove(this._buttons);
-	    
+	
 	    this.update();
 	    return this;
 	  },
-	  clear: function() {
+	  clear: function clear() {
 	    this._el.html();
 	    return this;
 	  }
@@ -1957,17 +2134,18 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 17 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var Button = __webpack_require__(18);
 	var Separator = __webpack_require__(23);
 	var ListButton = __webpack_require__(24);
 	
-	Button.eval = function(o) {
-	  if( !o ) return null;
-	  if( o instanceof Button ) return o;
-	  
-	  if( o == '-' || o.type == 'separator' ) return new Separator(o);
-	  else if( o.type == 'list' ) return new ListButton(o);
-	  
+	Button.eval = function (o) {
+	  if (!o) return null;
+	  if (o instanceof Button) return o;
+	
+	  if (o == '-' || o.type == 'separator') return new Separator(o);else if (o.type == 'list') return new ListButton(o);
+	
 	  return new Button(o);
 	};
 	
@@ -1980,81 +2158,81 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	
 	__webpack_require__(19);
 	
 	function Button(options) {
-	  if( typeof options == 'string' ) options = {text:options};
-	  
+	  if (typeof options == 'string') options = { text: options };
+	
 	  var self = this;
 	  self.options(options);
 	  self.owner(options.owner);
-	  
-	  self._el = $('<div class="ff-toolbar-btn"></div>')
-	  .ac(options.cls)
-	  .on('click', this);
-	  
+	
+	  self._el = $('<div class="ff-toolbar-btn"></div>').ac(options.cls).on('click', this);
+	
 	  this.text(options.text);
 	}
 	
 	Button.prototype = {
-	  handleEvent: function(e) {
-	    if( e.type == 'click' ) {
+	  handleEvent: function handleEvent(e) {
+	    if (e.type == 'click') {
 	      e.stopPropagation();
 	      this.click(e);
 	      this.update(e);
 	    }
 	  },
-	  options: function(options) {
-	    if( !arguments.length ) return this._options = this._options || {};
-	    this._options = options || {};
+	  options: function options(_options) {
+	    if (!arguments.length) return this._options = this._options || {};
+	    this._options = _options || {};
 	    return this;
 	  },
-	  dom: function() {
+	  dom: function dom() {
 	    return this._el[0];
 	  },
-	  owner: function(owner) {
-	    if( !arguments.length ) return this._owner;
-	    this._owner = owner;
+	  owner: function owner(_owner) {
+	    if (!arguments.length) return this._owner;
+	    this._owner = _owner;
 	    return this;
 	  },
-	  cls: function(cls) {
-	    this._el.cc().ac('ff-toolbar-btn').ac(cls);
+	  cls: function cls(_cls) {
+	    this._el.cc().ac('ff-toolbar-btn').ac(_cls);
 	    return this;
 	  },
-	  active: function(b) {
-	    if( !arguments.length ) return this._el.hc('ff-toolbar-btn-active');
+	  active: function active(b) {
+	    if (!arguments.length) return this._el.hc('ff-toolbar-btn-active');
 	    this._el.tc('ff-toolbar-btn-active', b);
 	    return this;
 	  },
-	  enable: function(b) {
-	    if( !arguments.length ) return !this._el.hc('ff-toolbar-btn-disabled');
+	  enable: function enable(b) {
+	    if (!arguments.length) return !this._el.hc('ff-toolbar-btn-disabled');
 	    this._el.tc('ff-toolbar-btn-disabled', !b);
 	    return this;
 	  },
-	  update: function(e) {
+	  update: function update(e) {
 	    var o = this.options();
 	    var fn = o.onupdate;
 	    fn && fn.call(this, e);
 	    return this;
 	  },
-	  click: function(e) {
+	  click: function click(e) {
 	    var o = this.options();
 	    var fn = o.onclick || o.fn;
 	    fn && fn.call(this, e);
 	    return this;
 	  },
-	  text: function(text) {
-	    if( !arguments.length ) return this._el.html();
-	    this._el.html(text);
+	  text: function text(_text) {
+	    if (!arguments.length) return this._el.html();
+	    this._el.html(_text);
 	    return this;
 	  },
-	  appendTo: function(parent, index) {
+	  appendTo: function appendTo(parent, index) {
 	    $(parent).append(this._el[0], index);
 	    return this;
 	  },
-	  remove: function() {
+	  remove: function remove() {
 	    this._el.remove();
 	    return this;
 	  }
@@ -2414,6 +2592,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	
 	function Separator(options) {
@@ -2421,16 +2601,16 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	Separator.prototype = {
-	  owner: function(owner) {
-	    if( !arguments.length ) return this._owner;
-	    this._owner = owner;
+	  owner: function owner(_owner) {
+	    if (!arguments.length) return this._owner;
+	    this._owner = _owner;
 	    return this;
 	  },
-	  appendTo: function(parent) {
+	  appendTo: function appendTo(parent) {
 	    $(parent).append(this.el);
 	    return this;
 	  },
-	  remove: function() {
+	  remove: function remove() {
 	    $(this.el).remove();
 	    return this;
 	  }
@@ -2442,19 +2622,21 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Button = __webpack_require__(18);
 	
 	function ListButton() {
 	  Button.apply(this, arguments);
-	  
+	
 	  this._el.ac('ff-toolbar-list-btn');
 	}
 	
 	ListButton.prototype = Object.create(Button.prototype, {
 	  handleEvent: {
-	    value: function(e) {
-	      if( e.type == 'click' ) {
+	    value: function value(e) {
+	      if (e.type == 'click') {
 	        e.stopPropagation();
 	        this.click(e);
 	        this.toggleList();
@@ -2463,12 +2645,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  },
 	  toggleList: {
-	    value: function() {
+	    value: function value() {
 	      console.log('toggle');
 	    }
 	  },
 	  text: {
-	    value: function(txt) {
+	    value: function value(txt) {
 	      this._el.html(txt);
 	      return this;
 	    }
@@ -2552,7 +2734,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff {\n  box-sizing: border-box;\n}\n.ff-part.ff-focus-state {\n  background-color: #eee;\n}\n", ""]);
+	exports.push([module.id, ".ff-part.ff-focus-state {\n  background-color: #eee;\n}\n.ff-part[contenteditable] {\n  outline: none;\n}\n", ""]);
 	
 	// exports
 
@@ -2561,6 +2743,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 29 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var context = __webpack_require__(1);
 	var Events = __webpack_require__(6);
 	var Types = __webpack_require__(11);
@@ -2568,141 +2752,132 @@ return /******/ (function(modules) { // webpackBootstrap
 	var $ = __webpack_require__(7);
 	
 	var focused, currentRange;
-	$(document).on('mouseup', function(e) {
+	$(document).on('mouseup', function (e) {
 	  currentRange = context.getRange();
-	  
+	
 	  var part = context.getPart(e.target);
 	  var isToolbar = $(e.target).parent('.ff-toolbar')[0];
-	  if( isToolbar ) {
+	  if (isToolbar) {
 	    e.preventDefault();
 	    e.stopPropagation();
-	    
-	    setTimeout(function() {
+	
+	    setTimeout(function () {
 	      context.setRange(currentRange);
 	    }, 0);
 	    return;
 	  }
-	  
-	  if( part ) part.focus();
-	  else if( focused && typeof focused.blur == 'function' ) focused.blur();
+	
+	  if (part) part.focus();else if (focused && typeof focused.blur == 'function') focused.blur();
 	});
 	
 	function Part(dom) {
-	  if( dom && dom.__ff__ ) return dom.__ff__;
-	  if( !(this instanceof Part) ) return null;
-	  if( !dom ) dom = this.create();
-	  if( !context.isElement(dom) ) dom = this.create(dom);
-	  if( !context.isElement(dom) ) throw new TypeError('illegal argument: dom');
+	  if (dom && dom.__ff__) return dom.__ff__;
+	  if (!(this instanceof Part)) return null;
+	  if (!dom) dom = this.create();
+	  if (!context.isElement(dom)) dom = this.create(dom);
+	  if (!context.isElement(dom)) throw new TypeError('illegal argument: dom');
 	  dom.__ff__ = this;
-	  
+	
 	  var el = $(dom).addClass('ff ff-part');
-	  
+	
 	  var dispatcher = Events(this);
 	  var self = this;
-	  
+	
 	  var toolbar = new Toolbar(this, {
 	    position: 'top center',
 	    group: 'part',
 	    cls: 'ff-part-toolbar'
 	  });
-	  
-	  if( dom !== arguments[0] ) {
+	
+	  if (dom !== arguments[0]) {
 	    toolbar.last({
 	      text: '<i class="fa fa-remove"></i>',
-	      fn: function(e) {
+	      fn: function fn(e) {
 	        self.remove();
 	      }
 	    });
 	  }
-	  
-	  dispatcher
-	  .on('focus', function(e) {
-	    if( e.defaultPrevented || !this.editmode() ) return;
-	    
+	
+	  dispatcher.on('focus', function (e) {
+	    if (e.defaultPrevented || !this.editmode()) return;
+	
 	    el.ac('ff-focus-state');
 	    this.toolbar().show();
-	  })
-	  .on('blur', function(e) {
-	    if( e.defaultPrevented || !this.editmode() ) return;
-	    
+	  }).on('blur', function (e) {
+	    if (e.defaultPrevented || !this.editmode()) return;
+	
 	    el.rc('ff-focus-state');
 	    this.toolbar().hide();
-	  })
-	  .on('data', function(e) {
-	    if( e.defaultPrevented ) return;
-	    
+	  }).on('data', function (e) {
+	    if (e.defaultPrevented) return;
+	
 	    dispatcher.fire('render', {
 	      type: 'update',
 	      originalEvent: e
 	    });
-	  })
-	  .on('modechange', function(e) {
-	    if( e.defaultPrevented ) return;
-	    
+	  }).on('modechange', function (e) {
+	    if (e.defaultPrevented) return;
+	
+	    if (self.editmode()) el.ac('ff-edit-state');else el.rc('ff-edit-state');
+	
 	    dispatcher.fire('render', {
 	      type: 'modechange',
 	      originalEvent: e
 	    });
-	  })
-	  .on('*', function(e) {
-	    if( e.defaultPrevented ) return;
-	    
+	  }).on('*', function (e) {
+	    if (e.defaultPrevented) return;
+	
 	    var type = e.type;
 	    var name = 'on' + type;
-	    
-	    if( typeof this.handleEvent == 'function' ) this.handleEvent(e);
-	    if( typeof this[name] == 'function' ) this[name](e);
+	
+	    if (typeof this.handleEvent == 'function') this.handleEvent(e);
+	    if (typeof this[name] == 'function') this[name](e);
 	  });
-	  
-	  el
-	  .on('mouseenter', function(e) {
-	    if( !self.editmode() ) return;
-	    
+	
+	  el.on('mouseenter', function (e) {
+	    if (!self.editmode()) return;
+	
 	    self.toolbar().update();
 	    el.ac('ff-enter-state');
-	  })
-	  .on('mousedown', function(e) {
-	    if( !self.editmode() ) return;
-	  
+	  }).on('mousedown', function (e) {
+	    if (!self.editmode()) return;
+	
 	    self.toolbar().update();
-	  })
-	  .on('mouseleave', function(e) {
-	    if( !self.editmode() ) return;
-	  
+	  }).on('mouseleave', function (e) {
+	    if (!self.editmode()) return;
+	
 	    el.removeClass('ff-enter-state');
-	  })
-	  .on('dragstart', function(e) {
-	    if( !self.editmode() ) return;
-	    
-	    if( e.target === dom ) {
+	  }).on('dragstart', function (e) {
+	    if (!self.editmode()) return;
+	
+	    if (e.target === dom) {
 	      self.blur();
 	      context.dragging = dom;
 	      el.ac('ff-dragging');
 	    }
-	  })
-	  .on('dragend', function(e) {
-	    if( e.target === dom ) {
+	  }).on('dragend', function (e) {
+	    if (e.target === dom) {
 	      context.dragging = null;
 	      el.rc('ff-dragging');
 	    }
 	  });
-	  
+	
 	  this._data = null;
 	  this._dom = dom;
 	  this._dispatcher = dispatcher;
 	  this._toolbar = toolbar;
-	  
+	
 	  var observer;
-	  setTimeout(function() {
-	    observer = new MutationObserver(function(mutations) {
-	      mutations.forEach(function(mutation) {
-	        if( mutation.type == 'attributes' ) {
+	  setTimeout(function () {
+	    observer = new MutationObserver(function (mutations) {
+	      mutations.forEach(function (mutation) {
+	        if (mutation.type == 'attributes') {
 	          dispatcher.fire('attr', {
 	            name: mutation.attributeName,
 	            old: mutation.oldValue,
 	            value: dom.getAttribute(mutation.attributeName)
 	          });
-	        } else if( mutation.type == 'childList' ) {
+	        } else if (mutation.type == 'childList') {
 	          dispatcher.fire('childlist', {
 	            added: mutation.added,
 	            removed: mutation.removed
@@ -2710,37 +2885,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	      });
 	    });
-	    
+	
 	    observer.observe(dom, {
 	      attributes: true,
 	      attributeOldValue: true,
 	      childList: true
 	    });
 	  }, 1);
-	  
+	
 	  dispatcher.fire('init');
-	  if( context.editmode() ) self.editmode(true);
+	  if (context.editmode()) self.editmode(true);
 	}
 	
 	var proto = Part.prototype = {};
 	
-	proto.context = function() {
+	proto.context = function () {
 	  return context;
 	};
 	
-	proto.toolbar = function() {
+	proto.toolbar = function () {
 	  return this._toolbar;
 	};
 	
-	proto.dom = function() {
+	proto.dom = function () {
 	  return this._dom;
 	};
 	
-	proto.create = function(arg) {
+	proto.create = function (arg) {
 	  return $('<div />').html(arg)[0];
 	};
 	
-	proto.remove = function() {
+	proto.remove = function () {
 	  this.blur();
 	  this.toolbar().hide();
 	  this.fire('remove');
@@ -2748,94 +2923,93 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return this;
 	};
 	
-	proto.editmode = function(b) {
-	  if( !arguments.length ) return !!this._editmode;
+	proto.editmode = function (b) {
+	  if (!arguments.length) return !!this._editmode;
 	  var prev = this._editmode;
 	  var editmode = this._editmode = !!b;
-	  
-	  if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
+	
+	  if (editmode !== prev) this.fire('modechange', { editmode: editmode });
 	  return this;
 	};
 	
-	proto.getData = function() {
+	proto.getData = function () {
 	  return this._data;
 	};
 	
-	proto.setData = function(data) {
+	proto.setData = function (data) {
 	  this._data = data;
-	  this.fire('data', {old: this._data, data: data});
+	  this.fire('data', { old: this._data, data: data });
 	  return this;
 	};
 	
-	proto.data = function(data) {
+	proto.data = function (data) {
 	  return !arguments.length ? this.getData() : this.setData(data);
 	};
 	
-	proto.fire = function() {
+	proto.fire = function () {
 	  this._dispatcher.fire.apply(this._dispatcher, arguments);
 	  return this;
 	};
 	
-	proto.on = function(type, fn) {
+	proto.on = function (type, fn) {
 	  this._dispatcher.on(type, fn);
 	  return this;
 	};
 	
-	proto.once = function(type, fn) {
+	proto.once = function (type, fn) {
 	  this._dispatcher.once(type, fn);
 	  return this;
 	};
 	
-	proto.off = function(type, fn) {
+	proto.off = function (type, fn) {
 	  this._dispatcher.off(type, fn);
 	  return this;
 	};
 	
-	proto.clear = function() {
+	proto.clear = function () {
 	  this.setData(null);
 	  this.fire('clear');
 	  return this;
 	};
 	
-	proto.click = function() {
+	proto.click = function () {
 	  this.dom().click();
 	  return this;
 	};
 	
-	proto.focus = function() {
-	  if( this !== focused ) {
-	    if( focused && typeof focused.blur == 'function' ) focused.blur();
+	proto.focus = function () {
+	  if (this !== focused) {
+	    if (focused && typeof focused.blur == 'function') focused.blur();
 	    this.fire('focus');
 	    focused = this;
 	  }
 	  return this;
 	};
 	
-	proto.blur = function() {
-	  if( this === focused ) {
+	proto.blur = function () {
+	  if (this === focused) {
 	    this.fire('blur');
 	    focused = null;
 	  }
 	  return this;
 	};
 	
-	proto.range = function() {
+	proto.range = function () {
 	  var el = this.dom();
 	  var range = currentRange;
-	  if( range && el.contains(range.startContainer) && el.contains(range.endContainer) ) return range;
-	  
+	  if (range && el.contains(range.startContainer) && el.contains(range.endContainer)) return range;
+	
 	  return null;
 	};
 	
-	Part.getFocused = function() {
+	Part.getFocused = function () {
 	  return focused;
 	};
 	
-	Part.getCurrentRange = function() {
+	Part.getCurrentRange = function () {
 	  return currentRange;
 	};
 	
-	  
 	/*
 	destroy: function() {
 	  this.clear();
@@ -2876,6 +3050,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 30 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	var components = __webpack_require__(31);
@@ -2890,162 +3066,157 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	ArticlePart.prototype = Object.create(Part.prototype, {
 	  oninit: {
-	    value: function(e) {
+	    value: function value(e) {
 	      var part = this;
-	      var el = $(this.dom()).ac('ff-article')
-	      .on('click', function(e) {
-	        if( part.editmode() && e.target === part.dom() ) {
+	      var el = $(this.dom()).ac('ff-article').on('click', function (e) {
+	        if (part.editmode() && e.target === part.dom()) {
 	          part.update();
-	          
-	          if( part.children().length === 1 ) {
+	
+	          if (part.children().length === 1) {
 	            var p = part.getPart(0);
 	            p && p.click();
 	          }
 	        }
 	      });
-	      
-	      var toolbar = this.toolbar()
-	      .position('vertical top right outside')
-	      .add({
+	
+	      var toolbar = this.toolbar().position('vertical top right outside').add({
 	        text: '<i class="fa fa-eraser"></i>',
 	        tooltip: '내용 삭제',
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          this.owner().clear();
 	        }
-	      }, 0)
-	      .add(components)
-	      .always(true);
-	      
+	      }, 0).add(components).always(true);
+	
 	      this._marker = new Marker(this);
 	      this._dnd = new DnD(this);
 	      this.update();
 	    }
 	  },
 	  update: {
-	    value: function() {
-	      if( this.editmode() ) {
+	    value: function value() {
+	      if (this.editmode()) {
 	        var ctx = this.context();
 	        var placeholder = $(this.dom()).attr('placeholder');
-	        if( placeholder && !this.children().length ) {
+	        if (placeholder && !this.children().length) {
 	          this.insert(new ctx.Paragraph().placeholder(placeholder));
 	        }
-	        
+	
 	        this._dnd.update();
 	      }
 	    }
 	  },
 	  onchildlist: {
-	    value: function(e) {
+	    value: function value(e) {
 	      this.update();
 	    }
 	  },
 	  onmodechange: {
-	    value: function(e) {
+	    value: function value(e) {
 	      this.update();
 	    }
 	  },
 	  marker: {
-	    value: function() {
+	    value: function value() {
 	      return this._marker;
 	    }
 	  },
 	  oninsert: {
-	    value: function() {
+	    value: function value() {
 	      this.update();
 	    }
 	  },
 	  clear: {
-	    value: function() {
+	    value: function value() {
 	      this.dom().innerHTML = '';
 	      return this;
 	    }
 	  },
 	  get: {
-	    value: function(index) {
+	    value: function value(index) {
 	      return this.children()[index];
 	    }
 	  },
 	  getPart: {
-	    value: function(index) {
+	    value: function value(index) {
 	      var el = $(this.dom()).children('.ff-part')[index];
 	      return el && el.__ff__;
 	    }
 	  },
 	  find: {
-	    value: function(selector) {
+	    value: function value(selector) {
 	      return $(this.dom()).find(selector);
 	    }
 	  },
 	  indexOf: {
-	    value: function(node) {
-	      if( !node ) return -1;
+	    value: function value(node) {
+	      if (!node) return -1;
 	      node = node.dom() || node;
 	      return $(this.dom()).indexOf(node);
 	    }
 	  },
 	  children: {
-	    value: function() {
-	      return $(this.dom()).children().filter(function() {
+	    value: function value() {
+	      return $(this.dom()).children().filter(function () {
 	        return !($(this).hc('ff-marker') || $(this).hc('ff-placeholder'));
 	      });
 	    }
 	  },
 	  getHTML: {
-	    value: function() {
+	    value: function value() {
 	      return this.dom().innerHTML;
 	    }
 	  },
 	  setHTML: {
-	    value: function(html) {
+	    value: function value(html) {
 	      this.dom().innerHTML = html;
 	      return this;
 	    }
 	  },
 	  insert: {
-	    value: function(node, ref) {
+	    value: function value(node, ref) {
 	      var context = this.context();
 	      var part = this;
 	      var target = $(this.dom());
 	      var marker = this.marker();
 	      var children = this.children();
-	      
-	      if( arguments.length <= 1 && marker.isExpanded() ) {
+	
+	      if (arguments.length <= 1 && marker.isExpanded()) {
 	        ref = children[marker.getIndex()];
 	        marker.collapse();
-	      } else if( typeof ref == 'number' ) {
+	      } else if (typeof ref == 'number') {
 	        ref = children[ref];
 	      }
-	      
-	      $(node).reverse().each(function() {
-	        var el = (this.dom && this.dom()) || this;
-	        
-	        if( window.File && this instanceof window.File ) {
+	
+	      $(node).reverse().each(function () {
+	        var el = this.dom && this.dom() || this;
+	
+	        if (window.File && this instanceof window.File) {
 	          var type = this.type;
-	          
-	          if( type ) {
-	            context.upload(this, function(err, result) {
-	              if( type.indexOf('image/') === 0 ) {
+	
+	          if (type) {
+	            context.upload(this, function (err, result) {
+	              if (type.indexOf('image/') === 0) {
 	                part.insert(new context.Image(result));
 	              } else {
 	                part.insert(new Attachment(result));
 	              }
 	            });
 	          }
-	        } else if( ref ) {
+	        } else if (ref) {
 	          ref.parentNode.insertBefore(el, ref);
 	        } else {
 	          target.append(el);
 	        }
 	      });
-	      
+	
 	      this.fire('insert', {
 	        node: node,
 	        ref: ref,
 	        target: target
 	      });
-	      
+	
 	      this.update();
-	      
+	
 	      return this;
 	    }
 	  }
@@ -3060,6 +3231,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 31 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var modal = __webpack_require__(32);
 	var URL = __webpack_require__(49);
@@ -3069,98 +3242,93 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	var items = Items();
 	
-	items
-	.add({
+	items.add({
 	  text: '<i class="fa fa-font"></i>',
 	  tooltip: '문단',
-	  fn: function(e) {
-	    this.owner().insert(new context.Paragraph());
+	  fn: function fn(e) {
+	    var placeholder = $(this.owner().dom()).attr('placeholder');
+	    this.owner().insert(new context.Paragraph().placeholder(placeholder));
 	  }
-	})
-	.add({
+	}).add({
 	  text: '<i class="fa fa-picture-o"></i>',
 	  tooltip: '이미지 파일',
-	  fn: function(e) {
+	  fn: function fn(e) {
 	    var part = this.owner();
-	    part.context().selectFiles(function(err, files) {
-	      if( err ) return modal.error(err);
-	      if( !files.length ) return;
-	      
-	      if( files.length === 1 ) {
+	    part.context().selectFiles(function (err, files) {
+	      if (err) return modal.error(err);
+	      if (!files.length) return;
+	
+	      if (files.length === 1) {
 	        part.insert(new context.Image(files[0]));
 	      } else {
 	        var row = new context.Row();
-	        files.forEach(function(file) {
+	        files.forEach(function (file) {
 	          row.add(new context.Image(file));
 	        });
 	        part.insert(row);
 	      }
 	    });
 	  }
-	})
-	.add({
+	}).add({
 	  text: '<i class="fa fa-instagram"></i>',
 	  tooltip: '이미지',
-	  fn: function(e) {
+	  fn: function fn(e) {
 	    var part = this.owner();
-	    modal.prompt('이미지 URL을 입력해주세요', function(src) {
-	      if( !src ) return;
-	      
+	    modal.prompt('이미지 URL을 입력해주세요', function (src) {
+	      if (!src) return;
+	
 	      var url = URL.parse(src);
-	      if( !url || !url.hostname ) return modal.error('URL을 정확히 입력해주세요');
-	      
-	      if( ~url.hostname.indexOf('instagram.com') ) {
-	        if( url.pathname.indexOf('/p/') !== 0 ) return modal.error('URL을 정확히 입력해주세요');
+	      if (!url || !url.hostname) return modal.error('URL을 정확히 입력해주세요');
+	
+	      if (~url.hostname.indexOf('instagram.com')) {
+	        if (url.pathname.indexOf('/p/') !== 0) return modal.error('URL을 정확히 입력해주세요');
 	        var shortid = url.pathname.substring(3).split('/')[0];
 	        src = 'https://www.instagram.com/p/' + shortid + '/media';
 	      }
-	      
+	
 	      part.insert(new context.Image(src));
 	    });
 	  }
-	})
-	.add({
+	}).add({
 	  text: '<i class="fa fa-youtube-square"></i>',
 	  tooltip: '동영상',
-	  fn: function(e) {
+	  fn: function fn(e) {
 	    var part = this.owner();
-	    modal.prompt('동영상 URL을 입력해주세요', function(src) {
-	      if( !src ) return;
-	      
+	    modal.prompt('동영상 URL을 입력해주세요', function (src) {
+	      if (!src) return;
+	
 	      var url = URL.parse(src);
-	      if( !url || !url.hostname ) return modal.error('URL을 정확히 입력해주세요');
-	      
-	      if( ~url.hostname.indexOf('youtube.com') ) {
+	      if (!url || !url.hostname) return modal.error('URL을 정확히 입력해주세요');
+	
+	      if (~url.hostname.indexOf('youtube.com')) {
 	        var qry = url && url.query && querystring.parse(url.query);
-	        if( !qry || !qry.v ) return modal.error('URL을 정확히 입력해주세요');
-	        
+	        if (!qry || !qry.v) return modal.error('URL을 정확히 입력해주세요');
+	
 	        src = 'https://www.youtube.com/embed/' + qry.v;
-	      } else if( ~url.hostname.indexOf('vimeo.com') ) {
+	      } else if (~url.hostname.indexOf('vimeo.com')) {
 	        var videoid = url.pathname.substring(1);
-	        if( !videoid ) return modal.error('URL을 정확히 입력해주세요');
-	        
+	        if (!videoid) return modal.error('URL을 정확히 입력해주세요');
+	
 	        src = 'https://player.vimeo.com/video/' + videoid;
 	      }
-	      
+	
 	      part.insert(new context.Video(src));
 	    });
 	  }
-	})
-	.add({
+	}).add({
 	  text: '<i class="fa fa-arrows-h"></i>',
 	  tooltip: '구분선',
-	  fn: function(e) {
+	  fn: function fn(e) {
 	    this.owner().insert(new context.Separator());
 	  }
-	})
-	.add({
+	}).add({
 	  text: '<i class="fa fa-paperclip"></i>',
 	  tooltip: '첨부파일',
-	  fn: function(e) {
+	  fn: function fn(e) {
 	    var part = this.owner();
-	    part.context().selectFile(function(err, file) {
-	      if( err ) return modal.error(err);
-	      
+	    part.context().selectFile(function (err, file) {
+	      if (err) return modal.error(err);
+	
 	      part.insert(new context.Attachment(file));
 	    });
 	  }
@@ -6578,28 +6746,33 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 56 */
 /***/ function(module, exports) {
 
-	module.exports = function() {
-	  return (function() {
+	"use strict";
+	
+	module.exports = function () {
+	  return function () {
 	    var items = [];
-	  
-	    items.add = function(item) {
+	
+	    items.add = function (item) {
 	      items.push(item);
 	      return this;
 	    };
-	  
-	    items.remove = function(item) {
-	      for(var pos;~(pos = items.indexOf(item));) items.splice(pos, 1);
-	      return this;
+	
+	    items.remove = function (item) {
+	      for (var pos; ~(pos = items.indexOf(item));) {
+	        items.splice(pos, 1);
+	      }return this;
 	    };
-	  
+	
 	    return items;
-	  })();
+	  }();
 	};
 
 /***/ },
 /* 57 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var getOffsetTop = __webpack_require__(58);
 	var components = __webpack_require__(31);
@@ -6611,83 +6784,82 @@ return /******/ (function(modules) { // webpackBootstrap
 	  var el = $(part.dom());
 	  var marker = $('<div class="ff-marker"><div class="ff-marker-head"></div><div class="ff-marker-tools"></div></div>');
 	  var lastref;
-	  
-	  var update = function() {
+	
+	  var update = function update() {
 	    var tools = marker.find('.ff-marker-tools').empty();
-	    components.forEach(function(item) {
-	      if( !item || !item.text ) return;
-	      
+	    components.forEach(function (item) {
+	      if (!item || !item.text) return;
+	
 	      new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
 	    });
 	  };
-	  
-	  var show = function(ref) {
-	    ref = (typeof ref == 'number' ? el.children()[ref] : ref);
-	    
-	    if( lastref === ref ) return this;
+	
+	  var show = function show(ref) {
+	    ref = typeof ref == 'number' ? el.children()[ref] : ref;
+	
+	    if (lastref === ref) return this;
 	    lastref = ref;
-	    
+	
 	    //marker.remove();
-	    if( ref ) marker.insertBefore(ref);
-	    else marker.appendTo(el);
-	    
+	    if (ref) marker.insertBefore(ref);else marker.appendTo(el);
+	
 	    return this;
 	  };
-	  
-	  var hide = function() {
+	
+	  var hide = function hide() {
 	    collapse();
 	    marker.remove();
 	    return this;
 	  };
-	  
-	  var expand = function() {
+	
+	  var expand = function expand() {
 	    marker.ac('ff-marker-open');
 	    return this;
 	  };
-	  
-	  var collapse = function() {
+	
+	  var collapse = function collapse() {
 	    marker.rc('ff-marker-open');
 	    return this;
 	  };
-	  
-	  marker.find('.ff-marker-head').on('click', function() {
+	
+	  marker.find('.ff-marker-head').on('click', function () {
 	    update();
 	    marker.tc('ff-marker-open');
 	  });
-	  
-	  el.on('click', function(e) {
-	    if( !marker[0].contains(e.target) ) marker.rc('ff-marker-open');
-	  }).on('mousemove', function(e) {
-	    if( part.editmode() ) {
+	
+	  el.on('click', function (e) {
+	    if (!marker[0].contains(e.target)) marker.rc('ff-marker-open');
+	  }).on('mousemove', function (e) {
+	    if (part.editmode()) {
 	      var target = e.target;
 	      var y = e.pageY;
-	      
-	      if( target === el || target === marker ) return;
+	
+	      if (target === el || target === marker) return;
 	      var children = el.children();
 	      var current;
-	      children.each(function() {
-	        if( this.contains(target) ) current = this;
+	      children.each(function () {
+	        if (this.contains(target)) current = this;
 	      });
-	      
-	      if( !current ) return;
-	      
+	
+	      if (!current) return;
+	
 	      var index = children.indexOf(current);
-	      if( y > getOffsetTop(current) + (current.offsetHeight / 2) ) index = index + 1;
+	      if (y > getOffsetTop(current) + current.offsetHeight / 2) index = index + 1;
 	      show(index);
 	    } else {
 	      hide();
 	    }
 	  });
-	  
+	
 	  this.show = show;
 	  this.hide = hide;
 	  this.expand = expand;
 	  this.collapse = collapse;
-	  this.getIndex = function() {
+	  this.getIndex = function () {
 	    return el.children().indexOf(marker[0]);
 	  };
-	  this.isExpanded = function() {
-	    return marker.hc('ff-marker-open')
+	  this.isExpanded = function () {
+	    return marker.hc('ff-marker-open');
 	  };
 	}
 	
@@ -6697,11 +6869,13 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 58 */
 /***/ function(module, exports) {
 
-	module.exports = function(el) {
+	"use strict";
+	
+	module.exports = function (el) {
 	  var top = 0;
 	  do {
-	    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
-	  } while( el = el.offsetParent );
+	    if (!isNaN(el.offsetLeft)) top += el.offsetTop;
+	  } while (el = el.offsetParent);
 	  return top;
 	};
 
@@ -6740,7 +6914,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -50px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
+	exports.push([module.id, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
 	
 	// exports
 
@@ -6749,6 +6923,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 61 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var modal = __webpack_require__(32);
 	var each = __webpack_require__(2);
 	var $ = __webpack_require__(7);
@@ -6759,68 +6935,63 @@ return /******/ (function(modules) { // webpackBootstrap
 	function DnD(part) {
 	  var el = $(part.dom());
 	  var marker = $('<div class="ff-dnd-marker"></div>');
-	  
-	  var move = function(target, y) {
-	    if( !target ) return;
-	    
-	    if( y < getOffsetTop(target) + (target.offsetHeight / 2) ) {
+	
+	  var move = function move(target, y) {
+	    if (!target) return;
+	
+	    if (y < getOffsetTop(target) + target.offsetHeight / 2) {
 	      marker.insertBefore(target);
 	    } else {
 	      marker.insertAfter(target);
 	    }
 	  };
-	  
-	  var hide = function() {
+	
+	  var hide = function hide() {
 	    marker.remove();
 	  };
-	  
-	  var current = function(target) {
-	    if( target === el || target === marker ) return;
+	
+	  var current = function current(target) {
+	    if (target === el || target === marker) return;
 	    var children = el.children();
 	    var current;
-	    children.each(function() {
-	      if( this.contains(target) ) current = this;
+	    children.each(function () {
+	      if (this.contains(target)) current = this;
 	    });
-	    
+	
 	    return current;
 	  };
-	  
-	  var update = function() {
-	    if( part.editmode() )
-	      el.find('.ff-part').attr('draggable', true);
-	    else
-	      el.find('.ff-part').attr('draggable', null);
+	
+	  var update = function update() {
+	    if (part.editmode()) el.find('.ff-part').attr('draggable', true);else el.find('.ff-part').attr('draggable', null);
 	  };
-	  
-	  el.on('dragover', function(e) {
-	    if( !part.editmode() ) return;
+	
+	  el.on('dragover', function (e) {
+	    if (!part.editmode()) return;
 	    e.stopPropagation();
 	    e.preventDefault();
-	    
+	
 	    var dragging = part.context().dragging;
-	    if( !e.target.contains(dragging) ) {
+	    if (!e.target.contains(dragging)) {
 	      move(current(e.target), e.pageY);
 	    } else {
 	      hide();
 	    }
-	  })
-	  .on('dragend', function(e) {
+	  }).on('dragend', function (e) {
 	    // hide marker
 	    hide();
-	  })
-	  .on('drop', function(e) {
-	    if( !part.editmode() ) return;
+	  }).on('drop', function (e) {
+	    if (!part.editmode()) return;
 	    e.stopPropagation();
 	    e.preventDefault();
-	    
+	
 	    var dragging = part.context().dragging;
-	    if( dragging && !e.target.contains(dragging) ) {
+	    if (dragging && !e.target.contains(dragging)) {
 	      part.insert(dragging, marker[0]);
-	    } else if( e.dataTransfer && e.dataTransfer.files ) {
+	    } else if (e.dataTransfer && e.dataTransfer.files) {
 	      part.insert(e.dataTransfer.files);
 	    }
 	  });
-	  
+	
 	  this.update = update;
 	}
 	
@@ -6901,7 +7072,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-article {\n  position: relative;\n  padding: 15px;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n", ""]);
+	exports.push([module.id, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n", ""]);
 	
 	// exports
 
@@ -6910,6 +7081,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 66 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
@@ -6927,139 +7100,112 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return false;
 	}
 	
-	
 	function ParagraphPart() {
 	  Part.apply(this, arguments);
 	}
 	
 	ParagraphPart.prototype = Object.create(Part.prototype, {
 	  oninit: {
-	    value: function(e) {
+	    value: function value(e) {
 	      var part = this;
 	      var el = $(part.dom()).ac('ff-paragraph');
-	      
-	      part.toolbar()
-	      .add({
+	
+	      part.toolbar().add({
 	        type: 'list',
-	        text: '기본폰트',
-	        onselect: function() {
-	          
-	        },
-	        onupdate: function() {
-	          
-	        },
-	        fn: function(e) {
-	          
-	        },
-	        list: [
-	          '기본폰트',
-	          '나눔고딕',
-	          '나눔명조',
-	          'Helvetica',
-	          'Times New Roman'
-	        ]
-	      })
-	      .add({
+	        text: '<i class="fa fa-font"></i>',
+	        onselect: function onselect(selected) {},
+	        onupdate: function onupdate() {},
+	        fn: function fn(e) {},
+	        list: ['기본폰트', '나눔고딕', '나눔명조', 'Helvetica', 'Times New Roman']
+	      }).add({
 	        text: '<i class="fa fa-bold"></i>',
 	        tooltip: '굵게',
-	        onupdate: function() {
+	        onupdate: function onupdate() {
 	          var range = this.owner().range();
-	          if( !range ) return this.enable(false);
-	          
+	          if (!range) return this.enable(false);
+	
 	          this.enable(true);
-	          if( iswrapped(range, 'b') ) this.active(true);
+	          if (iswrapped(range, 'b')) this.active(true);
 	        },
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'b') ) unwrap(range, 'b');
-	          else wrap(range, $('<b/>')[0]);
+	          if (!range) return;
+	
+	          if (iswrapped(range, 'b')) unwrap(range, 'b');else wrap(range, $('<b/>')[0]);
 	        }
-	      })
-	      .add({
+	      }).add({
 	        text: '<i class="fa fa-underline"></i>',
 	        tooltip: '밑줄',
-	        onupdate: function() {
+	        onupdate: function onupdate() {
 	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'span.underline') ) this.active(true);
+	          if (!range) return this.active(false);
+	
+	          if (iswrapped(range, 'span.underline')) this.active(true);
 	        },
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'span.underline') ) unwrap(range, 'span.underline');
-	          else wrap(range, $('<span class="underline" style="text-decoration:underline;" />')[0]);
+	          if (!range) return;
+	
+	          if (iswrapped(range, 'span.underline')) unwrap(range, 'span.underline');else wrap(range, $('<span class="underline" style="text-decoration:underline;" />')[0]);
 	        }
-	      })
-	      .add({
+	      }).add({
 	        text: '<i class="fa fa-italic"></i>',
 	        tooltip: '이탤릭',
-	        onupdate: function() {
+	        onupdate: function onupdate() {
 	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'i') ) this.active(true);
+	          if (!range) return this.active(false);
+	
+	          if (iswrapped(range, 'i')) this.active(true);
 	        },
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'i') ) unwrap(range, 'i');
-	          else wrap(range, $('<i />')[0]);
+	          if (!range) return;
+	
+	          if (iswrapped(range, 'i')) unwrap(range, 'i');else wrap(range, $('<i />')[0]);
 	        }
-	      })
-	      .add({
+	      }).add({
 	        text: '<i class="fa fa-strikethrough"></i>',
 	        tooltip: '가로줄',
-	        onupdate: function() {
+	        onupdate: function onupdate() {
 	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'span.strikethrough') ) this.active(true);
+	          if (!range) return this.active(false);
+	
+	          if (iswrapped(range, 'span.strikethrough')) this.active(true);
 	        },
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'span.strikethrough') ) unwrap(range, 'span.strikethrough');
-	          else wrap(range, $('<span class="strikethrough" style="text-decoration:line-through;" />')[0]);
+	          if (!range) return;
+	
+	          if (iswrapped(range, 'span.strikethrough')) unwrap(range, 'span.strikethrough');else wrap(range, $('<span class="strikethrough" style="text-decoration:line-through;" />')[0]);
 	        }
-	      })
-	      .add({
+	      }).add({
 	        text: '<i class="fa fa-link"></i>',
 	        tooltip: '링크',
-	        onupdate: function() {
+	        onupdate: function onupdate() {
 	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'a') ) this.active(true);
+	          if (!range) return this.active(false);
+	
+	          if (iswrapped(range, 'a')) this.active(true);
 	        },
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'a') ) unwrap(range, 'a');
-	          else wrap(range, $('<a href="" />').html('link')[0]);
+	          if (!range) return;
+	
+	          if (iswrapped(range, 'a')) unwrap(range, 'a');else wrap(range, $('<a href="" />').html('link')[0]);
 	        }
-	      })
-	      .add({
+	      }).add({
 	        text: '<i class="fa fa-align-left"></i>',
 	        tooltip: '정렬',
-	        onupdate: function() {
+	        onupdate: function onupdate() {
 	          var btn = this;
-	          if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-	          else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-	          else  btn.text('<i class="fa fa-align-left"></i>');
+	          if (btn.align == 'center') btn.text('<i class="fa fa-align-center"></i>');else if (btn.align == 'right') btn.text('<i class="fa fa-align-right"></i>');else btn.text('<i class="fa fa-align-left"></i>');
 	        },
-	        fn: function(e) {
+	        fn: function fn(e) {
 	          var btn = this;
-	          if( btn.align == 'center' ) {
+	          if (btn.align == 'center') {
 	            el.css('text-align', 'right');
 	            btn.align = 'right';
-	          } else if( btn.align == 'right' ) {
+	          } else if (btn.align == 'right') {
 	            el.css('text-align', 'left');
 	            btn.align = 'left';
 	          } else {
@@ -7068,28 +7214,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	          }
 	        }
 	      });
-	      
-	      var placeholder = $('<div class="ff-paragraph-placeholder" />').html(el.attr('placeholder') || ParagraphPart.placeholder || '내용을 입력해주세요');
-	      
+	
+	      var placeholder = $('<div class="ff-paragraph-placeholder" />').html(el.attr('placeholder') || ParagraphPart.placeholder);
+	
 	      part._placeholder = {
-	        html: function(html) {
-	          placeholder.html(html);
+	        html: function html(_html) {
+	          placeholder.html(_html);
 	          return part;
 	        },
-	        show: function() {
-	          if( !el.text().split('\n').join().trim() ) el.empty().append(placeholder);
+	        show: function show() {
+	          if (!el.text().split('\n').join().trim()) el.empty().append(placeholder);
 	          return part;
 	        },
-	        hide: function() {
+	        hide: function hide() {
 	          placeholder.remove();
 	          return part;
 	        }
 	      };
-	      
+	
 	      placeholder.show();
-	      
-	      el.on('dragstart', function(e) {
-	        if( part.editmode() ) {
+	
+	      el.on('dragstart', function (e) {
+	        if (part.editmode()) {
 	          e.stopPropagation();
 	          e.preventDefault();
 	        }
@@ -7097,17 +7243,17 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  },
 	  onfocus: {
-	    value: function() {
-	      if( !this.editmode() ) return;
-	        
+	    value: function value() {
+	      if (!this.editmode()) return;
+	
 	      var el = this.dom();
 	      this.placeholder().hide();
-	      
+	
 	      // 커서가 다른 곳에 있다면 옮긴다.
 	      var selection = window.getSelection();
 	      var range = selection.rangeCount && selection.getRangeAt(0);
-	      
-	      if( !range || !el.contains(range.startContainer) ) {
+	
+	      if (!range || !el.contains(range.startContainer)) {
 	        var lastindex = el.childNodes.length;
 	        range = document.createRange();
 	        range.setStart(el, lastindex);
@@ -7115,21 +7261,21 @@ return /******/ (function(modules) { // webpackBootstrap
 	        selection.removeAllRanges();
 	        selection.addRange(range);
 	      }
-	      
+	
 	      el.focus();
 	    }
 	  },
 	  onblur: {
-	    value: function() {
-	      if( !this.editmode() ) return;
-	      
+	    value: function value() {
+	      if (!this.editmode()) return;
+	
 	      this.placeholder().show();
 	    }
 	  },
 	  onmodechange: {
-	    value: function(e) {
+	    value: function value(e) {
 	      var el = $(this.dom());
-	      if( e.detail.editmode ) {
+	      if (e.detail.editmode) {
 	        el.attr('contenteditable', true);
 	        this.placeholder().show();
 	      } else {
@@ -7139,29 +7285,26 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	  },
 	  create: {
-	    value: function(arg) {
+	    value: function value(arg) {
 	      var html = typeof arg == 'string' ? arg : '';
 	      return $('<p/>').attr('ff-type', 'paragraph').ac('ff-paragraph').html(html)[0];
 	    }
 	  },
 	  placeholder: {
-	    value: function(placeholder) {
-	      if( !arguments.length ) return this._placeholder;
+	    value: function value(placeholder) {
+	      if (!arguments.length) return this._placeholder;
 	      this._placeholder.html(placeholder);
 	      return this;
 	    }
 	  },
 	  click: {
-	    value: function() {
+	    value: function value() {
 	      this.focus();
 	    }
 	  }
 	});
 	
 	module.exports = ParagraphPart;
-	
-	
-
 
 /***/ },
 /* 67 */
@@ -7198,7 +7341,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph .ff-paragraph-placeholder {\n  min-height: 30px;\n  line-height: 30px;\n}\n", ""]);
 	
 	// exports
 
@@ -7207,6 +7350,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
@@ -7214,21 +7359,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function Separator() {
 	  Part.apply(this, arguments);
-	  
+	
 	  var el = $(this.dom()).ac('ff-separator');
-	  
-	  this.toolbar()
-	  .add({
+	
+	  this.toolbar().add({
 	    text: '<i class="fa fa-ellipsis-h"></i>',
 	    tooltip: '점선',
-	    fn: function(e) {
+	    fn: function fn(e) {
 	      el.tc('ff-separator-dashed');
 	    }
-	  })
-	  .add({
+	  }).add({
 	    text: '<i class="fa fa-arrows-h"></i>',
 	    tooltip: '넓게',
-	    fn: function(e) {
+	    fn: function fn(e) {
 	      el.tc('ff-separator-wide');
 	    }
 	  });
@@ -7236,7 +7379,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	Separator.prototype = Object.create(Part.prototype, {
 	  create: {
-	    value: function(arg) {
+	    value: function value(arg) {
 	      return $('<div ff-type="separator" />')[0];
 	    }
 	  }
@@ -7279,7 +7422,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 15px;\n  max-width: 150px;\n  margin: 0 auto;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 15px;\n}\n.ff-separator.ff-separator-wide:before {\n  max-width: 100%;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
+	exports.push([module.id, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  max-width: 150px;\n  margin: 0 auto;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-wide:before {\n  max-width: 100%;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
 	
 	// exports
 
@@ -7288,6 +7431,10 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
@@ -7295,131 +7442,99 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function ImagePart(el) {
 	  Part.call(this, el);
-	  
+	
 	  var el = $(this.dom()).ac('ff-image');
-	  
-	  this.toolbar()
-	  .position('inside top center')
-	  .add({
+	
+	  this.toolbar().position('inside top center').add({
 	    text: '<i class="fa fa-angle-right"></i>',
 	    tooltip: '우측플로팅',
-	    fn: function(e) {
+	    fn: function fn(e) {
 	      this.owner().floating('right');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-angle-up"></i>',
 	    tooltip: '플로팅제거',
-	    fn: function(e) {
+	    fn: function fn(e) {
 	      this.owner().floating(false);
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-angle-left"></i>',
 	    tooltip: '좌측플로팅',
-	    fn: function(e) {
+	    fn: function fn(e) {
 	      this.owner().floating('left');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-circle-o"></i>',
 	    tooltip: '원본크기',
-	    fn: function(e) {
-	      el
-	      .rc('ff-image-size-full')
-	      .rc('ff-image-size-medium');
+	    fn: function fn(e) {
+	      el.rc('ff-image-size-full').rc('ff-image-size-medium');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-square-o"></i>',
 	    tooltip: '기본크기',
-	    fn: function(e) {
-	      el
-	      .rc('ff-image-size-full')
-	      .ac('ff-image-size-medium');
+	    fn: function fn(e) {
+	      el.rc('ff-image-size-full').ac('ff-image-size-medium');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-arrows-alt"></i>',
 	    tooltip: '풀사이즈',
-	    fn: function(e) {
-	      el
-	      .rc('ff-image-size-medium')
-	      .ac('ff-image-size-full');
+	    fn: function fn(e) {
+	      el.rc('ff-image-size-medium').ac('ff-image-size-full');
 	    }
 	  }, 0);
 	}
 	
 	ImagePart.prototype = Object.create(Part.prototype, {
 	  ondragend: {
-	    value: function(e) {
-	      if( this.editmode() && !$(this.dom()).parent().hc('ff-image-float-wrap') ) {
+	    value: function value(e) {
+	      if (this.editmode() && !$(this.dom()).parent().hc('ff-image-float-wrap')) {
 	        this.floating(false);
 	      }
 	    }
 	  },
 	  create: {
-	    value: function(arg) {
+	    value: function value(arg) {
 	      var src;
 	      var title;
-	      
-	      if( typeof arg === 'object' ) {
+	
+	      if ((typeof arg === 'undefined' ? 'undefined' : _typeof(arg)) === 'object') {
 	        src = arg.src;
 	        title = arg.title;
 	      } else {
 	        src = arg;
 	      }
-	      
-	      return $('<img/>')
-	      .attr('ff-type', 'image')
-	      .attr('title', title)
-	      .src(src || 'https://goo.gl/KRjd3U')[0];
+	
+	      return $('<img/>').attr('ff-type', 'image').attr('title', title).src(src || 'https://goo.gl/KRjd3U')[0];
 	    }
 	  },
 	  floating: {
-	    value: function(direction) {
-	      if( !arguments.length ) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
-	      
+	    value: function value(direction) {
+	      if (!arguments.length) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
+	
 	      var ctx = this.context();
 	      var el = $(this.dom()).unwrap('.ff-image-float-wrap');
 	      var paragraph = Part(el[0].nextSibling);
-	      
-	      if( !(paragraph instanceof ctx.Paragraph) ) {
+	
+	      if (!(paragraph instanceof ctx.Paragraph)) {
 	        paragraph = new ctx.Paragraph();
 	      }
-	      
-	      if( direction === 'left' ) {
-	        el
-	        .rc('ff-image-float-right')
-	        .ac('ff-image-float-left')
-	        .wrap('<div class="ff-image-float-wrap" />')
-	        .parent()
-	        .on('click', function(e) {
-	          if( e.target !== el[0] ) paragraph.focus();
-	        })
-	        .append(paragraph.dom());
-	      } else if( direction === 'right' ) {
-	        el
-	        .rc('ff-image-float-left')
-	        .ac('ff-image-float-right')
-	        .wrap('<div class="ff-image-float-wrap" />')
-	        .parent()
-	        .on('click', function(e) {
-	          if( e.target !== el[0] ) paragraph.focus();
-	        })
-	        .append(paragraph.dom());
+	
+	      if (direction === 'left') {
+	        el.rc('ff-image-float-right').ac('ff-image-float-left').wrap('<div class="ff-image-float-wrap" />').parent().on('click', function (e) {
+	          if (e.target !== el[0]) paragraph.focus();
+	        }).append(paragraph.dom());
+	      } else if (direction === 'right') {
+	        el.rc('ff-image-float-left').ac('ff-image-float-right').wrap('<div class="ff-image-float-wrap" />').parent().on('click', function (e) {
+	          if (e.target !== el[0]) paragraph.focus();
+	        }).append(paragraph.dom());
 	      } else {
-	        el
-	        .rc('ff-image-float-right')
-	        .rc('ff-image-float-left');
+	        el.rc('ff-image-float-right').rc('ff-image-float-left');
 	      }
 	    }
 	  }
 	});
 	
 	module.exports = ImagePart;
-	
-
 
 /***/ },
 /* 73 */
@@ -7465,6 +7580,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
@@ -7472,48 +7589,44 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function VideoPart() {
 	  Part.apply(this, arguments);
-	  
+	
 	  var el = $(this.dom()).ac('ff-video');
-	  
-	  this.toolbar()
-	  .add({
+	
+	  this.toolbar().add({
 	    text: '<i class="fa fa-circle-o"></i>',
 	    tooltip: '작은크기',
-	    fn: function(e) {
-	      el
-	      .rc('ff-video-size-fit')
-	      .ac('ff-video-size-narrow');
+	    fn: function fn(e) {
+	      el.rc('ff-video-size-fit').ac('ff-video-size-narrow');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-arrows-alt"></i>',
 	    tooltip: '화면에 맞춤',
-	    fn: function(e) {
-	      el
-	      .rc('ff-video-size-narrow')
-	      .ac('ff-video-size-fit');
+	    fn: function fn(e) {
+	      el.rc('ff-video-size-narrow').ac('ff-video-size-fit');
 	    }
 	  }, 0);
 	}
 	
 	VideoPart.prototype = Object.create(Part.prototype, {
 	  onmodechange: {
-	    value: function() {
+	    value: function value() {
 	      var el = $(this.dom());
-	      if( this.editmode() ) el.find('.mask').show();
-	      else el.find('.mask').hide();
+	      if (this.editmode()) {
+	        if (!el.find('.mask').length) $('<div class="mask"></div>').appendTo(el);
+	        el.find('.mask').show();
+	      } else {
+	        el.find('.mask').hide();
+	      }
 	    }
 	  },
 	  create: {
-	    value: function(arg) {
-	      return $('<div ff-type="video" />').html('<div class="ff-video-embed-responsive ff-video-embed-responsive-16by9"><iframe class="ff-video-embed-responsive-item" src="' + (arg || 'https://www.youtube.com/embed/aoKNQF2a4xY') + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div><div class="mask"></div>')[0];
+	    value: function value(arg) {
+	      return $('<div ff-type="video" />').html('<div class="ff-video-embed-responsive ff-video-embed-responsive-16by9"><iframe class="ff-video-embed-responsive-item" src="' + (arg || 'https://www.youtube.com/embed/aoKNQF2a4xY') + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
 	    }
 	  }
 	});
 	
 	module.exports = VideoPart;
-	
-
 
 /***/ },
 /* 76 */
@@ -7559,6 +7672,8 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
+	'use strict';
+	
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
@@ -7566,96 +7681,79 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function RowPart(el) {
 	  Part.call(this, el);
-	  
+	
 	  var el = $(this.dom()).ac('ff-row');
-	  
-	  this.toolbar()
-	  .add({
+	
+	  this.toolbar().add({
 	    text: '<i class="fa fa-angle-double-up"></i>',
 	    tooltip: '상단정렬',
-	    fn: function(e) {
-	      el
-	      .rc('ff-row-valign-bottom')
-	      .rc('ff-row-valign-middle')
-	      .ac('ff-row-valign-top');
+	    fn: function fn(e) {
+	      el.rc('ff-row-valign-bottom').rc('ff-row-valign-middle').ac('ff-row-valign-top');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-dot-circle-o"></i>',
 	    tooltip: '중앙정렬',
-	    fn: function(e) {
-	      el
-	      .rc('ff-row-valign-bottom')
-	      .rc('ff-row-valign-top')
-	      .ac('ff-row-valign-middle');
+	    fn: function fn(e) {
+	      el.rc('ff-row-valign-bottom').rc('ff-row-valign-top').ac('ff-row-valign-middle');
 	    }
-	  }, 0)
-	  .add({
+	  }, 0).add({
 	    text: '<i class="fa fa-angle-double-down"></i>',
 	    tooltip: '하단정렬',
-	    fn: function(e) {
-	      el
-	      .rc('ff-row-valign-top')
-	      .rc('ff-row-valign-middle')
-	      .ac('ff-row-valign-bottom');
+	    fn: function fn(e) {
+	      el.rc('ff-row-valign-top').rc('ff-row-valign-middle').ac('ff-row-valign-bottom');
 	    }
 	  }, 0);
-	  
-	  this.on('click', function() {
+	
+	  this.on('click', function () {
 	    this.toolbar().show();
-	  })
-	  .on('dragend', function(e) {
+	  }).on('dragend', function (e) {
 	    this.validate();
 	  });
 	}
 	
 	RowPart.prototype = Object.create(Part.prototype, {
 	  create: {
-	    value: function(items) {
+	    value: function value(items) {
 	      var el = $('<div ff-type="row" />')[0];
 	      this.add(items);
 	      return el;
 	    }
 	  },
 	  validate: {
-	    value: function() {
+	    value: function value() {
 	      var el = $(this.dom());
-	      el.find('.ff-row-cell').each(function() {
-	        if( !this.children.length ) this.parentNode.removeChild(this);
+	      el.find('.ff-row-cell').each(function () {
+	        if (!this.children.length) this.parentNode.removeChild(this);
 	      });
-	      
+	
 	      var cells = el.find('.ff-row-row').children('.ff-row-cell');
 	      var cellwidth = 100 / cells.length;
-	      cells.each(function() {
+	      cells.each(function () {
 	        $(this).css('width', cellwidth + '%');
 	      });
-	      
+	
 	      return this;
 	    }
 	  },
 	  add: {
-	    value: function(items) {
+	    value: function value(items) {
 	      var el = $(this.dom());
 	      var row = el.find('.ff-row-row');
-	      
-	      if( !row.length ) row = $('<div class="ff-row-row" />').appendTo(el);
-	      
-	      $(items).each(function(i, item) {
-	        $('<div class="ff-row-cell" />')
-	        .append(function() {
-	          return (item && item.dom && item.dom()) || item;
-	        })
-	        .appendTo(row);
+	
+	      if (!row.length) row = $('<div class="ff-row-row" />').appendTo(el);
+	
+	      $(items).each(function (i, item) {
+	        $('<div class="ff-row-cell" />').append(function () {
+	          return item && item.dom && item.dom() || item;
+	        }).appendTo(row);
 	      });
-	      
+	
 	      return this;
 	    }
 	  }
 	});
 	
 	module.exports = RowPart;
-	
-
 
 /***/ },
 /* 79 */
@@ -7701,4 +7799,4 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ ])
 });
 ;
-//# sourceMappingURL=firefront.js.map
+//# sourceMappingURL=ff.js.map

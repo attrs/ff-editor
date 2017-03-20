@@ -1,41 +1,34 @@
 import {Part} from 'firefront';
 
 class CustomPart extends Part {
+  static get matches() {
+    return ['x-custom'];
+  }
+  
   constructor(el) {
     super(el);
     
     this.toolbar().clear().add({
       text: '<i class="fa fa-pencil"></i>',
       fn: function(e) {
-        router.href('/config', {
-          data: this.data,
-          done: function() {
-          
-          }
-        }, false);
       }
     })
     .add({
       text: '<i class="fa fa-list"></i>',
       fn: function(e) {
-        router.href('/select', {
-          done: function() {
-          
-          }
-        }, false);
       }
     });
   }
   
-  onFocus(e) {
+  onfocus(e) {
     console.log('focus', e);
   }
   
-  onRender(e) {
+  onrender(e) {
     console.log('render', e);
   }
   
-  onUpdate(e) {
+  onupdate(e) {
     console.log('update', e);
   }
   

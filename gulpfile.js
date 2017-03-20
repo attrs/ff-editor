@@ -3,31 +3,51 @@
 const path = require('path');
 const gulp = require('gulp');
 const gutil = require('gulp-util');
-const rename = require("gulp-rename");
+const rename = require('gulp-rename');
 const uglify = require('gulp-uglify');
 const rimraf = require('gulp-rimraf');
 const header = require('gulp-header');
-const webpack = require('webpack-stream');
-
+const less = require('gulp-less');
+const csso = require('gulp-csso');
+const sourcemaps = require('gulp-sourcemaps');
+const autoprefixer = require('gulp-autoprefixer');
+const webpack = require('webpack');
 const pkg = require('./package.json');
-const dist = path.join(__dirname, 'dist');
 
 gulp.task('build.js.clean', () => {
-  return gulp.src('dist', { read: false })
+  return gulp.src(['dist', 'demo/js', 'demo/css'], { read: false })
     .pipe(rimraf());
 });
 
-gulp.task('build.webpack', ['build.js.clean'], () => {
-  var conf = require('./webpack.config.js');
-  delete conf.output.path;
-  
-  return gulp.src('lib/index.js')
-    .pipe(webpack(conf))
-    .pipe(gulp.dest(dist));
+gulp.task('build.webpack', ['build.js.clean'], (done) => {
+  webpack(require('./webpack.config.js'), function(err, stats) {
+    if( err ) throw new gutil.PluginError('webpack', err);
+    gutil.log('[webpack]', stats.toString({
+      colors: true,
+      children: true,
+      chunks: true,
+      modules: true
+    }));
+    done();
+  });
 });
 
-gulp.task('build', ['build.webpack'], () => {
-  return gulp.src(path.join(dist, 'firefront.js'))
+gulp.task('build.demo', () => {
+  return gulp.src(path.join('demo/less/index.less'))
+    .pipe(less({
+      paths: ['demo']
+    }))
+    .pipe(autoprefixer())
+    .pipe(gulp.dest('demo/css'))
+    .pipe(csso())
+    .pipe(rename({
+      suffix: '.min'
+    }))
+    .pipe(gulp.dest('demo/css'));
+});
+
+gulp.task('build', ['build.webpack', 'build.demo'], () => {
+  return gulp.src(path.join('dist/ff.js'))
     .pipe(header([
       '/*!',
       '* <%= pkg.name %>',
@@ -39,13 +59,13 @@ gulp.task('build', ['build.webpack'], () => {
       '*/',
       ''
     ].join('\n'), { pkg: pkg }))
-    .pipe(gulp.dest(dist))
+    .pipe(gulp.dest('dist'))
     .pipe(uglify())
     .pipe(header('/*! <%= pkg.name %> - attrs */', { pkg: pkg }))
     .pipe(rename({
       suffix: '.min'
     }))
-    .pipe(gulp.dest(dist));
+    .pipe(gulp.dest('dist'));
 });
 
 // conclusion
