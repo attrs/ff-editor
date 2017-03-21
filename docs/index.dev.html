@@ -15,11 +15,11 @@
 <body>
   <header class="topbar">
     <div class="logo pullleft">
-      <a><b>FF</b>Editor</a>
+      <a href="https://github.com/attrs/firefront" target="_blank"><b>FF</b>Editor</a>
     </div>
     <ul class="nav nav-pills pullright">
       <li>
-        <a href="javascript:reload();">Reload</a>
+        <a href="javascript:load();">Load</a>
       </li>
       <li>
         <a href="javascript:save();">Save</a>
@@ -33,29 +33,25 @@
         </a>
         <ul class="dropdown-menu dropdown-menu-right" role="menu">
           <li>
-            <a href="javascript:load('a');" route>Example A</a>
+            <a href="javascript:preset('spongebob');" route>SpongeBob SquarePants</a>
           </li>
           <li>
-            <a href="javascript:load('b');" route>Example B</a>
+            <a href="javascript:preset('patrick');" route>Patrick Star</a>
+          </li>
+          <li>
+            <a href="javascript:preset('squidward');" route>Squidward Tentacles</a>
+          </li>
+          <li>
+            <a href="javascript:preset('mrkrabs');" route>Eugene H. Krabs</a>
           </li>
         </ul>
       </li>
     </ul>
   </header>
   
-  <div class="contents">
-    <h1 ff-id="title">SpongeBob SquarePants</h1>
-    <div id="article" class="article" ff-type="article" placeholder="Please enter the content.">
-      <img src="https://goo.gl/cbUVH8" />
-      <hr />
-      <p>SpongeBob SquarePants is an American animated television series created by marine biologist and animator Stephen Hillenburg for Nickelodeon. The series chronicles the adventures and endeavors of the title character and his various friends in the fictional underwater city of Bikini Bottom. The series' popularity has made it a media franchise, as well as the highest rated series to ever air on Nickelodeon, and the most distributed property of MTV Networks. As of 2015, the media franchise has generated $12 billion in merchandising revenue for Nickelodeon.[2]
-
-Many of the ideas for the series originated in an unpublished educational comic book titled The Intertidal Zone, which Hillenburg created in 1989.[3] He began developing SpongeBob SquarePants into a television series in 1996 upon the cancellation of Rocko's Modern Life, and turned to Tom Kenny, who had worked with him on that series, to voice the title character. SpongeBob was originally going to be named SpongeBoy, and the series was to be called SpongeBoy Ahoy!, but these were both changed, as the name was already trademarked.
-
-Nickelodeon held a preview for the series in the United States on May 1, 1999, following the television airing of the 1999 Kids' Choice Awards. The series officially premiered on July 17, 1999. It has received worldwide critical acclaim since its premiere and gained enormous popularity by its second season. A feature film, The SpongeBob SquarePants Movie, was released in theaters on November 19, 2004, and a sequel was released on February 6, 2015. On July 21, 2012, the series was renewed and aired its ninth season, beginning with the episode "Extreme Spots".
-
-The series has won a variety of awards, including six Annie Awards, eight Golden Reel Awards, two Emmy Awards, 12 Kids' Choice Awards, and two BAFTA Children's Awards. Despite its widespread popularity, the series has been involved in several public controversies, including one centered on speculation over SpongeBob's intended sexual orientation, and another focusing on the perceived declining quality of the show's content since the release of the first film. In 2011, a newly described species of fungi, Spongiforma squarepantsii, was named after the cartoon's title character.</p>
-    </div>
+  <div class="article">
+    <h1 id="title" ff-type="text" placeholder="Please enter the title."></h1>
+    <div id="content" class="content" ff-type="article" placeholder="Please enter the content."></div>
   </div>
 </body>
 </html>

@@ -2,15 +2,12 @@ var ff = require('firefront');
 var $ = require('tinyselector');
 var Part = ff.Part;
 var CustomPart = require('./custom/index.es6.js').default;
+var tpls = require('./tpls/');
 
 ff.ready(function() {
-  console.log('Ready!');
-  
   $('.dropdown').on('click', function() {
     $(this).tc('open');
   });
-  
-  var article = Part(document.getElementById('article'));
   
   window.toggleMode = function(el) {
     var editmode = ff.editmode();
@@ -23,15 +20,18 @@ ff.ready(function() {
     }
   };
   
-  window.reload = function() {
-    
+  window.load = function() {
+    ff.data(JSON.parse(localStorage.getItem('article') || '{}'));
   };
   
   window.save = function() {
-    console.log('html', article.html());
+    localStorage.setItem('article', JSON.stringify(ff.data()));
   };
   
-  window.load = function(tpl) {
-    
+  window.preset = function(name) {
+    ff.data(tpls[name]);
   };
+  
+  if( localStorage.getItem('article') ) window.load();
+  else window.preset('spongebob');
 });
