@@ -15,7 +15,7 @@
     "async-each-series": "^1.1.0",
     "gulp-uglify": "^2.1.2",
     "tinyevent": "^0.1.2",
-    "tinyselector": "^0.1.6",
+    "tinyselector": "^0.1.7",
     "x-modal": "^0.1.11"
   },
   "devDependencies": {
