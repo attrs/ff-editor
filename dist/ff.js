@@ -7038,6 +7038,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    e.preventDefault();
 	    
 	    var dragging = part.context().dragging;
+	    
+	    if( e.target === dragging || dragging.contains(e.target) ) return hide();
+	    
 	    if( !e.target.contains(dragging) ) {
 	      move(current(e.target), e.pageY);
 	    }
@@ -7052,9 +7055,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    e.preventDefault();
 	    
 	    var dragging = part.context().dragging;
-	    var ref = marker[0] && marker[0].nextSibling;
+	    var ref = marker[0].nextSibling;
 	    
-	    if( e.target === dragging || dragging.contains(e.target) ) return;
+	    if( e.target === dragging || dragging.contains(e.target) || !dom.contains(marker[0]) ) return;
 	    
 	    if( dragging )
 	      part.insert(dragging, ref);
