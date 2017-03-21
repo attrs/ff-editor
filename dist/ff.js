@@ -70,12 +70,12 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Part = __webpack_require__(29);
 	var ArticlePart = __webpack_require__(30);
 	var ParagraphPart = __webpack_require__(66);
-	var TextPart = __webpack_require__(69);
-	var SeparatorPart = __webpack_require__(72);
-	var ImagePart = __webpack_require__(75);
-	var VideoPart = __webpack_require__(78);
-	var RowPart = __webpack_require__(81);
-	var FilePart = __webpack_require__(84);
+	var TextPart = __webpack_require__(70);
+	var SeparatorPart = __webpack_require__(73);
+	var ImagePart = __webpack_require__(76);
+	var VideoPart = __webpack_require__(79);
+	var RowPart = __webpack_require__(82);
+	var FilePart = __webpack_require__(85);
 	
 	ctx.Toolbar = Toolbar;
 	ctx.Part = Part;
@@ -151,8 +151,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return this;
 	  },
 	  scan: function() {
-	    [].slice.call(document.querySelectorAll('[ff-id], [ff-type]')).reverse().forEach(function(el) {
-	      var id = el.getAttribute('ff-id');
+	    [].slice.call(document.querySelectorAll('[ff], [ff-type]')).reverse().forEach(function(el) {
+	      var id = el.getAttribute('ff-id') || el.id;
 	      var type = el.getAttribute('ff-type') || 'default';
 	      var part = el.__ff__;
 	      
@@ -2779,7 +2779,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n", ""]);
+	exports.push([module.id, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n", ""]);
 	
 	// exports
 
@@ -2803,12 +2803,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  
 	  var el = $(dom);
 	  var self = dom.__ff__ = this;
-	  
-	  var toolbar = new Toolbar(this, {
-	    position: 'top center',
-	    group: 'part',
-	    cls: 'ff-part-toolbar'
-	  });
 	  
 	  var dispatcher = Events(this)
 	  .on('focus', function(e) {
@@ -2896,10 +2890,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this._d = null;
 	  this._n = dom;
 	  this._e = dispatcher;
-	  this._t = toolbar;
 	  
 	  if( dom !== arg ) this.removable(true);
-	  if( el.attr('ff-toolbar') === 'false' ) this.toolbar(false);
+	  if( el.attr('ff-toolbar') === 'false' ) this.toolbar().enable(false);
 	  
 	  dispatcher.fire('init');
 	  if( context.editmode() ) self.editmode(true);
@@ -2909,9 +2902,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	  context: function() {
 	    return context;
 	  },
-	  toolbar: function(enable) {
-	    if( !arguments.length ) return this._t;
-	    if( typeof enable == 'boolean' ) this._t.enable(enable);
+	  toolbar: function() {
+	    return this._t || (this._t = new Toolbar(this));
+	  },
+	  removable: function(removable) {
+	    var toolbar = this.toolbar();
+	    var removebtn = toolbar.get('remove');
+	    if( !arguments.length ) return removebtn ? true : false;
+	    
+	    if( !removable ) toolbar.remove('remove');
+	    
+	    if( !removebtn ) toolbar.last({
+	      id: 'remove',
+	      text: '<i class="fa fa-remove"></i>',
+	      fn: function(e) {
+	        this.owner().remove();
+	      }
+	    });
+	    
 	    return this;
 	  },
 	  dom: function() {
@@ -2933,28 +2941,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    var editmode = this._md = !!b;
 	  
 	    if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
-	    return this;
-	  },
-	  removable: function(removable) {
-	    var toolbar = this.toolbar();
-	    var removebtn = toolbar.get('remove');
-	    
-	    if( !arguments.length ) return removebtn ? true : false;
-	    
-	    if( !removable ) {
-	      toolbar.remove('remove');
-	    }
-	    
-	    if( !removebtn ) {
-	      toolbar.last({
-	        id: 'remove',
-	        text: '<i class="fa fa-remove"></i>',
-	        fn: function(e) {
-	          this.owner().remove();
-	        }
-	      });
-	    }
-	    
 	    return this;
 	  },
 	  data: function(data) {
@@ -3021,6 +3007,28 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    
 	    return null;
+	  },
+	  html: function(html) {
+	    var dom = this.dom();
+	    if( !arguments.length ) {
+	      var editmode = this.editmode();
+	      this.editmode(false);
+	      var html = dom.innerHTML;
+	      this.editmode(editmode);
+	      return html;
+	    }
+	    
+	    dom.innerHTML = html || '';
+	    return this;
+	  },
+	  getData: function() {
+	    return {
+	      html: this.html()
+	    };
+	  },
+	  setData: function(data) {
+	    this.html(data && data.html);
+	    return this;
 	  }
 	};
 	
@@ -3050,9 +3058,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	    if( this.editmode() && e.target === this.dom() ) {
 	      this.validate();
 	      
-	      if( this.children().length === 1 ) {
-	        var p = this.getPart(0);
-	        p && p.click();
+	      var children = this.children();
+	      if( children.length ) {
+	        var p = Part(children[children.length - 1]);
+	        p && p.focus();
 	      }
 	    }
 	  }.bind(this));
@@ -3073,9 +3082,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	proto.validate = function() {
 	  var dom = this.dom();
 	  var el = $(dom);
+	  var editmode = this.editmode();
+	  var context = this.context();
 	  
 	  if( this.editmode() ) {
-	    var context = this.context();
 	    var marker = this.marker();
 	    var viewport = el.children('.ff-article-viewport');
 	    if( !viewport.length ) {
@@ -3094,10 +3104,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this._dnd = DnD(this, viewport[0]);
 	    }
 	    
-	    var ctx = this.context();
-	    var placeholder = el.attr('placeholder');
-	    if( placeholder && !this.children().length ) {
-	      this.insert(new ctx.Paragraph().placeholder(placeholder));
+	    if( !this.children().length ) {
+	      this.insert(new context.Paragraph());
 	    }
 	    
 	    viewport.children().each(function() {
@@ -3119,15 +3127,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	    
 	  } else {
-	    el.empty();
-	    $(this._viewport).nodes().each(function() {
-	      el.append(this);
-	    });
-	    
-	    el.find('.ff-part').each(function() {
-	      var part = Part(this);
-	      if( part && part.editmode() ) part.editmode(false);
-	    });
+	    var viewport = el.children('.ff-article-viewport');
+	    if( viewport.length ) {
+	      el.empty();
+	      $(this._viewport).nodes().each(function() {
+	        el.append(this);
+	      });
+	    }
 	    
 	    this._mk && this._mk.destroy();
 	    this._dnd && this._dnd.destroy();
@@ -3135,6 +3141,15 @@ return /******/ (function(modules) { // webpackBootstrap
 	    delete this._dnd;
 	    delete this._viewport;
 	  }
+	  
+	  var placeholder = el.attr('placeholder');
+	  el.find('.ff-part').each(function() {
+	    var part = Part(this);
+	    if( part ) {
+	      if( part.editmode() != editmode ) part && part.editmode(editmode);
+	      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
+	    }
+	  });
 	};
 	
 	proto.onmodechange = function(e) {
@@ -3194,17 +3209,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	  
 	  this.viewport().innerHTML = html || '';
 	  this.validate();
-	  return this;
-	};
-	
-	proto.getData = function() {
-	  return {
-	    html: this.html()
-	  };
-	};
-	
-	proto.setData = function(data) {
-	  this.html(data && data.html);
 	  return this;
 	};
 	
@@ -7023,11 +7027,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	    
 	    var dragging = part.context().dragging;
 	    var ref = marker[0] && marker[0].nextSibling;
-	    if( dragging ) {
+	    
+	    if( e.target === dragging || dragging.contains(e.target) ) return;
+	    
+	    if( dragging )
 	      part.insert(dragging, ref);
-	    } else if( e.dataTransfer && e.dataTransfer.files ) {
+	    else if( e.dataTransfer && e.dataTransfer.files )
 	      part.insert(e.dataTransfer.files, ref);
-	    }
+	    
 	    hide();
 	  }
 	  
@@ -7136,8 +7143,116 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
+	var buildtoolbar = __webpack_require__(67);
 	
-	__webpack_require__(67);
+	__webpack_require__(68);
+	
+	function ParagraphPart() {
+	  Part.apply(this, arguments);
+	}
+	
+	var proto = ParagraphPart.prototype = Object.create(Part.prototype);
+	
+	proto.oninit = function(e) {
+	  var part = this;
+	  var el = $(part.dom()).ac('ff-paragraph')
+	  .on('dragstart', function(e) {
+	    if( part.editmode() ) {
+	      e.stopPropagation();
+	      e.preventDefault();
+	    }
+	  });
+	  
+	  buildtoolbar(this);
+	  
+	  var placeholder = part._placeholder = (function() {
+	    var node = $('<div class="ff-placeholder"/>'), text;
+	    
+	    return {
+	      text: function(o) {
+	        text = o;
+	        node.html(text);
+	        return this;
+	      },
+	      show: function() {
+	        if( part.editmode() ) el.attr('contenteditable', null);
+	        node.html(text).remove();
+	        if( !part.text() ) el.empty().append(node);
+	        return this;
+	      },
+	      hide: function() {
+	        if( part.editmode() ) el.attr('contenteditable', true);
+	        node.remove();
+	        return this;
+	      }
+	    };
+	  })();
+	  
+	  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
+	};
+	
+	proto.text = function() {
+	  return $(this.dom()).text().split('\n').join().trim();
+	};
+	
+	proto.onfocus = function() {
+	  if( !this.editmode() ) return;
+	  
+	  this.placeholder().hide();
+	  
+	  var el = this.dom();
+	  var selection = window.getSelection();
+	  var range = selection.rangeCount && selection.getRangeAt(0);
+	  
+	  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
+	   || el === range.startContainer
+	   || el === range.endContainer ) {
+	    selection.removeAllRanges();
+	    setTimeout(function() {
+	      el.focus();
+	      el.click();
+	    }, 10);
+	  }
+	};
+	
+	proto.onblur = function() {
+	  if( this.editmode() )
+	    this.placeholder().show();
+	};
+	
+	proto.oneditmode = function(e) {
+	  $(this.dom()).attr('contenteditable', true);
+	  this.placeholder().show();
+	};
+	
+	proto.onviewmode = function(e) {
+	  $(this.dom()).attr('contenteditable', null);
+	  this.placeholder().hide();
+	};
+	
+	proto.create = function(arg) {
+	  var html = typeof arg == 'string' ? arg : '';
+	  return $('<p/>').html(html)[0];
+	};
+	
+	proto.placeholder = function(placeholder) {
+	  if( !arguments.length ) return this._placeholder;
+	  this._placeholder.text(placeholder);
+	  return this;
+	};
+	
+	module.exports = ParagraphPart;
+	
+	
+
+
+/***/ },
+/* 67 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var context = __webpack_require__(1);
+	var Toolbar = context.Toolbar;
+	
 	
 	function wrap(range, node) {
 	  range.surroundContents(node);
@@ -7151,260 +7266,153 @@ return /******/ (function(modules) { // webpackBootstrap
 	  return false;
 	}
 	
-	
-	function ParagraphPart() {
-	  Part.apply(this, arguments);
-	}
-	
-	ParagraphPart.prototype = Object.create(Part.prototype, {
-	  oninit: {
-	    value: function(e) {
-	      var part = this;
-	      var el = $(part.dom()).ac('ff-paragraph');
+	module.exports = function(part) {
+	  var el = part.dom();
+	  
+	  return part.toolbar()
+	  .add({
+	    type: 'list',
+	    text: '<i class="fa fa-font"></i>',
+	    onselect: function(selected) {
 	      
-	      part.toolbar()
-	      .add({
-	        type: 'list',
-	        text: '<i class="fa fa-font"></i>',
-	        onselect: function(selected) {
-	          
-	        },
-	        onupdate: function() {
-	          
-	        },
-	        fn: function(e) {
-	          
-	        },
-	        list: [
-	          '기본폰트',
-	          '나눔고딕',
-	          '나눔명조',
-	          'Helvetica',
-	          'Times New Roman'
-	        ]
-	      })
-	      .add({
-	        text: '<i class="fa fa-bold"></i>',
-	        tooltip: '굵게',
-	        onupdate: function() {
-	          var range = this.owner().range();
-	          if( !range ) return this.enable(false);
-	          
-	          this.enable(true);
-	          if( iswrapped(range, 'b') ) this.active(true);
-	        },
-	        fn: function(e) {
-	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'b') ) unwrap(range, 'b');
-	          else wrap(range, $('<b/>')[0]);
-	        }
-	      })
-	      .add({
-	        text: '<i class="fa fa-underline"></i>',
-	        tooltip: '밑줄',
-	        onupdate: function() {
-	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'span.underline') ) this.active(true);
-	        },
-	        fn: function(e) {
-	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'span.underline') ) unwrap(range, 'span.underline');
-	          else wrap(range, $('<span class="underline" style="text-decoration:underline;" />')[0]);
-	        }
-	      })
-	      .add({
-	        text: '<i class="fa fa-italic"></i>',
-	        tooltip: '이탤릭',
-	        onupdate: function() {
-	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'i') ) this.active(true);
-	        },
-	        fn: function(e) {
-	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'i') ) unwrap(range, 'i');
-	          else wrap(range, $('<i />')[0]);
-	        }
-	      })
-	      .add({
-	        text: '<i class="fa fa-strikethrough"></i>',
-	        tooltip: '가로줄',
-	        onupdate: function() {
-	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'span.strikethrough') ) this.active(true);
-	        },
-	        fn: function(e) {
-	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'span.strikethrough') ) unwrap(range, 'span.strikethrough');
-	          else wrap(range, $('<span class="strikethrough" style="text-decoration:line-through;" />')[0]);
-	        }
-	      })
-	      .add({
-	        text: '<i class="fa fa-link"></i>',
-	        tooltip: '링크',
-	        onupdate: function() {
-	          var range = this.owner().range();
-	          if( !range ) return this.active(false);
-	          
-	          if( iswrapped(range, 'a') ) this.active(true);
-	        },
-	        fn: function(e) {
-	          var range = this.owner().range();
-	          if( !range ) return;
-	          
-	          if( iswrapped(range, 'a') ) unwrap(range, 'a');
-	          else wrap(range, $('<a href="" />').html('link')[0]);
-	        }
-	      })
-	      .add({
-	        text: '<i class="fa fa-align-justify"></i>',
-	        tooltip: '정렬',
-	        onupdate: function() {
-	          var btn = this;
-	          if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-	          else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-	          else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-	          else btn.text('<i class="fa fa-align-justify"></i>');
-	        },
-	        fn: function(e) {
-	          var btn = this;
-	          if( btn.align == 'center' ) {
-	            el.css('text-align', 'right');
-	            btn.align = 'right';
-	          } else if( btn.align == 'right' ) {
-	            el.css('text-align', 'left');
-	            btn.align = 'left';
-	          } else if( btn.align == 'left' ) {
-	            el.css('text-align', '');
-	            btn.align = '';
-	          } else {
-	            el.css('text-align', 'center');
-	            btn.align = 'center';
-	          }
-	        }
-	      });
+	    },
+	    onupdate: function() {
 	      
-	      var placeholder = part._placeholder = (function() {
-	        var node = document.createTextNode(ParagraphPart.placeholder);
-	        
-	        return {
-	          text: function(text) {
-	            node.nodeValue = text || '';
-	            return this;
-	          },
-	          show: function() {
-	            if( !el.text().split('\n').join().trim() ) {
-	              el.empty().append(node);
-	            }
-	            return this;
-	          },
-	          hide: function() {
-	            var p = node.parentNode;
-	            p && p.removeChild(node);
-	            return this;
-	          }
-	        };
-	      })();
+	    },
+	    fn: function(e) {
 	      
-	      placeholder.text(el.attr('placeholder')).show();
+	    },
+	    list: [
+	      '기본폰트',
+	      '나눔고딕',
+	      '나눔명조',
+	      'Helvetica',
+	      'Times New Roman'
+	    ]
+	  })
+	  .add({
+	    text: '<i class="fa fa-bold"></i>',
+	    tooltip: '굵게',
+	    onupdate: function() {
+	      var range = this.owner().range();
+	      if( !range ) return this.enable(false);
 	      
-	      el.on('dragstart', function(e) {
-	        if( part.editmode() ) {
-	          e.stopPropagation();
-	          e.preventDefault();
-	        }
-	      });
+	      this.enable(true);
+	      if( iswrapped(range, 'b') ) this.active(true);
+	    },
+	    fn: function(e) {
+	      var range = this.owner().range();
+	      if( !range ) return;
+	      
+	      if( iswrapped(range, 'b') ) unwrap(range, 'b');
+	      else wrap(range, $('<b/>')[0]);
 	    }
-	  },
-	  onfocus: {
-	    value: function() {
-	      if( !this.editmode() ) return;
-	        
-	      var el = this.dom();
-	      this.placeholder().hide();
+	  })
+	  .add({
+	    text: '<i class="fa fa-underline"></i>',
+	    tooltip: '밑줄',
+	    onupdate: function() {
+	      var range = this.owner().range();
+	      if( !range ) return this.active(false);
 	      
-	      // 커서가 다른 곳에 있다면 옮긴다.
-	      var selection = window.getSelection();
-	      var range = selection.rangeCount && selection.getRangeAt(0);
+	      if( iswrapped(range, 'span.underline') ) this.active(true);
+	    },
+	    fn: function(e) {
+	      var range = this.owner().range();
+	      if( !range ) return;
 	      
-	      if( !range || !el.contains(range.startContainer) ) {
-	        var lastindex = el.childNodes.length;
-	        range = document.createRange();
-	        range.setStart(el, lastindex);
-	        range.setEnd(el, lastindex);
-	        selection.removeAllRanges();
-	        selection.addRange(range);
-	      }
-	      
-	      el.focus();
+	      if( iswrapped(range, 'span.underline') ) unwrap(range, 'span.underline');
+	      else wrap(range, $('<span class="underline" style="text-decoration:underline;" />')[0]);
 	    }
-	  },
-	  onblur: {
-	    value: function() {
-	      if( !this.editmode() ) return;
+	  })
+	  .add({
+	    text: '<i class="fa fa-italic"></i>',
+	    tooltip: '이탤릭',
+	    onupdate: function() {
+	      var range = this.owner().range();
+	      if( !range ) return this.active(false);
 	      
-	      this.placeholder().show();
+	      if( iswrapped(range, 'i') ) this.active(true);
+	    },
+	    fn: function(e) {
+	      var range = this.owner().range();
+	      if( !range ) return;
+	      
+	      if( iswrapped(range, 'i') ) unwrap(range, 'i');
+	      else wrap(range, $('<i />')[0]);
 	    }
-	  },
-	  onmodechange: {
-	    value: function(e) {
-	      console.log('modechnage', this.editmode(), this.dom());
-	      var el = $(this.dom());
-	      if( this.editmode() ) {
-	        el.attr('contenteditable', true);
-	        this.placeholder().show();
+	  })
+	  .add({
+	    text: '<i class="fa fa-strikethrough"></i>',
+	    tooltip: '가로줄',
+	    onupdate: function() {
+	      var range = this.owner().range();
+	      if( !range ) return this.active(false);
+	      
+	      if( iswrapped(range, 'span.strikethrough') ) this.active(true);
+	    },
+	    fn: function(e) {
+	      var range = this.owner().range();
+	      if( !range ) return;
+	      
+	      if( iswrapped(range, 'span.strikethrough') ) unwrap(range, 'span.strikethrough');
+	      else wrap(range, $('<span class="strikethrough" style="text-decoration:line-through;" />')[0]);
+	    }
+	  })
+	  .add({
+	    text: '<i class="fa fa-link"></i>',
+	    tooltip: '링크',
+	    onupdate: function() {
+	      var range = this.owner().range();
+	      if( !range ) return this.active(false);
+	      
+	      if( iswrapped(range, 'a') ) this.active(true);
+	    },
+	    fn: function(e) {
+	      var range = this.owner().range();
+	      if( !range ) return;
+	      
+	      if( iswrapped(range, 'a') ) unwrap(range, 'a');
+	      else wrap(range, $('<a href="" />').html('link')[0]);
+	    }
+	  })
+	  .add({
+	    text: '<i class="fa fa-align-justify"></i>',
+	    tooltip: '정렬',
+	    onupdate: function() {
+	      var btn = this;
+	      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
+	      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+	      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
+	      else btn.text('<i class="fa fa-align-justify"></i>');
+	    },
+	    fn: function(e) {
+	      var btn = this;
+	      if( btn.align == 'center' ) {
+	        el.css('text-align', 'right');
+	        btn.align = 'right';
+	      } else if( btn.align == 'right' ) {
+	        el.css('text-align', 'left');
+	        btn.align = 'left';
+	      } else if( btn.align == 'left' ) {
+	        el.css('text-align', '');
+	        btn.align = '';
 	      } else {
-	        el.attr('contenteditable', null);
-	        this.placeholder().hide();
+	        el.css('text-align', 'center');
+	        btn.align = 'center';
 	      }
 	    }
-	  },
-	  create: {
-	    value: function(arg) {
-	      var html = typeof arg == 'string' ? arg : '';
-	      return $('<p/>').html(html)[0];
-	    }
-	  },
-	  placeholder: {
-	    value: function(placeholder) {
-	      if( !arguments.length ) return this._placeholder;
-	      this._placeholder.text(placeholder);
-	      return this;
-	    }
-	  },
-	  click: {
-	    value: function() {
-	      this.focus();
-	    }
-	  }
-	});
-	
-	module.exports = ParagraphPart;
-	
-	
-
+	  });
+	};
 
 /***/ },
-/* 67 */
+/* 68 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(68);
+	var content = __webpack_require__(69);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7424,7 +7432,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 68 */
+/* 69 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7432,24 +7440,24 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph {\n  display: block;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 69 */
+/* 70 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var ParagraphPart = __webpack_require__(66);
 	
-	__webpack_require__(70);
+	__webpack_require__(71);
 	
 	function TextPart() {
 	  ParagraphPart.apply(this, arguments);
 	  
-	  this.toolbar(false);
+	  this.toolbar().enable(false);
 	  $(this.dom()).rc('ff-paragraph').ac('ff-text');
 	}
 	
@@ -7465,13 +7473,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = TextPart;
 
 /***/ },
-/* 70 */
+/* 71 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(71);
+	var content = __webpack_require__(72);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7491,7 +7499,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 71 */
+/* 72 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7499,19 +7507,19 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n", ""]);
+	exports.push([module.id, ".ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
 	
 	// exports
 
 
 /***/ },
-/* 72 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(73);
+	__webpack_require__(74);
 	
 	function Separator() {
 	  Part.apply(this, arguments);
@@ -7546,13 +7554,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Separator;
 
 /***/ },
-/* 73 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(74);
+	var content = __webpack_require__(75);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7572,7 +7580,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 74 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7586,13 +7594,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 75 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(76);
+	__webpack_require__(77);
 	
 	function ImagePart(el) {
 	  Part.apply(this, arguments);
@@ -7722,13 +7730,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 76 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(77);
+	var content = __webpack_require__(78);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7748,7 +7756,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 77 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7762,13 +7770,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 78 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(79);
+	__webpack_require__(80);
 	
 	function VideoPart() {
 	  Part.apply(this, arguments);
@@ -7820,13 +7828,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 79 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(80);
+	var content = __webpack_require__(81);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7846,7 +7854,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 80 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7860,13 +7868,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 81 */
+/* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(82);
+	__webpack_require__(83);
 	
 	function RowPart(el) {
 	  Part.call(this, el);
@@ -7962,13 +7970,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 82 */
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(83);
+	var content = __webpack_require__(84);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7988,7 +7996,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 83 */
+/* 84 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -8002,14 +8010,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 84 */
+/* 85 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
-	var path = __webpack_require__(85);
+	var path = __webpack_require__(86);
 	
-	__webpack_require__(86);
+	__webpack_require__(87);
 	
 	function FilePart() {
 	  Part.apply(this, arguments);
@@ -8066,7 +8074,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = FilePart;
 
 /***/ },
-/* 85 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -8297,13 +8305,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 86 */
+/* 87 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(87);
+	var content = __webpack_require__(88);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -8323,7 +8331,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 87 */
+/* 88 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
