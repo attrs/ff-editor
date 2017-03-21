@@ -7250,9 +7250,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 67 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var $ = __webpack_require__(7);
 	var context = __webpack_require__(1);
 	var Toolbar = context.Toolbar;
-	
 	
 	function wrap(range, node) {
 	  range.surroundContents(node);
@@ -7267,8 +7267,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	module.exports = function(part) {
-	  var el = part.dom();
-	  
 	  return part.toolbar()
 	  .add({
 	    type: 'list',
@@ -7388,6 +7386,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    fn: function(e) {
 	      var btn = this;
+	      var el = $(part.dom());
+	      
 	      if( btn.align == 'center' ) {
 	        el.css('text-align', 'right');
 	        btn.align = 'right';
@@ -7440,7 +7440,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
 	
 	// exports
 
@@ -7507,7 +7507,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
+	exports.push([module.id, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
 	
 	// exports
 
