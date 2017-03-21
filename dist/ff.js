@@ -293,6 +293,22 @@ return /******/ (function(modules) { // webpackBootstrap
 	    types.define(name, cls);
 	    return this;
 	  },
+	  wrap: function(range, selector) {
+	    range.surroundContents(node);
+	    return this;
+	  },
+	  unwrap: function(range, selector) {
+	    console.log('unwrap', range);
+	    return this;
+	  },
+	  wrapped: function(range, selector) {
+	    return false;
+	  },
+	  toggleWrap: function(range, selector) {
+	    if( this.wrapped(range, selector) ) this.unwrap(range, selector);
+	    else this.wrap(range, selector);
+	    return this;
+	  }
 	  /*getRange: function(index) {
 	    if( !window.getSelection ) return null;
 	    
@@ -1916,7 +1932,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    .ac(options.cls)
 	    .appendTo(document.body);
 	    
-	    if( position && ownerElement ) {
+	    if( ownerElement ) {
 	      var ownerposition = getPosition(ownerElement);
 	      var posarr = position.split(' ');
 	      var inside = ~posarr.indexOf('inside');
@@ -2253,6 +2269,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  active: function(b) {
 	    if( !arguments.length ) return this._el.hc('ff-toolbar-btn-active');
 	    this._el.tc('ff-toolbar-btn-active', b);
+	    return this;
+	  },
+	  hide: function() {
+	    this._el.hide();
+	    return this;
+	  },
+	  show: function() {
+	    this._el.show();
 	    return this;
 	  },
 	  enable: function(b) {
@@ -3108,22 +3132,37 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.insert(new context.Paragraph());
 	    }
 	    
+	    viewport.find('.ff-image').each(function() {
+	      if( !this.__ff__) new context.Image(this);
+	    });
+	    
+	    viewport.find('.ff-paragraph').each(function() {
+	      if( !this.__ff__) new context.Paragraph(this);
+	    });
+	    
+	    viewport.find('.ff-separator').each(function() {
+	      if( !this.__ff__) new context.Separator(this);
+	    });
+	    
+	    viewport.find('.ff-text').each(function() {
+	      if( !this.__ff__) new context.Text(this);
+	    });
+	    
+	    viewport.find('.ff-file').each(function() {
+	      if( !this.__ff__) new context.File(this);
+	    });
+	    
 	    viewport.children().each(function() {
-	      if( this.__marker__ ) return;
+	      if( !this.matches || this.matches('.ff-acc') ) return;
+	      
 	      var tag = this.tagName;
 	      var part = this.__ff__;
 	      
 	      if( !part ) {
-	        if( tag == 'IMG' ) {
-	          part = new context.Image(this);
-	        } else if( tag == 'HR' ) {
-	          part = new context.Separator(this);
-	        } else {
-	          part = new context.Paragraph(this);
-	        }
+	        if( tag == 'IMG' ) part = new context.Image(this);
+	        else if( tag == 'HR' ) part = new context.Separator(this);
+	        else part = new context.Paragraph(this);
 	      }
-	      
-	      part.editmode(true).removable(true);
 	    });
 	    
 	  } else {
@@ -3146,6 +3185,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  el.find('.ff-part').each(function() {
 	    var part = Part(this);
 	    if( part ) {
+	      part.removable(true);
 	      if( part.editmode() != editmode ) part && part.editmode(editmode);
 	      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
 	    }
@@ -6818,10 +6858,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function Marker(part, dom) {
 	  var el = $(dom);
-	  var marker = $('<div class="ff-marker"><div class="ff-marker-head"></div><div class="ff-marker-tools"></div></div>');
+	  var marker = $('<div class="ff-marker ff-acc"><div class="ff-marker-head"></div><div class="ff-marker-tools"></div></div>');
 	  var lastref;
-	  
-	  marker[0].__marker__ = true;
 	  
 	  function update() {
 	    var tools = marker.find('.ff-marker-tools').empty();
@@ -6978,9 +7016,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	function DnD(part, dom) {
 	  var el = $(dom);
-	  var marker = $('<div class="ff-dnd-marker"></div>');
-	  
-	  marker[0].__marker__ = true;
+	  var marker = $('<div class="ff-dnd-marker ff-acc"></div>');
 	  
 	  function move(target, y) {
 	    if( !target ) return;
@@ -7252,18 +7288,24 @@ return /******/ (function(modules) { // webpackBootstrap
 
 	var $ = __webpack_require__(7);
 	var context = __webpack_require__(1);
+	var modal = __webpack_require__(32);
 	var Toolbar = context.Toolbar;
 	
-	function wrap(range, node) {
-	  range.surroundContents(node);
-	}
-	
-	function unwrap(range, selector) {
-	  console.log('unwrap', range);
-	}
-	
-	function iswrapped(range, selector) {
-	  return false;
+	function rangeitem(text, tooltip, selector, fn) {
+	  return {
+	    text: text,
+	    tooltip: tooltip,
+	    onupdate: function() {
+	      var range = this.owner().range();
+	      if( !range ) return this.enable(false);
+	      
+	      this.enable(true);
+	      if( context.wrapped(range, selector) ) this.active(true);
+	    },
+	    fn: fn || function(e) {
+	      context.toggleWrap(this.owner().range(), selector);
+	    }
+	  };
 	}
 	
 	module.exports = function(part) {
@@ -7288,92 +7330,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	      'Times New Roman'
 	    ]
 	  })
-	  .add({
-	    text: '<i class="fa fa-bold"></i>',
-	    tooltip: '굵게',
-	    onupdate: function() {
-	      var range = this.owner().range();
-	      if( !range ) return this.enable(false);
-	      
-	      this.enable(true);
-	      if( iswrapped(range, 'b') ) this.active(true);
-	    },
-	    fn: function(e) {
-	      var range = this.owner().range();
-	      if( !range ) return;
-	      
-	      if( iswrapped(range, 'b') ) unwrap(range, 'b');
-	      else wrap(range, $('<b/>')[0]);
-	    }
-	  })
-	  .add({
-	    text: '<i class="fa fa-underline"></i>',
-	    tooltip: '밑줄',
-	    onupdate: function() {
-	      var range = this.owner().range();
-	      if( !range ) return this.active(false);
-	      
-	      if( iswrapped(range, 'span.underline') ) this.active(true);
-	    },
-	    fn: function(e) {
-	      var range = this.owner().range();
-	      if( !range ) return;
-	      
-	      if( iswrapped(range, 'span.underline') ) unwrap(range, 'span.underline');
-	      else wrap(range, $('<span class="underline" style="text-decoration:underline;" />')[0]);
-	    }
-	  })
-	  .add({
-	    text: '<i class="fa fa-italic"></i>',
-	    tooltip: '이탤릭',
-	    onupdate: function() {
-	      var range = this.owner().range();
-	      if( !range ) return this.active(false);
-	      
-	      if( iswrapped(range, 'i') ) this.active(true);
-	    },
-	    fn: function(e) {
-	      var range = this.owner().range();
-	      if( !range ) return;
-	      
-	      if( iswrapped(range, 'i') ) unwrap(range, 'i');
-	      else wrap(range, $('<i />')[0]);
-	    }
-	  })
-	  .add({
-	    text: '<i class="fa fa-strikethrough"></i>',
-	    tooltip: '가로줄',
-	    onupdate: function() {
-	      var range = this.owner().range();
-	      if( !range ) return this.active(false);
-	      
-	      if( iswrapped(range, 'span.strikethrough') ) this.active(true);
-	    },
-	    fn: function(e) {
-	      var range = this.owner().range();
-	      if( !range ) return;
-	      
-	      if( iswrapped(range, 'span.strikethrough') ) unwrap(range, 'span.strikethrough');
-	      else wrap(range, $('<span class="strikethrough" style="text-decoration:line-through;" />')[0]);
-	    }
-	  })
-	  .add({
-	    text: '<i class="fa fa-link"></i>',
-	    tooltip: '링크',
-	    onupdate: function() {
-	      var range = this.owner().range();
-	      if( !range ) return this.active(false);
-	      
-	      if( iswrapped(range, 'a') ) this.active(true);
-	    },
-	    fn: function(e) {
-	      var range = this.owner().range();
-	      if( !range ) return;
-	      
-	      if( iswrapped(range, 'a') ) unwrap(range, 'a');
-	      else wrap(range, $('<a href="" />').html('link')[0]);
-	    }
-	  })
+	  .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
+	  .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'span.underline'))
+	  .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
+	  .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'span.strike'))
+	  .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
+	    var range = this.owner().range();
+	    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
+	    
+	    modal.prompt('링크 주소를 입력해주세요', function(href) {
+	      context.wrap(range, $('<a href="' + href + '" />')[0]);
+	    });
+	  }))
 	  .add({
 	    text: '<i class="fa fa-align-justify"></i>',
 	    tooltip: '정렬',
@@ -7619,6 +7587,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  .add({
 	    text: '<i class="fa fa-angle-up"></i>',
 	    tooltip: '플로팅제거',
+	    onupdate: function() {
+	      if( this.owner().floating() ) this.show();
+	      else this.hide();
+	    },
 	    fn: function(e) {
 	      this.owner().floating(false);
 	    }
@@ -7633,6 +7605,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  .add({
 	    text: '<i class="fa fa-circle-o"></i>',
 	    tooltip: '원본크기',
+	    onupdate: function() {
+	      if( this.owner().floating() ) this.hide();
+	      else this.show();
+	    },
 	    fn: function(e) {
 	      el
 	      .rc('ff-image-size-full')
@@ -7642,6 +7618,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  .add({
 	    text: '<i class="fa fa-square-o"></i>',
 	    tooltip: '기본크기',
+	    onupdate: function() {
+	      if( this.owner().floating() ) this.hide();
+	      else this.show();
+	    },
 	    fn: function(e) {
 	      el
 	      .rc('ff-image-size-full')
@@ -7651,22 +7631,25 @@ return /******/ (function(modules) { // webpackBootstrap
 	  .add({
 	    text: '<i class="fa fa-arrows-alt"></i>',
 	    tooltip: '풀사이즈',
+	    onupdate: function() {
+	      if( this.owner().floating() ) this.hide();
+	      else this.show();
+	    },
 	    fn: function(e) {
 	      el
 	      .rc('ff-image-size-medium')
 	      .ac('ff-image-size-full');
 	    }
 	  });
+	  
+	  el.on('dragend', function(e) {
+	    if( this.editmode() && !$(this.dom()).parent().hc('ff-image-float-wrap') ) {
+	      this.floating(false);
+	    }
+	  }.bind(this));
 	}
 	
 	ImagePart.prototype = Object.create(Part.prototype, {
-	  ondragend: {
-	    value: function(e) {
-	      if( this.editmode() && !$(this.dom()).parent().hc('ff-image-float-wrap') ) {
-	        this.floating(false);
-	      }
-	    }
-	  },
 	  create: {
 	    value: function(arg) {
 	      var src;
@@ -7686,11 +7669,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  floating: {
 	    value: function(direction) {
+	      var el = $(this.dom());
 	      if( !arguments.length ) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
 	      
 	      var ctx = this.context();
-	      var el = $(this.dom()).unwrap('.ff-image-float-wrap');
 	      var paragraph = Part(el[0].nextSibling);
+	      
+	      el.unwrap('.ff-image-float-wrap');
 	      
 	      if( !(paragraph instanceof ctx.Paragraph) ) {
 	        paragraph = new ctx.Paragraph();
@@ -7700,7 +7685,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        el
 	        .rc('ff-image-float-right')
 	        .ac('ff-image-float-left')
-	        .wrap('<div class="ff-image-float-wrap" />')
+	        .wrap('<div class="ff-image-float-wrap ff-acc" />')
 	        .parent()
 	        .on('click', function(e) {
 	          if( e.target !== el[0] ) paragraph.focus();
@@ -7710,7 +7695,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	        el
 	        .rc('ff-image-float-left')
 	        .ac('ff-image-float-right')
-	        .wrap('<div class="ff-image-float-wrap" />')
+	        .wrap('<div class="ff-image-float-wrap ff-acc" />')
 	        .parent()
 	        .on('click', function(e) {
 	          if( e.target !== el[0] ) paragraph.focus();
