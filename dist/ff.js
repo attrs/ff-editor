@@ -70,16 +70,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	var Part = __webpack_require__(29);
 	var ArticlePart = __webpack_require__(30);
 	var ParagraphPart = __webpack_require__(66);
-	var SeparatorPart = __webpack_require__(69);
-	var ImagePart = __webpack_require__(72);
-	var VideoPart = __webpack_require__(75);
-	var RowPart = __webpack_require__(78);
-	var FilePart = __webpack_require__(81);
+	var TextPart = __webpack_require__(69);
+	var SeparatorPart = __webpack_require__(72);
+	var ImagePart = __webpack_require__(75);
+	var VideoPart = __webpack_require__(78);
+	var RowPart = __webpack_require__(81);
+	var FilePart = __webpack_require__(84);
 	
 	ctx.Toolbar = Toolbar;
 	ctx.Part = Part;
 	ctx.Article = ArticlePart;
 	ctx.Paragraph = ParagraphPart;
+	ctx.Text = TextPart;
 	ctx.Separator = SeparatorPart;
 	ctx.Image = ImagePart;
 	ctx.Video = VideoPart;
@@ -89,6 +91,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	ctx.type('default', ParagraphPart);
 	ctx.type('article', ArticlePart);
 	ctx.type('paragraph', ParagraphPart);
+	ctx.type('text', TextPart);
 	ctx.type('separator', SeparatorPart);
 	ctx.type('image', ImagePart);
 	ctx.type('video', VideoPart);
@@ -1165,12 +1168,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 	
 	function isArrayLike(o) {
-	  return !!(o && typeof o == 'object' && typeof o.length == 'number');
-	  /*if( !o || typeof o != 'object' || o === window || typeof o.length != 'number' ) return false;
+	  if( !o || typeof o != 'object' || o === window || typeof o.length != 'number' ) return false;
 	  if( o instanceof Array || (Array.isArray && Array.isArray(o)) ) return true;
 	  
 	  var type = Object.prototype.toString.call(o);
-	  return /^\[object (HTMLCollection|NodeList|Array|FileList|Arguments)\]$/.test(type);*/
+	  return /^\[object (HTMLCollection|NodeList|Array|FileList|Arguments)\]$/.test(type);
 	}
 	
 	function create(html) {
@@ -2897,6 +2899,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	  this._t = toolbar;
 	  
 	  if( dom !== arg ) this.removable(true);
+	  if( el.attr('ff-toolbar') === 'false' ) this.toolbar(false);
+	  
 	  dispatcher.fire('init');
 	  if( context.editmode() ) self.editmode(true);
 	}
@@ -2905,8 +2909,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	  context: function() {
 	    return context;
 	  },
-	  toolbar: function() {
-	    return this._t;
+	  toolbar: function(enable) {
+	    if( !arguments.length ) return this._t;
+	    if( typeof enable == 'boolean' ) this._t.enable(enable);
+	    return this;
 	  },
 	  dom: function() {
 	    return this._n;
@@ -7291,24 +7297,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	      });
 	      
-	      var placeholder = $('<div class="ff-paragraph-placeholder" />').html(el.attr('placeholder') || ParagraphPart.placeholder);
+	      var placeholder = part._placeholder = (function() {
+	        var node = document.createTextNode(ParagraphPart.placeholder);
+	        
+	        return {
+	          text: function(text) {
+	            node.nodeValue = text || '';
+	            return this;
+	          },
+	          show: function() {
+	            if( !el.text().split('\n').join().trim() ) {
+	              el.empty().append(node);
+	            }
+	            return this;
+	          },
+	          hide: function() {
+	            var p = node.parentNode;
+	            p && p.removeChild(node);
+	            return this;
+	          }
+	        };
+	      })();
 	      
-	      part._placeholder = {
-	        html: function(html) {
-	          placeholder.html(html);
-	          return part;
-	        },
-	        show: function() {
-	          if( !el.text().split('\n').join().trim() ) el.empty().append(placeholder);
-	          return part;
-	        },
-	        hide: function() {
-	          placeholder.remove();
-	          return part;
-	        }
-	      };
-	      
-	      placeholder.show();
+	      placeholder.text(el.attr('placeholder')).show();
 	      
 	      el.on('dragstart', function(e) {
 	        if( part.editmode() ) {
@@ -7350,8 +7361,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	  },
 	  onmodechange: {
 	    value: function(e) {
+	      console.log('modechnage', this.editmode(), this.dom());
 	      var el = $(this.dom());
-	      if( e.detail.editmode ) {
+	      if( this.editmode() ) {
 	        el.attr('contenteditable', true);
 	        this.placeholder().show();
 	      } else {
@@ -7369,7 +7381,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  placeholder: {
 	    value: function(placeholder) {
 	      if( !arguments.length ) return this._placeholder;
-	      this._placeholder.html(placeholder);
+	      this._placeholder.text(placeholder);
 	      return this;
 	    }
 	  },
@@ -7420,7 +7432,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph {\n  margin: 0;\n  padding: 0.5em 0;\n}\n.ff-paragraph.ff-paragraph-align-right {\n  text-align: right;\n}\n.ff-paragraph.ff-paragraph-align-center {\n  text-align: center;\n}\n.ff-paragraph .ff-paragraph-placeholder {\n  min-height: 30px;\n  line-height: 30px;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n", ""]);
 	
 	// exports
 
@@ -7430,9 +7442,76 @@ return /******/ (function(modules) { // webpackBootstrap
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
-	var Part = __webpack_require__(29);
+	var ParagraphPart = __webpack_require__(66);
 	
 	__webpack_require__(70);
+	
+	function TextPart() {
+	  ParagraphPart.apply(this, arguments);
+	  
+	  this.toolbar(false);
+	  $(this.dom()).rc('ff-paragraph').ac('ff-text');
+	}
+	
+	TextPart.prototype = Object.create(ParagraphPart.prototype, {
+	  create: {
+	    value: function(arg) {
+	      var html = typeof arg == 'string' ? arg : '';
+	      return $('<span/>').html(html)[0];
+	    }
+	  }
+	});
+	
+	module.exports = TextPart;
+
+/***/ },
+/* 70 */
+/***/ function(module, exports, __webpack_require__) {
+
+	// style-loader: Adds some css to the DOM by adding a <style> tag
+	
+	// load the styles
+	var content = __webpack_require__(71);
+	if(typeof content === 'string') content = [[module.id, content, '']];
+	// add the styles to the DOM
+	var update = __webpack_require__(22)(content, {});
+	if(content.locals) module.exports = content.locals;
+	// Hot Module Replacement
+	if(false) {
+		// When the styles change, update the <style> tags
+		if(!content.locals) {
+			module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
+				var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
+				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+				update(newContent);
+			});
+		}
+		// When the module is disposed, remove the <style> tags
+		module.hot.dispose(function() { update(); });
+	}
+
+/***/ },
+/* 71 */
+/***/ function(module, exports, __webpack_require__) {
+
+	exports = module.exports = __webpack_require__(21)();
+	// imports
+	
+	
+	// module
+	exports.push([module.id, ".ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n", ""]);
+	
+	// exports
+
+
+/***/ },
+/* 72 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(7);
+	var Part = __webpack_require__(29);
+	
+	__webpack_require__(73);
 	
 	function Separator() {
 	  Part.apply(this, arguments);
@@ -7467,13 +7546,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = Separator;
 
 /***/ },
-/* 70 */
+/* 73 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(71);
+	var content = __webpack_require__(74);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7493,7 +7572,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 71 */
+/* 74 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7507,13 +7586,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 72 */
+/* 75 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(73);
+	__webpack_require__(76);
 	
 	function ImagePart(el) {
 	  Part.apply(this, arguments);
@@ -7643,13 +7722,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 73 */
+/* 76 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(74);
+	var content = __webpack_require__(77);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7669,7 +7748,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 74 */
+/* 77 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7683,13 +7762,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 75 */
+/* 78 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(76);
+	__webpack_require__(79);
 	
 	function VideoPart() {
 	  Part.apply(this, arguments);
@@ -7741,13 +7820,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 76 */
+/* 79 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(77);
+	var content = __webpack_require__(80);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7767,7 +7846,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 77 */
+/* 80 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7781,13 +7860,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 78 */
+/* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
 	
-	__webpack_require__(79);
+	__webpack_require__(82);
 	
 	function RowPart(el) {
 	  Part.call(this, el);
@@ -7883,13 +7962,13 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 79 */
+/* 82 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(80);
+	var content = __webpack_require__(83);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -7909,7 +7988,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 80 */
+/* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
@@ -7923,14 +8002,14 @@ return /******/ (function(modules) { // webpackBootstrap
 
 
 /***/ },
-/* 81 */
+/* 84 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(7);
 	var Part = __webpack_require__(29);
-	var path = __webpack_require__(82);
+	var path = __webpack_require__(85);
 	
-	__webpack_require__(83);
+	__webpack_require__(86);
 	
 	function FilePart() {
 	  Part.apply(this, arguments);
@@ -7987,7 +8066,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	module.exports = FilePart;
 
 /***/ },
-/* 82 */
+/* 85 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {// Copyright Joyent, Inc. and other Node contributors.
@@ -8218,13 +8297,13 @@ return /******/ (function(modules) { // webpackBootstrap
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(5)))
 
 /***/ },
-/* 83 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 	
 	// load the styles
-	var content = __webpack_require__(84);
+	var content = __webpack_require__(87);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
 	var update = __webpack_require__(22)(content, {});
@@ -8244,7 +8323,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	}
 
 /***/ },
-/* 84 */
+/* 87 */
 /***/ function(module, exports, __webpack_require__) {
 
 	exports = module.exports = __webpack_require__(21)();
