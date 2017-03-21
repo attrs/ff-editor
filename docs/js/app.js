@@ -185,11 +185,12 @@
 	        var Type = types.get(type);
 	        if( !Type ) return console.warn('[firefront] not found type: ' + type);
 	        part = el.__ff__ = new Type(el);
-	        data && data[id] && part.data(data[id]);
 	      }
 	      
-	      parts.push(part);
-	      if( id ) part.id = id, parts[id] = part;
+	      if( !~parts.indexOf(part) ) {
+	        parts.push(part);
+	        if( id ) part.id = id, parts[id] = part;
+	      }
 	    });
 	  },
 	  reset: function(d) {
@@ -3056,32 +3057,6 @@
 	    }
 	    
 	    return null;
-	  },
-	  html: function(html) {
-	    var dom = this.dom();
-	    if( !arguments.length ) {
-	      var editmode = this.editmode();
-	      this.editmode(false);
-	      var html = dom.innerHTML;
-	      this.editmode(editmode);
-	      return html;
-	    }
-	    
-	    if( typeof html == 'string' ) dom.innerHTML = html || '';
-	    else if( html ) console.warn('[ff] html must be a string but', html);
-	    
-	    this.fire('childlist');
-	    
-	    return this;
-	  },
-	  getData: function() {
-	    return {
-	      html: this.html()
-	    };
-	  },
-	  setData: function(data) {
-	    this.html(data && data.html);
-	    return this;
 	  }
 	};
 	
@@ -3323,6 +3298,17 @@
 	    target: target
 	  });
 	  
+	  return this;
+	};
+	
+	proto.getData = function() {
+	  return {
+	    html: this.html()
+	  };
+	};
+	
+	proto.setData = function(data) {
+	  this.html(data && data.html);
 	  return this;
 	};
 	
@@ -7311,6 +7297,22 @@
 	proto.placeholder = function(placeholder) {
 	  if( !arguments.length ) return this._placeholder;
 	  this._placeholder.text(placeholder);
+	  return this;
+	};
+	
+	proto.getData = function() {
+	  this.placeholder().hide();
+	  var html = this.dom().innerHTML;
+	  if( this.editmode() ) this.placeholder().show();
+	  
+	  return {
+	    html: html
+	  };
+	};
+	
+	proto.setData = function(data) {
+	  var html = (!data || typeof data == 'string') ? data : data.html;
+	  if( html ) this.dom().innerHTML = html;
 	  return this;
 	};
 	
