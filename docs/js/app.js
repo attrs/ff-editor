@@ -7457,7 +7457,7 @@
 	
 	
 	// module
-	exports.push([module.id, ".ff-paragraph.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n", ""]);
+	exports.push([module.id, ".ff-paragraph {\n  display: block;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
 	
 	// exports
 
