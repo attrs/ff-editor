@@ -7280,7 +7280,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	proto.create = function(arg) {
 	  var html = typeof arg == 'string' ? arg : '';
-	  return $('<p/>').html(html)[0];
+	  return $('<div/>').html(html)[0];
 	};
 	
 	proto.placeholder = function(placeholder) {
