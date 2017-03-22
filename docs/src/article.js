@@ -31,11 +31,15 @@ var tpls = require('./tpls/');
   });
 })();
 
-ff.ready(function() {
+// init gnb dropdown
+$(document).ready(function($) {
   $('.dropdown').on('click', function() {
     $(this).tc('open');
   });
-  
+});
+
+// ready
+ff.ready(function() {
   window.toggleMode = function(el) {
     var editmode = ff.editmode();
     if( editmode ) ff.editmode(false);
