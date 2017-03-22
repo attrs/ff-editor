@@ -2851,7 +2851,7 @@
 	  if( !dom || !context.isElement(dom) ) dom = this.create.apply(this, arguments);
 	  if( !context.isElement(dom) ) throw new TypeError('illegal arguments: dom');
 	  
-	  var el = $(dom);
+	  var el = $(dom).ac('ff');
 	  var self = dom.__ff__ = this;
 	  
 	  var dispatcher = Events(this)
@@ -2881,11 +2881,11 @@
 	    var toolbar = this.toolbar();
 	    if( this.editmode() ) {
 	      if( toolbar.always() ) toolbar.show();
-	      el.attr('draggable', true).ac('ff-part').ac('ff-edit-state');
+	      el.attr('draggable', true).ac('ff-edit-state');
 	      dispatcher.fire('editmode');
 	    } else {
 	      toolbar.hide(true);
-	      el.attr('draggable', null).rc('ff-part').rc('ff-edit-state');
+	      el.attr('draggable', null).rc('ff-edit-state');
 	      dispatcher.fire('viewmode');
 	    }
 	    
@@ -3168,7 +3168,6 @@
 	        else part = new context.Paragraph(this);
 	      }
 	    });
-	    
 	  } else {
 	    var viewport = el.children('.ff-article-viewport');
 	    if( viewport.length ) {
@@ -3186,11 +3185,11 @@
 	  }
 	  
 	  var placeholder = el.attr('placeholder');
-	  el.find('.ff-part').each(function() {
+	  el.find('.ff').each(function() {
 	    var part = Part(this);
 	    if( part ) {
 	      part.removable(true);
-	      if( part.editmode() != editmode ) part && part.editmode(editmode);
+	      if( part.editmode() !== editmode ) part.editmode(editmode);
 	      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
 	    }
 	  });
@@ -3218,7 +3217,7 @@
 	};
 	
 	proto.getPart = function(index) {
-	  var el = $(this.viewport()).children('.ff-part')[index];
+	  var el = $(this.viewport()).children('.ff')[index];
 	  return el && el.__ff__;
 	};
 	
@@ -7063,8 +7062,7 @@
 	    e.preventDefault();
 	    
 	    var dragging = part.context().dragging;
-	    
-	    if( e.target === dragging || dragging.contains(e.target) ) return hide();
+	    if( !dragging || e.target === dragging || dragging.contains(e.target) ) return hide();
 	    
 	    if( !e.target.contains(dragging) ) {
 	      move(current(e.target), e.pageY);
@@ -7082,12 +7080,12 @@
 	    var dragging = part.context().dragging;
 	    var ref = marker[0].nextSibling;
 	    
-	    if( e.target === dragging || dragging.contains(e.target) || !dom.contains(marker[0]) ) return;
-	    
-	    if( dragging )
+	    if( dragging ) {
+	      if( e.target === dragging || dragging.contains(e.target) || !dom.contains(marker[0]) ) return;
 	      part.insert(dragging, ref);
-	    else if( e.dataTransfer && e.dataTransfer.files )
+	    } else if( e.dataTransfer && e.dataTransfer.files ) {
 	      part.insert(e.dataTransfer.files, ref);
+	    }
 	    
 	    hide();
 	  }
