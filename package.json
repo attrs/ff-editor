@@ -1,10 +1,10 @@
 {
-  "name": "firefront",
+  "name": "ff-editor",
   "version": "0.2.7",
-  "description": "Extensible WYSIWYG Web Contents Editor",
+  "description": "Extensible WYSIWYG HTML Editor",
   "main": "lib/index.js",
-  "homepage": "https://github.com/attrs/firefront",
-  "repository": "attrs/firefront",
+  "homepage": "https://github.com/attrs/ff-editor",
+  "repository": "attrs/ff-editor",
   "author": "joje <joje.attrs@gmail.com>",
   "scripts": {
     "demo": "node node_modules/webmodules/bin/wpm.js up 9999 docs -s",
@@ -49,7 +49,8 @@
     "style-loader": "^0.13.1",
     "through2": "^2.0.1",
     "url-loader": "^0.5.7",
-    "webmodules": "^0.1.32"
+    "webmodules": "^0.1.32",
+    "webpack": "^2.3.1"
   },
   "files": [
     "lib",
@@ -57,5 +58,13 @@
     "LICENSE",
     "README.md"
   ],
-  "keywords": []
+  "keywords": [
+    "editor",
+    "contenteditable",
+    "html5",
+    "wysiwyg",
+    "author",
+    "medium",
+    "WYSIWYG"
+  ]
 }

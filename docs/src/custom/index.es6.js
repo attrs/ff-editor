@@ -1,4 +1,4 @@
-import {Part} from 'firefront';
+import {Part} from 'ff-editor';
 
 class CustomPart extends Part {
   constructor(el) {

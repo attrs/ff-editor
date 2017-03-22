@@ -2,20 +2,12 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  entry: path.join(__dirname, 'lib/index.js'),
-  output: {
-    path: path.join(__dirname, 'dist'),
-    filename: 'ff.js',
-    library: 'ff',
-    libraryTarget: 'umd',
-    umdNamedDefine: true
+  entry: {
+    article: path.join(__dirname, 'docs/src/article.js')
   },
-  node: {
-    console: false,
-    global: false,
-    process: false,
-    Buffer: false,
-    setImmediate: false
+  output: {
+    path: path.join(__dirname, 'docs/js'),
+    filename: '[name].js',
   },
   module: {
     loaders: [
@@ -31,9 +23,19 @@ module.exports = {
       }, {
         test: /\.html$/,
         loader: 'html-loader'
+      }, {
+        test: /\.es6.js$/,
+        loader: 'babel-loader',
+        query: {
+          presets: ['es2015']
+        }
       }
     ]
   },
+  resolve: {
+    alias: {
+      'ff-editor': __dirname
+    }
+  },
   devtool: 'source-map'
 };
-

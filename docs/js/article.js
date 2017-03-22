@@ -1,22 +1,4 @@
-/*!
-* ff-editor
-* https://github.com/attrs/ff-editor
-*
-* Copyright attrs and others
-* Released under the MIT license
-* https://github.com/attrs/ff-editor/blob/master/LICENSE
-*/
-(function webpackUniversalModuleDefinition(root, factory) {
-	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory();
-	else if(typeof define === 'function' && define.amd)
-		define("ff", [], factory);
-	else if(typeof exports === 'object')
-		exports["ff"] = factory();
-	else
-		root["ff"] = factory();
-})(this, function() {
-return /******/ (function(modules) { // webpackBootstrap
+/******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
 /******/
@@ -81,16 +63,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 31);
+/******/ 	return __webpack_require__(__webpack_require__.s = 25);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(70);
+var Context = __webpack_require__(79);
 
-__webpack_require__(71)(Context);
+__webpack_require__(80)(Context);
 
 var def = Context(document);
 module.exports = function(doc) {
@@ -415,7 +397,7 @@ function updateLink(linkElement, obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var context = __webpack_require__(5);
-var Events = __webpack_require__(19);
+var Events = __webpack_require__(21);
 var Types = __webpack_require__(13);
 var Toolbar = __webpack_require__(8);
 var $ = __webpack_require__(0);
@@ -839,11 +821,11 @@ exports.stopEventPropagation = stopEventPropagation;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(16);
-var Events = __webpack_require__(19);
+var each = __webpack_require__(17);
+var Events = __webpack_require__(21);
 var $ = __webpack_require__(0);
 var types = __webpack_require__(13);
-var connector = __webpack_require__(30);
+var connector = __webpack_require__(26);
 
 var parts = [];
 var data = {};
@@ -1102,7 +1084,7 @@ var _hexToRgb = __webpack_require__(7);
 
 var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(4);
 
-var _defaultParams = __webpack_require__(17);
+var _defaultParams = __webpack_require__(19);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
@@ -1110,7 +1092,7 @@ var _defaultParams2 = _interopRequireWildcard(_defaultParams);
  * Add modal + overlay to DOM
  */
 
-var _injectedHTML = __webpack_require__(68);
+var _injectedHTML = __webpack_require__(77);
 
 var _injectedHTML2 = _interopRequireWildcard(_injectedHTML);
 
@@ -1341,7 +1323,7 @@ exports.colorLuminance = colorLuminance;
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(34);
+var Toolbar = __webpack_require__(29);
 
 Toolbar.Button = __webpack_require__(9);
 Toolbar.Separator = __webpack_require__(12);
@@ -1355,7 +1337,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(55);
+__webpack_require__(63);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1448,11 +1430,303 @@ module.exports = Button;
 /* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
-var buildtoolbar = __webpack_require__(39);
+var ctx = __webpack_require__(5);
+var Toolbar = __webpack_require__(8);
 
 __webpack_require__(61);
+__webpack_require__(74);
+
+var Part = __webpack_require__(3);
+var ArticlePart = __webpack_require__(31);
+var ParagraphPart = __webpack_require__(16);
+var TextPart = __webpack_require__(40);
+var SeparatorPart = __webpack_require__(39);
+var ImagePart = __webpack_require__(36);
+var VideoPart = __webpack_require__(41);
+var RowPart = __webpack_require__(38);
+var FilePart = __webpack_require__(35);
+
+ctx.Toolbar = Toolbar;
+ctx.Part = Part;
+ctx.Article = ArticlePart;
+ctx.Paragraph = ParagraphPart;
+ctx.Text = TextPart;
+ctx.Separator = SeparatorPart;
+ctx.Image = ImagePart;
+ctx.Video = VideoPart;
+ctx.Row = RowPart;
+ctx.File = FilePart;
+
+ctx.type('default', ParagraphPart);
+ctx.type('article', ArticlePart);
+ctx.type('paragraph', ParagraphPart);
+ctx.type('text', TextPart);
+ctx.type('separator', SeparatorPart);
+ctx.type('image', ImagePart);
+ctx.type('video', VideoPart);
+ctx.type('row', RowPart);
+ctx.type('file', FilePart);
+
+(function() {
+  var readyfn;
+  
+  document.addEventListener('DOMContentLoaded', function() {
+    ctx.scan();
+    readyfn && readyfn();
+  });
+
+  ctx.ready = function(fn) {
+    if( document.body ) fn();
+    else readyfn = fn;
+  };
+})();
+
+module.exports = ctx;
+
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var Button = __webpack_require__(9);
+
+function ListButton() {
+  Button.apply(this, arguments);
+  
+  this._el.ac('ff-toolbar-list-btn');
+}
+
+ListButton.prototype = Object.create(Button.prototype, {
+  handleEvent: {
+    value: function(e) {
+      if( e.type == 'click' ) {
+        e.stopPropagation();
+        this.click(e);
+        this.toggleList();
+        this.update(e);
+      }
+    }
+  },
+  toggleList: {
+    value: function() {
+      console.log('toggle');
+    }
+  },
+  text: {
+    value: function(txt) {
+      this._el.html(txt);
+      return this;
+    }
+  }
+});
+
+module.exports = ListButton;
+
+/***/ }),
+/* 12 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+
+function Separator(options) {
+  self.el = $('<div class="ff-toolbar-separator"></div>')[0];
+}
+
+Separator.prototype = {
+  owner: function(owner) {
+    if( !arguments.length ) return this._owner;
+    this._owner = owner;
+    return this;
+  },
+  appendTo: function(parent) {
+    $(parent).append(this.el);
+    return this;
+  },
+  remove: function() {
+    $(this.el).remove();
+    return this;
+  }
+};
+
+module.exports = Separator;
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports) {
+
+var types = {};
+
+module.exports = {
+  get: function(id) {
+    return types[id];
+  },
+  define: function(id, handler) {
+    if( !id ) throw new TypeError('missing id');
+    if( typeof id !== 'string' ) throw new TypeError('id must be a string');
+    if( typeof handler !== 'function' ) throw new TypeError('type plugin must be a function');
+    
+    types[id] = handler;
+    return this;
+  },
+  exists: function(id) {
+    return !!types[id];
+  }
+};
+
+/***/ }),
+/* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var swal = __webpack_require__(20);
+var Items = __webpack_require__(33);
+var context = __webpack_require__(5);
+
+var items = Items();
+
+function error(msg) {
+  if( !msg ) msg = 'Error';
+  swal(msg.message || msg, 'error');
+}
+
+items
+.add({
+  text: '<i class="fa fa-font"></i>',
+  tooltip: '문단',
+  fn: function(e) {
+    var placeholder = $(this.owner().dom()).attr('placeholder');
+    this.owner().insert(new context.Paragraph().placeholder(placeholder));
+  }
+})
+.add({
+  text: '<i class="fa fa-picture-o"></i>',
+  tooltip: '이미지 파일',
+  fn: function(e) {
+    var part = this.owner();
+    part.context().selectFiles(function(err, files) {
+      if( err ) return error(err);
+      if( !files.length ) return;
+      
+      if( files.length === 1 ) {
+        part.insert(new context.Image(files[0]));
+      } else {
+        var row = new context.Row();
+        files.forEach(function(file) {
+          row.add(new context.Image(file));
+        });
+        part.insert(row);
+      }
+    });
+  }
+})
+.add({
+  text: '<i class="fa fa-instagram"></i>',
+  tooltip: '이미지',
+  fn: function(e) {
+    var part = this.owner();
+    
+    swal({
+      title: '이미지 URL을 입력해주세요',
+      type: 'input',
+      showCancelButton: true,
+      closeOnConfirm: true,
+      animation: 'slide-from-top'
+    }, function(src){
+      if( !src ) return;
+      
+      if( ~src.indexOf('instagram.com') ) {
+        var vid = src.split('//')[1];
+        vid = vid && vid.split('/p/')[1];
+        vid = vid && vid.split('/')[0];
+        
+        if( vid ) src = 'https://www.instagram.com/p/' + vid + '/media';
+      }
+      
+      part.insert(new context.Image(src));
+    });
+  }
+})
+.add({
+  text: '<i class="fa fa-youtube-square"></i>',
+  tooltip: '동영상',
+  fn: function(e) {
+    var part = this.owner();
+    
+    swal({
+      title: '동영상 URL을 입력해주세요',
+      type: 'input',
+      showCancelButton: true,
+      closeOnConfirm: true,
+      animation: 'slide-from-top'
+    }, function(src){
+      if( !src ) return;
+      
+      if( ~src.indexOf('youtube.com') ) {
+        var vid = src.split('v=')[1];
+        vid = vid && vid.split('&')[0];
+        vid = vid && vid.split('#')[0];
+        
+        if( !vid ) return error('URL을 정확히 입력해주세요');
+        src = 'https://www.youtube.com/embed/' + vid;
+      } else if( ~src.indexOf('vimeo.com') ) {
+        var vid = src.split('//')[1];
+        vid = vid && vid.split('/')[1];
+        vid = vid && vid.split('?')[0];
+        vid = vid && vid.split('&')[0];
+        vid = vid && vid.split('#')[0];
+        
+        if( !vid ) return error('URL을 정확히 입력해주세요');
+        src = 'https://player.vimeo.com/video/' + vid;
+      }
+      
+      part.insert(new context.Video(src));
+    });
+  }
+})
+.add({
+  text: '<i class="fa fa-arrows-h"></i>',
+  tooltip: '구분선',
+  fn: function(e) {
+    this.owner().insert(new context.Separator());
+  }
+})
+.add({
+  text: '<i class="fa fa-paperclip"></i>',
+  tooltip: '첨부파일',
+  fn: function(e) {
+    var part = this.owner();
+    part.context().selectFile(function(err, file) {
+      if( err ) return error(err);
+      
+      part.insert(new context.File(file));
+    });
+  }
+});
+
+module.exports = items;
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports) {
+
+module.exports = function(el) {
+  var top = 0;
+  do {
+    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
+  } while( el = el.offsetParent );
+  return top;
+};
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var Part = __webpack_require__(3);
+var buildtoolbar = __webpack_require__(37);
+
+__webpack_require__(69);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -1599,244 +1873,10 @@ module.exports = ParagraphPart;
 
 
 /***/ }),
-/* 11 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var $ = __webpack_require__(0);
-var Button = __webpack_require__(9);
-
-function ListButton() {
-  Button.apply(this, arguments);
-  
-  this._el.ac('ff-toolbar-list-btn');
-}
-
-ListButton.prototype = Object.create(Button.prototype, {
-  handleEvent: {
-    value: function(e) {
-      if( e.type == 'click' ) {
-        e.stopPropagation();
-        this.click(e);
-        this.toggleList();
-        this.update(e);
-      }
-    }
-  },
-  toggleList: {
-    value: function() {
-      console.log('toggle');
-    }
-  },
-  text: {
-    value: function(txt) {
-      this._el.html(txt);
-      return this;
-    }
-  }
-});
-
-module.exports = ListButton;
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-
-function Separator(options) {
-  self.el = $('<div class="ff-toolbar-separator"></div>')[0];
-}
-
-Separator.prototype = {
-  owner: function(owner) {
-    if( !arguments.length ) return this._owner;
-    this._owner = owner;
-    return this;
-  },
-  appendTo: function(parent) {
-    $(parent).append(this.el);
-    return this;
-  },
-  remove: function() {
-    $(this.el).remove();
-    return this;
-  }
-};
-
-module.exports = Separator;
-
-/***/ }),
-/* 13 */
-/***/ (function(module, exports) {
-
-var types = {};
-
-module.exports = {
-  get: function(id) {
-    return types[id];
-  },
-  define: function(id, handler) {
-    if( !id ) throw new TypeError('missing id');
-    if( typeof id !== 'string' ) throw new TypeError('id must be a string');
-    if( typeof handler !== 'function' ) throw new TypeError('type plugin must be a function');
-    
-    types[id] = handler;
-    return this;
-  },
-  exists: function(id) {
-    return !!types[id];
-  }
-};
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var swal = __webpack_require__(18);
-var Items = __webpack_require__(37);
-var context = __webpack_require__(5);
-
-var items = Items();
-
-function error(msg) {
-  if( !msg ) msg = 'Error';
-  swal(msg.message || msg, 'error');
-}
-
-items
-.add({
-  text: '<i class="fa fa-font"></i>',
-  tooltip: '문단',
-  fn: function(e) {
-    var placeholder = $(this.owner().dom()).attr('placeholder');
-    this.owner().insert(new context.Paragraph().placeholder(placeholder));
-  }
-})
-.add({
-  text: '<i class="fa fa-picture-o"></i>',
-  tooltip: '이미지 파일',
-  fn: function(e) {
-    var part = this.owner();
-    part.context().selectFiles(function(err, files) {
-      if( err ) return error(err);
-      if( !files.length ) return;
-      
-      if( files.length === 1 ) {
-        part.insert(new context.Image(files[0]));
-      } else {
-        var row = new context.Row();
-        files.forEach(function(file) {
-          row.add(new context.Image(file));
-        });
-        part.insert(row);
-      }
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-instagram"></i>',
-  tooltip: '이미지',
-  fn: function(e) {
-    var part = this.owner();
-    
-    swal({
-      title: '이미지 URL을 입력해주세요',
-      type: 'input',
-      showCancelButton: true,
-      closeOnConfirm: true,
-      animation: 'slide-from-top'
-    }, function(src){
-      if( !src ) return;
-      
-      if( ~src.indexOf('instagram.com') ) {
-        var vid = src.split('//')[1];
-        vid = vid && vid.split('/p/')[1];
-        vid = vid && vid.split('/')[0];
-        
-        if( vid ) src = 'https://www.instagram.com/p/' + vid + '/media';
-      }
-      
-      part.insert(new context.Image(src));
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-youtube-square"></i>',
-  tooltip: '동영상',
-  fn: function(e) {
-    var part = this.owner();
-    
-    swal({
-      title: '동영상 URL을 입력해주세요',
-      type: 'input',
-      showCancelButton: true,
-      closeOnConfirm: true,
-      animation: 'slide-from-top'
-    }, function(src){
-      if( !src ) return;
-      
-      if( ~src.indexOf('youtube.com') ) {
-        var vid = src.split('v=')[1];
-        vid = vid && vid.split('&')[0];
-        vid = vid && vid.split('#')[0];
-        
-        if( !vid ) return error('URL을 정확히 입력해주세요');
-        src = 'https://www.youtube.com/embed/' + vid;
-      } else if( ~src.indexOf('vimeo.com') ) {
-        var vid = src.split('//')[1];
-        vid = vid && vid.split('/')[1];
-        vid = vid && vid.split('?')[0];
-        vid = vid && vid.split('&')[0];
-        vid = vid && vid.split('#')[0];
-        
-        if( !vid ) return error('URL을 정확히 입력해주세요');
-        src = 'https://player.vimeo.com/video/' + vid;
-      }
-      
-      part.insert(new context.Video(src));
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-arrows-h"></i>',
-  tooltip: '구분선',
-  fn: function(e) {
-    this.owner().insert(new context.Separator());
-  }
-})
-.add({
-  text: '<i class="fa fa-paperclip"></i>',
-  tooltip: '첨부파일',
-  fn: function(e) {
-    var part = this.owner();
-    part.context().selectFile(function(err, file) {
-      if( err ) return error(err);
-      
-      part.insert(new context.File(file));
-    });
-  }
-});
-
-module.exports = items;
-
-/***/ }),
-/* 15 */
-/***/ (function(module, exports) {
-
-module.exports = function(el) {
-  var top = 0;
-  do {
-    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
-  } while( el = el.offsetParent );
-  return top;
-};
-
-/***/ }),
-/* 16 */
-/***/ (function(module, exports) {
-
-module.exports = function (arr, iterator, callback) {
+/* WEBPACK VAR INJECTION */(function(setImmediate, process) {module.exports = function (arr, iterator, callback) {
   callback = callback || function () {};
   if (!Array.isArray(arr) || !arr.length) {
       return callback();
@@ -1865,9 +1905,196 @@ function nextTick (cb) {
     process.nextTick(cb);
   }
 }
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(82).setImmediate, __webpack_require__(18)))
 
 /***/ }),
-/* 17 */
+/* 18 */
+/***/ (function(module, exports) {
+
+// shim for using process in browser
+var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+function defaultSetTimout() {
+    throw new Error('setTimeout has not been defined');
+}
+function defaultClearTimeout () {
+    throw new Error('clearTimeout has not been defined');
+}
+(function () {
+    try {
+        if (typeof setTimeout === 'function') {
+            cachedSetTimeout = setTimeout;
+        } else {
+            cachedSetTimeout = defaultSetTimout;
+        }
+    } catch (e) {
+        cachedSetTimeout = defaultSetTimout;
+    }
+    try {
+        if (typeof clearTimeout === 'function') {
+            cachedClearTimeout = clearTimeout;
+        } else {
+            cachedClearTimeout = defaultClearTimeout;
+        }
+    } catch (e) {
+        cachedClearTimeout = defaultClearTimeout;
+    }
+} ())
+function runTimeout(fun) {
+    if (cachedSetTimeout === setTimeout) {
+        //normal enviroments in sane situations
+        return setTimeout(fun, 0);
+    }
+    // if setTimeout wasn't available but was latter defined
+    if ((cachedSetTimeout === defaultSetTimout || !cachedSetTimeout) && setTimeout) {
+        cachedSetTimeout = setTimeout;
+        return setTimeout(fun, 0);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedSetTimeout(fun, 0);
+    } catch(e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+            return cachedSetTimeout.call(null, fun, 0);
+        } catch(e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+            return cachedSetTimeout.call(this, fun, 0);
+        }
+    }
+
+
+}
+function runClearTimeout(marker) {
+    if (cachedClearTimeout === clearTimeout) {
+        //normal enviroments in sane situations
+        return clearTimeout(marker);
+    }
+    // if clearTimeout wasn't available but was latter defined
+    if ((cachedClearTimeout === defaultClearTimeout || !cachedClearTimeout) && clearTimeout) {
+        cachedClearTimeout = clearTimeout;
+        return clearTimeout(marker);
+    }
+    try {
+        // when when somebody has screwed with setTimeout but no I.E. maddness
+        return cachedClearTimeout(marker);
+    } catch (e){
+        try {
+            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+            return cachedClearTimeout.call(null, marker);
+        } catch (e){
+            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+            return cachedClearTimeout.call(this, marker);
+        }
+    }
+
+
+
+}
+var queue = [];
+var draining = false;
+var currentQueue;
+var queueIndex = -1;
+
+function cleanUpNextTick() {
+    if (!draining || !currentQueue) {
+        return;
+    }
+    draining = false;
+    if (currentQueue.length) {
+        queue = currentQueue.concat(queue);
+    } else {
+        queueIndex = -1;
+    }
+    if (queue.length) {
+        drainQueue();
+    }
+}
+
+function drainQueue() {
+    if (draining) {
+        return;
+    }
+    var timeout = runTimeout(cleanUpNextTick);
+    draining = true;
+
+    var len = queue.length;
+    while(len) {
+        currentQueue = queue;
+        queue = [];
+        while (++queueIndex < len) {
+            if (currentQueue) {
+                currentQueue[queueIndex].run();
+            }
+        }
+        queueIndex = -1;
+        len = queue.length;
+    }
+    currentQueue = null;
+    draining = false;
+    runClearTimeout(timeout);
+}
+
+process.nextTick = function (fun) {
+    var args = new Array(arguments.length - 1);
+    if (arguments.length > 1) {
+        for (var i = 1; i < arguments.length; i++) {
+            args[i - 1] = arguments[i];
+        }
+    }
+    queue.push(new Item(fun, args));
+    if (queue.length === 1 && !draining) {
+        runTimeout(drainQueue);
+    }
+};
+
+// v8 likes predictible objects
+function Item(fun, array) {
+    this.fun = fun;
+    this.array = array;
+}
+Item.prototype.run = function () {
+    this.fun.apply(null, this.array);
+};
+process.title = 'browser';
+process.browser = true;
+process.env = {};
+process.argv = [];
+process.version = ''; // empty string to avoid regexp issues
+process.versions = {};
+
+function noop() {}
+
+process.on = noop;
+process.addListener = noop;
+process.once = noop;
+process.off = noop;
+process.removeListener = noop;
+process.removeAllListeners = noop;
+process.emit = noop;
+
+process.binding = function (name) {
+    throw new Error('process.binding is not supported');
+};
+
+process.cwd = function () { return '/' };
+process.chdir = function (dir) {
+    throw new Error('process.chdir is not supported');
+};
+process.umask = function() { return 0; };
+
+
+/***/ }),
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1905,7 +2132,7 @@ exports['default'] = defaultParams;
 module.exports = exports['default'];
 
 /***/ }),
-/* 18 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1940,19 +2167,19 @@ var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$r
 
 // Handle button events and keyboard events
 
-var _handleButton$handleConfirm$handleCancel = __webpack_require__(66);
+var _handleButton$handleConfirm$handleCancel = __webpack_require__(75);
 
-var _handleKeyDown = __webpack_require__(67);
+var _handleKeyDown = __webpack_require__(76);
 
 var _handleKeyDown2 = _interopRequireWildcard(_handleKeyDown);
 
 // Default values
 
-var _defaultParams = __webpack_require__(17);
+var _defaultParams = __webpack_require__(19);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
-var _setParameters = __webpack_require__(69);
+var _setParameters = __webpack_require__(78);
 
 var _setParameters2 = _interopRequireWildcard(_setParameters);
 
@@ -2214,7 +2441,7 @@ if (typeof window !== 'undefined') {
 module.exports = exports['default'];
 
 /***/ }),
-/* 19 */
+/* 21 */
 /***/ (function(module, exports) {
 
 if( !Array.prototype.every ) {
@@ -2459,7 +2686,7 @@ module.exports = function(scope) {
 };
 
 /***/ }),
-/* 20 */
+/* 22 */
 /***/ (function(module, exports) {
 
 function isNull(value) {
@@ -2549,16 +2776,535 @@ module.exports = {
 };
 
 /***/ }),
-/* 21 */
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = {
+  spongebob: {
+    title: {
+      html: 'SpongeBob SquarePants'
+    },
+    content: {
+      html: __webpack_require__(58)
+    }
+  },
+  patrick: {
+    title: {
+      html: 'Patrick Star'
+    },
+    content: {
+      html: __webpack_require__(57)
+    }
+  },
+  squidward: {
+    title: {
+      html: 'Squidward Tentacles'
+    },
+    content: {
+      html: __webpack_require__(59)
+    }
+  },
+  mrkrabs: {
+    title: {
+      html: 'Eugene H. Krabs'
+    },
+    content: {
+      html: __webpack_require__(56)
+    }
+  }
+};
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _ffEditor = __webpack_require__(10);
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var CustomPart = function (_Part) {
+  _inherits(CustomPart, _Part);
+
+  function CustomPart(el) {
+    _classCallCheck(this, CustomPart);
+
+    var _this = _possibleConstructorReturn(this, (CustomPart.__proto__ || Object.getPrototypeOf(CustomPart)).call(this, el));
+
+    _this.toolbar().clear().add({
+      text: '<i class="fa fa-pencil"></i>',
+      fn: function fn(e) {}
+    }).add({
+      text: '<i class="fa fa-list"></i>',
+      fn: function fn(e) {}
+    });
+    return _this;
+  }
+
+  _createClass(CustomPart, [{
+    key: 'onfocus',
+    value: function onfocus(e) {
+      console.log('focus', e);
+    }
+  }, {
+    key: 'onrender',
+    value: function onrender(e) {
+      console.log('render', e);
+    }
+  }, {
+    key: 'onupdate',
+    value: function onupdate(e) {
+      console.log('update', e);
+    }
+  }, {
+    key: 'test',
+    value: function test() {
+      console.log('OK!', this);
+    }
+  }]);
+
+  return CustomPart;
+}(_ffEditor.Part);
+
+exports.default = CustomPart;
+
+/***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var ff = __webpack_require__(10);
+var $ = __webpack_require__(0);
+var Part = ff.Part;
+var CustomPart = __webpack_require__(24).default;
+var tpls = __webpack_require__(23);
+
+ff.ready(function() {
+  $('.dropdown').on('click', function() {
+    $(this).tc('open');
+  });
+  
+  window.toggleMode = function(el) {
+    var editmode = ff.editmode();
+    if( editmode ) ff.editmode(false);
+    else ff.editmode(true);
+    
+    if( el ) {
+      if( editmode ) el.innerHTML = 'Edit Mode';
+      else el.innerHTML = 'View Mode';
+    }
+  };
+  
+  window.load = function() {
+    ff.data(JSON.parse(localStorage.getItem('article') || '{}'));
+  };
+  
+  window.save = function() {
+    localStorage.setItem('article', JSON.stringify(ff.data()));
+  };
+  
+  window.preset = function(name) {
+    ff.data(tpls[name]);
+  };
+  
+  if( localStorage.getItem('article') ) window.load();
+  else window.preset('spongebob');
+});
+
+
+/***/ }),
+/* 26 */
+/***/ (function(module, exports) {
+
+var endpoint;
+
+module.exports = {
+  endpoint: function(url) {
+    endpoint = url;
+  },
+  load: function(url, done) {
+    done();
+  }
+}
+
+/***/ }),
+/* 27 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var Button = __webpack_require__(30);
+
+function Buttons(toolbar) {
+  this._toolbar = toolbar;
+  this._el = $(toolbar.dom());
+  this._first = [];
+  this._buttons = [];
+  this._last = [];
+}
+
+Buttons.prototype = {
+  toolbar: function() {
+    return this._toolbar;
+  },
+  update: function() {
+    var el = this._el[0];
+    var list = this._list = [];
+    var append = function(btns) {
+      btns.forEach(function(btn) {
+        btn.appendTo(el).update();
+        list.push(btn);
+        if( btn.id ) list[btn.id] = btn;
+      });
+    };
+    
+    append(this._first);
+    append(this._buttons);
+    append(this._last);
+    return this;
+  },
+  get: function(id) {
+    return this._list && this._list[id];
+  },
+  add: function(btn, index) {
+    if( !btn ) return this;
+    if( !Array.isArray(btn) ) btn = [btn];
+    
+    var owner = this._toolbar.owner();
+    var btns = this._buttons;
+    btn.forEach(function(btn) {
+      btn = Button.eval(btn).owner(owner);
+      
+      if( btn ) {
+        if( index >= 0 ) btns.splice(index++, 0, btn);
+        else btns.push(btn);
+      }
+    });
+    
+    this.update();
+    return this;
+  },
+  first: function(btn, index) {
+    if( !btn ) return this;
+    if( !Array.isArray(btn) ) btn = [btn];
+    
+    var owner = this._toolbar.owner();
+    var btns = this._first;
+    btn.forEach(function(btn) {
+      btn = Button.eval(btn).owner(owner);
+      
+      if( btn ) {
+        if( index >= 0 ) btns.splice(index++, 0, btn);
+        else btns.push(btn);
+      }
+    });
+    
+    this.update();
+    return this;
+  },
+  last: function(btn, index) {
+    if( !btn ) return this;
+    if( !Array.isArray(btn) ) btn = [btn];
+    
+    var owner = this._toolbar.owner();
+    var btns = this._last;
+    btn.forEach(function(btn) {
+      btn = Button.eval(btn).owner(owner);
+      
+      if( btn ) {
+        if( index >= 0 ) btns.splice(index++, 0, btn);
+        else btns.push(btn);
+      }
+    });
+    
+    this.update();
+    return this;
+  },
+  remove: function(target) {
+    if( ~['string', 'number'].indexOf(typeof target) ) target = this.get(target);
+    if( !target ) return this;
+    
+    var remove = function(btns) {
+      btns.forEach(function(btn) {
+        if( btn === target ) btns.splice(btns.indexOf(btn), 1);
+      });
+    };
+    
+    remove(this._last);
+    remove(this._first);
+    remove(this._buttons);
+    
+    this.update();
+    return this;
+  },
+  clear: function() {
+    this._el.html();
+    return this;
+  }
+};
+
+module.exports = Buttons;
+
+/***/ }),
+/* 28 */
+/***/ (function(module, exports) {
+
+module.exports = function(el) {
+  var top = 0;
+  var left = 0;
+  
+  var c = el;
+  do {
+    if ( +c.offsetTop ) top += c.offsetTop;
+    if ( +c.offsetLeft ) left += c.offsetLeft;
+  } while( c = c.offsetParent );
+  
+  return {
+    top: top,
+    left: left,
+    width: el.offsetWidth,
+    height: el.offsetHeight
+  };
+};
+
+/***/ }),
+/* 29 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var getPosition = __webpack_require__(28);
+var Buttons = __webpack_require__(27);
+__webpack_require__(62);
+
+function clone(o) {
+  var result = {};
+  for(var k in o) result[k] = o[k];
+  return result; 
+}
+
+function Toolbar(owner, options) {
+  if( !owner || typeof owner.dom !== 'function' ) throw new TypeError('illegal owner(owner.dom() requried)');
+  
+  this._owner = owner;
+  this._el = $('<div/>').css('opacity', 0).ac('ff-toolbar').hide();
+  this._buttons = new Buttons(this);
+  this._enable = true;
+  this.options(options);
+  
+  $(window).on('scroll resize', this);
+}
+
+Toolbar.prototype = {
+  handleEvent: function(e) {
+    this.update();
+  },
+  options: function(o) {
+    if( !arguments.length ) return this._options;
+    this._options = clone(o);
+    return this;
+  },
+  position: function(position) {
+    this.options().position = position;
+    this.update();
+    return this;
+  },
+  dom: function() {
+    return this._el[0];
+  },
+  owner: function() {
+    return this._owner;
+  },
+  buttons: function() {
+    return this._buttons;
+  },
+  update: function() {
+    var options = this.options();
+    var dom = this.dom();
+    var ownerElement = this.owner().dom();
+    var position = options.position || 'top center outside';
+    
+    if( !document.body.contains(ownerElement) ) {
+      $(window).off('scroll resize', this);
+      var p = dom.parentNode;
+      p && p.removeChild(dom);
+      return;
+    }
+    
+    $(window).on('scroll resize', this);
+    
+    var el = this._el
+    .css(options.style || {})
+    .ac(options.cls)
+    .appendTo(document.body);
+    
+    if( ownerElement ) {
+      var ownerposition = getPosition(ownerElement);
+      var posarr = position.split(' ');
+      var inside = ~posarr.indexOf('inside');
+      var vertical = ~posarr.indexOf('vertical');
+      var nomargin = ~posarr.indexOf('nomargin');
+      if( vertical ) el.ac('ff-toolbar-vertical');
+      
+      var width = ownerElement.clientWidth;
+      var height = ownerElement.clientHeight;
+      var tbarwidth = dom.clientWidth;
+      var tbarheight = dom.clientHeight;
+      var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
+      
+      posarr.forEach(function(pos) {
+        if( !vertical ) {
+          if( pos === 'top' ) {
+            if( inside ) top = ownerposition.top + margin;
+            else top = ownerposition.top - tbarheight - margin;
+          } else if( pos == 'bottom' ) {
+            if( inside ) top = ownerposition.top + height - tbarheight - margin;
+            else top = ownerposition.top + height + margin;
+          } else if( pos == 'left' ) {
+            left = ownerposition.left;
+            if( inside ) left += margin;
+          } else if( pos == 'center' ) {
+            left = ownerposition.left + (width - tbarwidth) / 2;
+          } else if( pos == 'right' ) {
+            left = ownerposition.left + width - tbarwidth;
+            if( inside ) left -= margin;
+          }
+        } else {
+          if( pos === 'top' ) {
+            top = ownerposition.top;
+            if( inside ) top += margin;
+          } else if( pos == 'middle' ) {
+            top = ownerposition.top + (height - tbarheight) / 2;
+          } else if( pos == 'bottom' ) {
+            top = ownerposition.top + height - tbarheight;
+            if( inside ) top -= margin;
+          } else if( pos == 'left' ) {
+            if( inside ) left = ownerposition.left + margin;
+            else left = ownerposition.left - tbarwidth - margin;
+          } else if( pos == 'right' ) {
+            if( inside ) left = ownerposition.left + width - tbarwidth - margin;
+            else left = ownerposition.left + width + margin;
+          }
+        }
+      });
+      
+      if( top <= 5 ) top = 5;
+      if( left <= 5 ) left = 5;
+      
+      if( vertical ) {
+        //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
+        if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
+      }
+    
+      dom.style.top = top + 'px';
+      dom.style.left = left + 'px';
+    }
+    
+    this.buttons().update();
+    
+    return this;
+  },
+  show: function() {
+    if( !this.enable() ) return this;
+    this._el.css('opacity', 0).show();
+    this.update();
+    this._el.css('opacity', 1);
+    return this;
+  },
+  hide: function(force) {
+    if( !force && this.always() ) return this;
+    $(window).off('scroll resize', this);
+    this._el.css('opacity', 0).hide();
+    return this;
+  },
+  refresh: function() {
+    this.update();
+    return this;
+  },
+  always: function(b) {
+    if( !arguments.length ) return this._always;
+    this._always = !!b;
+    this.update();
+    return this;
+  },
+  enable: function(b) {
+    if( !arguments.length ) return this._enable;
+    this._enable = !!b;
+    this.update();
+    return this;
+  },
+  add: function(btn, index) {
+    this.buttons().add(btn, index);
+    return this;
+  },
+  get: function(id) {
+    return this.buttons().get(id);
+  },
+  first: function(btn) {
+    this.buttons().first(btn);
+    return this;
+  },
+  last: function(btn) {
+    this.buttons().last(btn);
+    return this;
+  },
+  clear: function(btn) {
+    this.buttons().clear();
+    return this;
+  },
+  remove: function(btn) {
+    this.buttons().remove(btn);
+    return this;
+  }
+};
+
+
+module.exports = Toolbar;
+
+
+/***/ }),
+/* 30 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var Button = __webpack_require__(9);
+var Separator = __webpack_require__(12);
+var ListButton = __webpack_require__(11);
+
+Button.eval = function(o) {
+  if( !o ) return null;
+  if( o instanceof Button ) return o;
+  
+  if( o == '-' || o.type == 'separator' ) return new Separator(o);
+  else if( o.type == 'list' ) return new ListButton(o);
+  
+  return new Button(o);
+};
+
+Button.Separator = Separator;
+Button.ListButton = ListButton;
+
+module.exports = Button;
+
+/***/ }),
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 var components = __webpack_require__(14);
-var Marker = __webpack_require__(38);
-var DnD = __webpack_require__(36);
+var Marker = __webpack_require__(34);
+var DnD = __webpack_require__(32);
 
-__webpack_require__(56);
+__webpack_require__(64);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -2809,13 +3555,232 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 22 */
+/* 32 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var each = __webpack_require__(17);
+var $ = __webpack_require__(0);
+var getOffsetTop = __webpack_require__(15);
+
+__webpack_require__(65);
+
+function DnD(part, dom) {
+  var el = $(dom);
+  var marker = $('<div class="ff-dnd-marker ff-acc"></div>');
+  
+  function move(target, y) {
+    if( !target ) return;
+    
+    if( y < getOffsetTop(target) + (target.offsetHeight / 2) ) {
+      marker.insertBefore(target);
+    } else {
+      marker.insertAfter(target);
+    }
+  }
+  
+  function hide() {
+    marker.remove();
+  }
+  
+  function current(target) {
+    if( target === el || target === marker ) return;
+    var children = el.children();
+    var current;
+    children.each(function() {
+      if( this.contains(target) ) current = this;
+    });
+    
+    return current;
+  }
+  
+  function ondragover(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    var dragging = part.context().dragging;
+    if( !dragging || e.target === dragging || dragging.contains(e.target) ) return hide();
+    
+    if( !e.target.contains(dragging) ) {
+      move(current(e.target), e.pageY);
+    }
+  }
+  
+  function ondragend(e) {
+    hide();
+  }
+  
+  function ondrop(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    var dragging = part.context().dragging;
+    var ref = marker[0].nextSibling;
+    
+    if( dragging ) {
+      if( e.target === dragging || dragging.contains(e.target) || !dom.contains(marker[0]) ) return;
+      part.insert(dragging, ref);
+    } else if( e.dataTransfer && e.dataTransfer.files ) {
+      part.insert(e.dataTransfer.files, ref);
+    }
+    
+    hide();
+  }
+  
+  el.on('dragover', ondragover)
+  .on('dragend', ondragend)
+  .on('drop', ondrop);
+  
+  return {
+    move: move,
+    hide: hide,
+    destroy: function() {
+      el.off('dragover', ondragover)
+      .off('dragend', ondragend)
+      .off('drop', ondrop);
+      
+      marker.remove();
+    }
+  };
+}
+
+module.exports = DnD;
+
+/***/ }),
+/* 33 */
+/***/ (function(module, exports) {
+
+module.exports = function() {
+  return (function() {
+    var items = [];
+  
+    items.add = function(item) {
+      items.push(item);
+      return this;
+    };
+  
+    items.remove = function(item) {
+      for(var pos;~(pos = items.indexOf(item));) items.splice(pos, 1);
+      return this;
+    };
+  
+    return items;
+  })();
+};
+
+/***/ }),
+/* 34 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var getOffsetTop = __webpack_require__(15);
+var components = __webpack_require__(14);
+var Button = __webpack_require__(8).Button;
+
+__webpack_require__(66);
+
+function Marker(part, dom) {
+  var el = $(dom);
+  var marker = $('<div class="ff-marker ff-acc"><div class="ff-marker-head"></div><div class="ff-marker-tools"></div></div>');
+  var lastref;
+  
+  function update() {
+    var tools = marker.find('.ff-marker-tools').empty();
+    components.forEach(function(item) {
+      if( !item || !item.text ) return;
+      
+      new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
+    });
+  }
+  
+  function show(ref) {
+    ref = (typeof ref == 'number' ? el.children()[ref] : ref);
+    
+    if( lastref === ref ) return this;
+    lastref = ref;
+    
+    //marker.remove();
+    if( ref ) marker.insertBefore(ref);
+    else marker.appendTo(el);
+    
+    return this;
+  }
+  
+  function hide() {
+    collapse();
+    marker.remove();
+    return this;
+  }
+  
+  function expand() {
+    marker.ac('ff-marker-open');
+    return this;
+  }
+  
+  function collapse() {
+    marker.rc('ff-marker-open');
+    return this;
+  }
+  
+  function onclick(e) {
+    if( !marker[0].contains(e.target) ) marker.rc('ff-marker-open');
+  }
+  
+  function onmousemove(e) {
+    var target = e.target;
+    var y = e.pageY;
+    
+    if( target === el || target === marker ) return;
+    var children = el.children();
+    var current;
+    children.each(function() {
+      if( this.contains(target) ) current = this;
+    });
+    
+    if( !current ) return;
+    
+    var index = children.indexOf(current);
+    if( y > getOffsetTop(current) + (current.offsetHeight / 2) ) index = index + 1;
+    show(index);
+  }
+  
+  marker.find('.ff-marker-head').on('click', function() {
+    update();
+    marker.tc('ff-marker-open');
+  });
+  
+  el.on('click', onclick).on('mousemove', onmousemove);
+  
+  return {
+    show: show,
+    hide: hide,
+    expand: expand,
+    collapse: collapse,
+    getIndex: function() {
+      return el.children().indexOf(marker[0]);
+    },
+    getRef: function() {
+      return marker[0].nextSibling;
+    },
+    isExpanded: function() {
+      return marker.hc('ff-marker-open')
+    },
+    destroy: function() {
+      el.off('click', onclick).off('mousemove', onmousemove);
+      marker.remove();
+    }
+  };
+}
+
+module.exports = Marker;
+
+/***/ }),
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(59);
+__webpack_require__(67);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -2872,13 +3837,13 @@ FilePart.defaultLabel = 'Download';
 module.exports = FilePart;
 
 /***/ }),
-/* 23 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(60);
+__webpack_require__(68);
 
 function ImagePart(el) {
   Part.apply(this, arguments);
@@ -3025,13 +3990,111 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 24 */
+/* 37 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var context = __webpack_require__(5);
+var swal = __webpack_require__(20);
+var Toolbar = context.Toolbar;
+
+function rangeitem(text, tooltip, selector, fn) {
+  return {
+    text: text,
+    tooltip: tooltip,
+    onupdate: function() {
+      var range = this.owner().range();
+      if( !range ) return this.enable(false);
+      
+      this.enable(true);
+      if( context.wrapped(range, selector) ) this.active(true);
+    },
+    fn: fn || function(e) {
+      context.toggleWrap(this.owner().range(), selector);
+    }
+  };
+}
+
+module.exports = function(part) {
+  return part.toolbar()
+  .add({
+    type: 'list',
+    text: '<i class="fa fa-font"></i>',
+    onselect: function(selected) {
+      
+    },
+    onupdate: function() {
+      
+    },
+    fn: function(e) {
+      
+    },
+    list: [
+      '기본폰트',
+      '나눔고딕',
+      '나눔명조',
+      'Helvetica',
+      'Times New Roman'
+    ]
+  })
+  .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
+  .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'span.underline'))
+  .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
+  .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'span.strike'))
+  .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
+    var range = this.owner().range();
+    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
+    
+    swal({
+      title: '링크 주소를 입력해주세요',
+      type: 'input',
+      showCancelButton: true,
+      closeOnConfirm: true,
+      animation: 'slide-from-top'
+    }, function(href){
+      if( !src ) return;
+      context.wrap(range, $('<a href="' + href + '" />')[0]);
+    });
+  }))
+  .add({
+    text: '<i class="fa fa-align-justify"></i>',
+    tooltip: '정렬',
+    onupdate: function() {
+      var btn = this;
+      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
+      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
+      else btn.text('<i class="fa fa-align-justify"></i>');
+    },
+    fn: function(e) {
+      var btn = this;
+      var el = $(part.dom());
+      
+      if( btn.align == 'center' ) {
+        el.css('text-align', 'right');
+        btn.align = 'right';
+      } else if( btn.align == 'right' ) {
+        el.css('text-align', 'left');
+        btn.align = 'left';
+      } else if( btn.align == 'left' ) {
+        el.css('text-align', '');
+        btn.align = '';
+      } else {
+        el.css('text-align', 'center');
+        btn.align = 'center';
+      }
+    }
+  });
+};
+
+/***/ }),
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(62);
+__webpack_require__(70);
 
 function RowPart(el) {
   Part.call(this, el);
@@ -3127,13 +4190,13 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 25 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(63);
+__webpack_require__(71);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -3168,13 +4231,13 @@ Separator.prototype = Object.create(Part.prototype, {
 module.exports = Separator;
 
 /***/ }),
-/* 26 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var ParagraphPart = __webpack_require__(10);
+var ParagraphPart = __webpack_require__(16);
 
-__webpack_require__(64);
+__webpack_require__(72);
 
 function TextPart() {
   ParagraphPart.apply(this, arguments);
@@ -3200,13 +4263,13 @@ proto.html = ParagraphPart.prototype.text;
 module.exports = TextPart;
 
 /***/ }),
-/* 27 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(65);
+__webpack_require__(73);
 
 function VideoPart() {
   Part.apply(this, arguments);
@@ -3258,13 +4321,426 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 28 */
+/* 42 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 43 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 44 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 45 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.ff-article img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-article hr {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-article hr:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-article hr:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 46 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #2796DD;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 47 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 50 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 52 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 150px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 53 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 54 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-video-embed-responsive {\n  position: relative;\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n}\n.ff-video .ff-video-embed-responsive-16by9 {\n  padding-bottom: 56.25%;\n}\n.ff-video .ff-video-embed-responsive .ff-video-embed-responsive-item {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video .mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.ff-video-size-narrow {\n  width: 50%;\n}\n.ff-video.ff-video-size-fit {\n  width: 100%;\n}\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 55 */
+/***/ (function(module, exports, __webpack_require__) {
+
+exports = module.exports = __webpack_require__(1)();
+// imports
+
+
+// module
+exports.push([module.i, "body.stop-scrolling {\n  height: 100%;\n  overflow: hidden; }\n\n.sweet-overlay {\n  background-color: black;\n  /* IE8 */\n  -ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity=40)\";\n  /* IE8 */\n  background-color: rgba(0, 0, 0, 0.4);\n  position: fixed;\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  display: none;\n  z-index: 10000; }\n\n.sweet-alert {\n  background-color: white;\n  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;\n  width: 478px;\n  padding: 17px;\n  border-radius: 5px;\n  text-align: center;\n  position: fixed;\n  left: 50%;\n  top: 50%;\n  margin-left: -256px;\n  margin-top: -200px;\n  overflow: hidden;\n  display: none;\n  z-index: 99999; }\n  @media all and (max-width: 540px) {\n    .sweet-alert {\n      width: auto;\n      margin-left: 0;\n      margin-right: 0;\n      left: 15px;\n      right: 15px; } }\n  .sweet-alert h2 {\n    color: #575757;\n    font-size: 30px;\n    text-align: center;\n    font-weight: 600;\n    text-transform: none;\n    position: relative;\n    margin: 25px 0;\n    padding: 0;\n    line-height: 40px;\n    display: block; }\n  .sweet-alert p {\n    color: #797979;\n    font-size: 16px;\n    text-align: center;\n    font-weight: 300;\n    position: relative;\n    text-align: inherit;\n    float: none;\n    margin: 0;\n    padding: 0;\n    line-height: normal; }\n  .sweet-alert fieldset {\n    border: none;\n    position: relative; }\n  .sweet-alert .sa-error-container {\n    background-color: #f1f1f1;\n    margin-left: -17px;\n    margin-right: -17px;\n    overflow: hidden;\n    padding: 0 10px;\n    max-height: 0;\n    webkit-transition: padding 0.15s, max-height 0.15s;\n    transition: padding 0.15s, max-height 0.15s; }\n    .sweet-alert .sa-error-container.show {\n      padding: 10px 0;\n      max-height: 100px;\n      webkit-transition: padding 0.2s, max-height 0.2s;\n      transition: padding 0.25s, max-height 0.25s; }\n    .sweet-alert .sa-error-container .icon {\n      display: inline-block;\n      width: 24px;\n      height: 24px;\n      border-radius: 50%;\n      background-color: #ea7d7d;\n      color: white;\n      line-height: 24px;\n      text-align: center;\n      margin-right: 3px; }\n    .sweet-alert .sa-error-container p {\n      display: inline-block; }\n  .sweet-alert .sa-input-error {\n    position: absolute;\n    top: 29px;\n    right: 26px;\n    width: 20px;\n    height: 20px;\n    opacity: 0;\n    -webkit-transform: scale(0.5);\n    transform: scale(0.5);\n    -webkit-transform-origin: 50% 50%;\n    transform-origin: 50% 50%;\n    -webkit-transition: all 0.1s;\n    transition: all 0.1s; }\n    .sweet-alert .sa-input-error::before, .sweet-alert .sa-input-error::after {\n      content: \"\";\n      width: 20px;\n      height: 6px;\n      background-color: #f06e57;\n      border-radius: 3px;\n      position: absolute;\n      top: 50%;\n      margin-top: -4px;\n      left: 50%;\n      margin-left: -9px; }\n    .sweet-alert .sa-input-error::before {\n      -webkit-transform: rotate(-45deg);\n      transform: rotate(-45deg); }\n    .sweet-alert .sa-input-error::after {\n      -webkit-transform: rotate(45deg);\n      transform: rotate(45deg); }\n    .sweet-alert .sa-input-error.show {\n      opacity: 1;\n      -webkit-transform: scale(1);\n      transform: scale(1); }\n  .sweet-alert input {\n    width: 100%;\n    box-sizing: border-box;\n    border-radius: 3px;\n    border: 1px solid #d7d7d7;\n    height: 43px;\n    margin-top: 10px;\n    margin-bottom: 17px;\n    font-size: 18px;\n    box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.06);\n    padding: 0 12px;\n    display: none;\n    -webkit-transition: all 0.3s;\n    transition: all 0.3s; }\n    .sweet-alert input:focus {\n      outline: none;\n      box-shadow: 0px 0px 3px #c4e6f5;\n      border: 1px solid #b4dbed; }\n      .sweet-alert input:focus::-moz-placeholder {\n        transition: opacity 0.3s 0.03s ease;\n        opacity: 0.5; }\n      .sweet-alert input:focus:-ms-input-placeholder {\n        transition: opacity 0.3s 0.03s ease;\n        opacity: 0.5; }\n      .sweet-alert input:focus::-webkit-input-placeholder {\n        transition: opacity 0.3s 0.03s ease;\n        opacity: 0.5; }\n    .sweet-alert input::-moz-placeholder {\n      color: #bdbdbd; }\n    .sweet-alert input:-ms-input-placeholder {\n      color: #bdbdbd; }\n    .sweet-alert input::-webkit-input-placeholder {\n      color: #bdbdbd; }\n  .sweet-alert.show-input input {\n    display: block; }\n  .sweet-alert .sa-confirm-button-container {\n    display: inline-block;\n    position: relative; }\n  .sweet-alert .la-ball-fall {\n    position: absolute;\n    left: 50%;\n    top: 50%;\n    margin-left: -27px;\n    margin-top: 4px;\n    opacity: 0;\n    visibility: hidden; }\n  .sweet-alert button {\n    background-color: #8CD4F5;\n    color: white;\n    border: none;\n    box-shadow: none;\n    font-size: 17px;\n    font-weight: 500;\n    -webkit-border-radius: 4px;\n    border-radius: 5px;\n    padding: 10px 32px;\n    margin: 26px 5px 0 5px;\n    cursor: pointer; }\n    .sweet-alert button:focus {\n      outline: none;\n      box-shadow: 0 0 2px rgba(128, 179, 235, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.05); }\n    .sweet-alert button:hover {\n      background-color: #7ecff4; }\n    .sweet-alert button:active {\n      background-color: #5dc2f1; }\n    .sweet-alert button.cancel {\n      background-color: #C1C1C1; }\n      .sweet-alert button.cancel:hover {\n        background-color: #b9b9b9; }\n      .sweet-alert button.cancel:active {\n        background-color: #a8a8a8; }\n      .sweet-alert button.cancel:focus {\n        box-shadow: rgba(197, 205, 211, 0.8) 0px 0px 2px, rgba(0, 0, 0, 0.0470588) 0px 0px 0px 1px inset !important; }\n    .sweet-alert button[disabled] {\n      opacity: .6;\n      cursor: default; }\n    .sweet-alert button.confirm[disabled] {\n      color: transparent; }\n      .sweet-alert button.confirm[disabled] ~ .la-ball-fall {\n        opacity: 1;\n        visibility: visible;\n        transition-delay: 0s; }\n    .sweet-alert button::-moz-focus-inner {\n      border: 0; }\n  .sweet-alert[data-has-cancel-button=false] button {\n    box-shadow: none !important; }\n  .sweet-alert[data-has-confirm-button=false][data-has-cancel-button=false] {\n    padding-bottom: 40px; }\n  .sweet-alert .sa-icon {\n    width: 80px;\n    height: 80px;\n    border: 4px solid gray;\n    -webkit-border-radius: 40px;\n    border-radius: 40px;\n    border-radius: 50%;\n    margin: 20px auto;\n    padding: 0;\n    position: relative;\n    box-sizing: content-box; }\n    .sweet-alert .sa-icon.sa-error {\n      border-color: #F27474; }\n      .sweet-alert .sa-icon.sa-error .sa-x-mark {\n        position: relative;\n        display: block; }\n      .sweet-alert .sa-icon.sa-error .sa-line {\n        position: absolute;\n        height: 5px;\n        width: 47px;\n        background-color: #F27474;\n        display: block;\n        top: 37px;\n        border-radius: 2px; }\n        .sweet-alert .sa-icon.sa-error .sa-line.sa-left {\n          -webkit-transform: rotate(45deg);\n          transform: rotate(45deg);\n          left: 17px; }\n        .sweet-alert .sa-icon.sa-error .sa-line.sa-right {\n          -webkit-transform: rotate(-45deg);\n          transform: rotate(-45deg);\n          right: 16px; }\n    .sweet-alert .sa-icon.sa-warning {\n      border-color: #F8BB86; }\n      .sweet-alert .sa-icon.sa-warning .sa-body {\n        position: absolute;\n        width: 5px;\n        height: 47px;\n        left: 50%;\n        top: 10px;\n        -webkit-border-radius: 2px;\n        border-radius: 2px;\n        margin-left: -2px;\n        background-color: #F8BB86; }\n      .sweet-alert .sa-icon.sa-warning .sa-dot {\n        position: absolute;\n        width: 7px;\n        height: 7px;\n        -webkit-border-radius: 50%;\n        border-radius: 50%;\n        margin-left: -3px;\n        left: 50%;\n        bottom: 10px;\n        background-color: #F8BB86; }\n    .sweet-alert .sa-icon.sa-info {\n      border-color: #C9DAE1; }\n      .sweet-alert .sa-icon.sa-info::before {\n        content: \"\";\n        position: absolute;\n        width: 5px;\n        height: 29px;\n        left: 50%;\n        bottom: 17px;\n        border-radius: 2px;\n        margin-left: -2px;\n        background-color: #C9DAE1; }\n      .sweet-alert .sa-icon.sa-info::after {\n        content: \"\";\n        position: absolute;\n        width: 7px;\n        height: 7px;\n        border-radius: 50%;\n        margin-left: -3px;\n        top: 19px;\n        background-color: #C9DAE1; }\n    .sweet-alert .sa-icon.sa-success {\n      border-color: #A5DC86; }\n      .sweet-alert .sa-icon.sa-success::before, .sweet-alert .sa-icon.sa-success::after {\n        content: '';\n        -webkit-border-radius: 40px;\n        border-radius: 40px;\n        border-radius: 50%;\n        position: absolute;\n        width: 60px;\n        height: 120px;\n        background: white;\n        -webkit-transform: rotate(45deg);\n        transform: rotate(45deg); }\n      .sweet-alert .sa-icon.sa-success::before {\n        -webkit-border-radius: 120px 0 0 120px;\n        border-radius: 120px 0 0 120px;\n        top: -7px;\n        left: -33px;\n        -webkit-transform: rotate(-45deg);\n        transform: rotate(-45deg);\n        -webkit-transform-origin: 60px 60px;\n        transform-origin: 60px 60px; }\n      .sweet-alert .sa-icon.sa-success::after {\n        -webkit-border-radius: 0 120px 120px 0;\n        border-radius: 0 120px 120px 0;\n        top: -11px;\n        left: 30px;\n        -webkit-transform: rotate(-45deg);\n        transform: rotate(-45deg);\n        -webkit-transform-origin: 0px 60px;\n        transform-origin: 0px 60px; }\n      .sweet-alert .sa-icon.sa-success .sa-placeholder {\n        width: 80px;\n        height: 80px;\n        border: 4px solid rgba(165, 220, 134, 0.2);\n        -webkit-border-radius: 40px;\n        border-radius: 40px;\n        border-radius: 50%;\n        box-sizing: content-box;\n        position: absolute;\n        left: -4px;\n        top: -4px;\n        z-index: 2; }\n      .sweet-alert .sa-icon.sa-success .sa-fix {\n        width: 5px;\n        height: 90px;\n        background-color: white;\n        position: absolute;\n        left: 28px;\n        top: 8px;\n        z-index: 1;\n        -webkit-transform: rotate(-45deg);\n        transform: rotate(-45deg); }\n      .sweet-alert .sa-icon.sa-success .sa-line {\n        height: 5px;\n        background-color: #A5DC86;\n        display: block;\n        border-radius: 2px;\n        position: absolute;\n        z-index: 2; }\n        .sweet-alert .sa-icon.sa-success .sa-line.sa-tip {\n          width: 25px;\n          left: 14px;\n          top: 46px;\n          -webkit-transform: rotate(45deg);\n          transform: rotate(45deg); }\n        .sweet-alert .sa-icon.sa-success .sa-line.sa-long {\n          width: 47px;\n          right: 8px;\n          top: 38px;\n          -webkit-transform: rotate(-45deg);\n          transform: rotate(-45deg); }\n    .sweet-alert .sa-icon.sa-custom {\n      background-size: contain;\n      border-radius: 0;\n      border: none;\n      background-position: center center;\n      background-repeat: no-repeat; }\n\n/*\n * Animations\n */\n@-webkit-keyframes showSweetAlert {\n  0% {\n    transform: scale(0.7);\n    -webkit-transform: scale(0.7); }\n  45% {\n    transform: scale(1.05);\n    -webkit-transform: scale(1.05); }\n  80% {\n    transform: scale(0.95);\n    -webkit-transform: scale(0.95); }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1); } }\n\n@keyframes showSweetAlert {\n  0% {\n    transform: scale(0.7);\n    -webkit-transform: scale(0.7); }\n  45% {\n    transform: scale(1.05);\n    -webkit-transform: scale(1.05); }\n  80% {\n    transform: scale(0.95);\n    -webkit-transform: scale(0.95); }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1); } }\n\n@-webkit-keyframes hideSweetAlert {\n  0% {\n    transform: scale(1);\n    -webkit-transform: scale(1); }\n  100% {\n    transform: scale(0.5);\n    -webkit-transform: scale(0.5); } }\n\n@keyframes hideSweetAlert {\n  0% {\n    transform: scale(1);\n    -webkit-transform: scale(1); }\n  100% {\n    transform: scale(0.5);\n    -webkit-transform: scale(0.5); } }\n\n@-webkit-keyframes slideFromTop {\n  0% {\n    top: 0%; }\n  100% {\n    top: 50%; } }\n\n@keyframes slideFromTop {\n  0% {\n    top: 0%; }\n  100% {\n    top: 50%; } }\n\n@-webkit-keyframes slideToTop {\n  0% {\n    top: 50%; }\n  100% {\n    top: 0%; } }\n\n@keyframes slideToTop {\n  0% {\n    top: 50%; }\n  100% {\n    top: 0%; } }\n\n@-webkit-keyframes slideFromBottom {\n  0% {\n    top: 70%; }\n  100% {\n    top: 50%; } }\n\n@keyframes slideFromBottom {\n  0% {\n    top: 70%; }\n  100% {\n    top: 50%; } }\n\n@-webkit-keyframes slideToBottom {\n  0% {\n    top: 50%; }\n  100% {\n    top: 70%; } }\n\n@keyframes slideToBottom {\n  0% {\n    top: 50%; }\n  100% {\n    top: 70%; } }\n\n.showSweetAlert[data-animation=pop] {\n  -webkit-animation: showSweetAlert 0.3s;\n  animation: showSweetAlert 0.3s; }\n\n.showSweetAlert[data-animation=none] {\n  -webkit-animation: none;\n  animation: none; }\n\n.showSweetAlert[data-animation=slide-from-top] {\n  -webkit-animation: slideFromTop 0.3s;\n  animation: slideFromTop 0.3s; }\n\n.showSweetAlert[data-animation=slide-from-bottom] {\n  -webkit-animation: slideFromBottom 0.3s;\n  animation: slideFromBottom 0.3s; }\n\n.hideSweetAlert[data-animation=pop] {\n  -webkit-animation: hideSweetAlert 0.2s;\n  animation: hideSweetAlert 0.2s; }\n\n.hideSweetAlert[data-animation=none] {\n  -webkit-animation: none;\n  animation: none; }\n\n.hideSweetAlert[data-animation=slide-from-top] {\n  -webkit-animation: slideToTop 0.4s;\n  animation: slideToTop 0.4s; }\n\n.hideSweetAlert[data-animation=slide-from-bottom] {\n  -webkit-animation: slideToBottom 0.3s;\n  animation: slideToBottom 0.3s; }\n\n@-webkit-keyframes animateSuccessTip {\n  0% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  54% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  70% {\n    width: 50px;\n    left: -8px;\n    top: 37px; }\n  84% {\n    width: 17px;\n    left: 21px;\n    top: 48px; }\n  100% {\n    width: 25px;\n    left: 14px;\n    top: 45px; } }\n\n@keyframes animateSuccessTip {\n  0% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  54% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  70% {\n    width: 50px;\n    left: -8px;\n    top: 37px; }\n  84% {\n    width: 17px;\n    left: 21px;\n    top: 48px; }\n  100% {\n    width: 25px;\n    left: 14px;\n    top: 45px; } }\n\n@-webkit-keyframes animateSuccessLong {\n  0% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  65% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  84% {\n    width: 55px;\n    right: 0px;\n    top: 35px; }\n  100% {\n    width: 47px;\n    right: 8px;\n    top: 38px; } }\n\n@keyframes animateSuccessLong {\n  0% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  65% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  84% {\n    width: 55px;\n    right: 0px;\n    top: 35px; }\n  100% {\n    width: 47px;\n    right: 8px;\n    top: 38px; } }\n\n@-webkit-keyframes rotatePlaceholder {\n  0% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  5% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  12% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); }\n  100% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); } }\n\n@keyframes rotatePlaceholder {\n  0% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  5% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  12% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); }\n  100% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); } }\n\n.animateSuccessTip {\n  -webkit-animation: animateSuccessTip 0.75s;\n  animation: animateSuccessTip 0.75s; }\n\n.animateSuccessLong {\n  -webkit-animation: animateSuccessLong 0.75s;\n  animation: animateSuccessLong 0.75s; }\n\n.sa-icon.sa-success.animate::after {\n  -webkit-animation: rotatePlaceholder 4.25s ease-in;\n  animation: rotatePlaceholder 4.25s ease-in; }\n\n@-webkit-keyframes animateErrorIcon {\n  0% {\n    transform: rotateX(100deg);\n    -webkit-transform: rotateX(100deg);\n    opacity: 0; }\n  100% {\n    transform: rotateX(0deg);\n    -webkit-transform: rotateX(0deg);\n    opacity: 1; } }\n\n@keyframes animateErrorIcon {\n  0% {\n    transform: rotateX(100deg);\n    -webkit-transform: rotateX(100deg);\n    opacity: 0; }\n  100% {\n    transform: rotateX(0deg);\n    -webkit-transform: rotateX(0deg);\n    opacity: 1; } }\n\n.animateErrorIcon {\n  -webkit-animation: animateErrorIcon 0.5s;\n  animation: animateErrorIcon 0.5s; }\n\n@-webkit-keyframes animateXMark {\n  0% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  50% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  80% {\n    transform: scale(1.15);\n    -webkit-transform: scale(1.15);\n    margin-top: -6px; }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1);\n    margin-top: 0;\n    opacity: 1; } }\n\n@keyframes animateXMark {\n  0% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  50% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  80% {\n    transform: scale(1.15);\n    -webkit-transform: scale(1.15);\n    margin-top: -6px; }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1);\n    margin-top: 0;\n    opacity: 1; } }\n\n.animateXMark {\n  -webkit-animation: animateXMark 0.5s;\n  animation: animateXMark 0.5s; }\n\n@-webkit-keyframes pulseWarning {\n  0% {\n    border-color: #F8D486; }\n  100% {\n    border-color: #F8BB86; } }\n\n@keyframes pulseWarning {\n  0% {\n    border-color: #F8D486; }\n  100% {\n    border-color: #F8BB86; } }\n\n.pulseWarning {\n  -webkit-animation: pulseWarning 0.75s infinite alternate;\n  animation: pulseWarning 0.75s infinite alternate; }\n\n@-webkit-keyframes pulseWarningIns {\n  0% {\n    background-color: #F8D486; }\n  100% {\n    background-color: #F8BB86; } }\n\n@keyframes pulseWarningIns {\n  0% {\n    background-color: #F8D486; }\n  100% {\n    background-color: #F8BB86; } }\n\n.pulseWarningIns {\n  -webkit-animation: pulseWarningIns 0.75s infinite alternate;\n  animation: pulseWarningIns 0.75s infinite alternate; }\n\n@-webkit-keyframes rotate-loading {\n  0% {\n    transform: rotate(0deg); }\n  100% {\n    transform: rotate(360deg); } }\n\n@keyframes rotate-loading {\n  0% {\n    transform: rotate(0deg); }\n  100% {\n    transform: rotate(360deg); } }\n\n/* Internet Explorer 9 has some special quirks that are fixed here */\n/* The icons are not animated. */\n/* This file is automatically merged into sweet-alert.min.js through Gulp */\n/* Error icon */\n.sweet-alert .sa-icon.sa-error .sa-line.sa-left {\n  -ms-transform: rotate(45deg) \\9; }\n\n.sweet-alert .sa-icon.sa-error .sa-line.sa-right {\n  -ms-transform: rotate(-45deg) \\9; }\n\n/* Success icon */\n.sweet-alert .sa-icon.sa-success {\n  border-color: transparent\\9; }\n\n.sweet-alert .sa-icon.sa-success .sa-line.sa-tip {\n  -ms-transform: rotate(45deg) \\9; }\n\n.sweet-alert .sa-icon.sa-success .sa-line.sa-long {\n  -ms-transform: rotate(-45deg) \\9; }\n\n/*!\n * Load Awesome v1.1.0 (http://github.danielcardoso.net/load-awesome/)\n * Copyright 2015 Daniel Cardoso <@DanielCardoso>\n * Licensed under MIT\n */\n.la-ball-fall,\n.la-ball-fall > div {\n  position: relative;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box; }\n\n.la-ball-fall {\n  display: block;\n  font-size: 0;\n  color: #fff; }\n\n.la-ball-fall.la-dark {\n  color: #333; }\n\n.la-ball-fall > div {\n  display: inline-block;\n  float: none;\n  background-color: currentColor;\n  border: 0 solid currentColor; }\n\n.la-ball-fall {\n  width: 54px;\n  height: 18px; }\n\n.la-ball-fall > div {\n  width: 10px;\n  height: 10px;\n  margin: 4px;\n  border-radius: 100%;\n  opacity: 0;\n  -webkit-animation: ball-fall 1s ease-in-out infinite;\n  -moz-animation: ball-fall 1s ease-in-out infinite;\n  -o-animation: ball-fall 1s ease-in-out infinite;\n  animation: ball-fall 1s ease-in-out infinite; }\n\n.la-ball-fall > div:nth-child(1) {\n  -webkit-animation-delay: -200ms;\n  -moz-animation-delay: -200ms;\n  -o-animation-delay: -200ms;\n  animation-delay: -200ms; }\n\n.la-ball-fall > div:nth-child(2) {\n  -webkit-animation-delay: -100ms;\n  -moz-animation-delay: -100ms;\n  -o-animation-delay: -100ms;\n  animation-delay: -100ms; }\n\n.la-ball-fall > div:nth-child(3) {\n  -webkit-animation-delay: 0ms;\n  -moz-animation-delay: 0ms;\n  -o-animation-delay: 0ms;\n  animation-delay: 0ms; }\n\n.la-ball-fall.la-sm {\n  width: 26px;\n  height: 8px; }\n\n.la-ball-fall.la-sm > div {\n  width: 4px;\n  height: 4px;\n  margin: 2px; }\n\n.la-ball-fall.la-2x {\n  width: 108px;\n  height: 36px; }\n\n.la-ball-fall.la-2x > div {\n  width: 20px;\n  height: 20px;\n  margin: 8px; }\n\n.la-ball-fall.la-3x {\n  width: 162px;\n  height: 54px; }\n\n.la-ball-fall.la-3x > div {\n  width: 30px;\n  height: 30px;\n  margin: 12px; }\n\n/*\n * Animation\n */\n@-webkit-keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -webkit-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -webkit-transform: translateY(145%);\n    transform: translateY(145%); } }\n\n@-moz-keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -moz-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -moz-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -moz-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -moz-transform: translateY(145%);\n    transform: translateY(145%); } }\n\n@-o-keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -o-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -o-transform: translateY(145%);\n    transform: translateY(145%); } }\n\n@keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -webkit-transform: translateY(-145%);\n    -moz-transform: translateY(-145%);\n    -o-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    -moz-transform: translateY(0);\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    -moz-transform: translateY(0);\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -webkit-transform: translateY(145%);\n    -moz-transform: translateY(145%);\n    -o-transform: translateY(145%);\n    transform: translateY(145%); } }\n", ""]);
+
+// exports
+
+
+/***/ }),
+/* 56 */
+/***/ (function(module, exports) {
+
+module.exports = "<img src=\"https://goo.gl/YcfIqI\" />\n\n<h2>Mr. Krabs</h2>\n<div>Eugene H. Krabs, nicknamed \"Armor Abs\", \"Krabs\" and commonly known as Mr. Krabs, is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Clancy Brown, and first appeared in the series' first episode \"Help Wanted\" on May 1, 1999. Mr. Krabs was created and designed by marine biologist, animator, and creator of the show Stephen Hillenburg.</div>\n\n<hr>\n\n<h2>Role in Spongebob Squarepants</h2>\n<div>Mr. Krabs is the greedy founder and owner of the Krusty Krab restaurant, where Spongebob works as a frycook, and Squidward works as a cashier. The success of the restaurant is built in part on a lack of competition and in part on the success of the Krusty Krab's signature sandwich, the Krabby Patty, the formula to which is a closely guarded trade secret.\n\nHis rival and former best friend, Plankton, has a struggling restaurant called the Chum Bucket located across the street from the Krusty Krab. A recurring gag throughout the series is Plankton's futile attempts to steal the Krabby Patty formula, under the assumption that it would eventually put the Krusty Krab out of business. To avoid this, Krabs goes to extreme lengths to prevent Plankton from obtaining the formula (going so far as to refuse to allow him to even buy a Krabby Patty legitimately, out of fear that Plankton might reverse-engineer the formula) or to prevent the Chum Bucket from having any business whatsoever, not even just one single customer (as seen in the episode \"Plankton's Regular\").\n\nKrabs values money above all, and he views the other characters in regard to how they affect his money. He tolerates his two employees because of their low cost and positive impact on his finances, but he is quick to rebuke them, especially Spongebob, if they engage in behavior that drives away customers or costs him money. Krabs and Spongebob have a tentative father-son relationship - Krabs often scolds Spongebob if he gets in trouble, but at times gives him fatherly advice. However, Squidward strongly abhors Krabs for often taking money out of his paycheck for little reason at all.\n\nMr. Krabs has served in the navy, and in the episode \"Krusty Krab Training Video\" it is revealed that Mr. Krabs served during a time of war, and fell into a depression after finishing his service. His depression was alleviated after founding the Krusty Krab.</div>\n\n<hr>\n\n<h2>Daughter</h2>\n<div>Mr. Krabs has a daughter, a sperm whale named Pearl. Pearl is a stereotypical teenage girl, extremely socially conscious and embarrassed by her father's miserliness. She made her first appearance in the season one episode, \"Squeaky Boots,\" which aired on September 4, 1999. Due to her frequent appearances, Pearl has been featured in many types of merchandise, such as plush toys and action figures. Although she is officially Mr. Krabs' daughter, her mother is neither seen nor named, and in fact in the season two episode \"Krusty Love\" it is implied that Mr. Krabs is not (currently) married.\n\nPearl is voiced by Lori Alan.</div>";
+
+/***/ }),
+/* 57 */
+/***/ (function(module, exports) {
+
+module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>\n<div>Patrick Star is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Bill Fagerbakke, who also voices numerous other characters on the show. Created and designed by marine biologist and cartoonist Stephen Hillenburg, the series creator, Patrick first appeared on television in the show's pilot episode \"Help Wanted\" on May 1, 1999.\n\nSeen as an overweight, dimwitted pink starfish, Patrick lives under a rock in the underwater city of Bikini Bottom next door to Squidward Tentacles' moai. His most significant character trait is his lack of common sense, which sometimes leads him and his best friend, main character SpongeBob SquarePants, into trouble. Patrick is unemployed and a self-proclaimed expert in the \"art of doing nothing\".\n\nThe character has received positive reactions from critics and fans alike. Patrick has been included in various SpongeBob SquarePants-related merchandise, including trading cards, video games, plush toys, and comic books. He has been seen in the 2004 full-length feature film The SpongeBob SquarePants Movie and its 2015 sequel The SpongeBob Movie: Sponge Out of Water.\n\nDespite not appearing as frequently in episodes as Squidward, he is generally considered to be the show's most prominent character besides SpongeBob.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Patrick is the ignorant but humorous best friend of main character SpongeBob SquarePants. He is portrayed as being an overweight, dimwitted, pink starfish residing in the underwater city of Bikini Bottom. Patrick has been shown to make many ludicrous mistakes; despite this, he has occasionally been portrayed as a savant, with articulate observance to certain subjects in specific detail. However, he always reverts quickly back to his usual, unintelligent self after displaying a moment of wisdom. He holds no form of occupation except for several very brief stints working at the Krusty Krab and at the Chum Bucket in a variety of positions, and mostly spends his time either clowning around with SpongeBob, catching jellyfish with him, or lounging beneath the rock under which he resides.\n\nAt home, Patrick is typically depicted either sleeping, watching TV, or engaged in the \"art of doing nothing\", at which he is an expert. All the furnishings in the space under his rock are made of sand, and Patrick can simply opt to quickly build up furniture as needed; even so, his living space is sparse and contains only the barest essentials. Aside from his best friend SpongeBob, who is often impressed by Patrick's capacity to come up with naïve yet genius plans or solutions, Patrick frequently irritates those around him and is confounded by the simplest of questions or subjects. The characters of Mr. Krabs and Squidward have no patience for Patrick's stupidity, and the former does not pay him much regard; Clancy Brown, who provides Mr. Krabs' voice, said, \"The only person that he [Mr. Krabs] doesn't hire is Patrick because Patrick is just too stupid to work for nothing.\" Sandy often gets annoyed by Patrick, but still sees him as a friend.</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. In 1987, Hillenburg left the institute to pursue a career in animation.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of the Nickelodeon series Rocko's Modern Life, at an animation festival, and was offered a job as a director of the show. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not even considered creating his own series. However, he realized that if he ever did, this would be the best approach. Production on Rocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants.\n\n\nEarly drawings of Patrick from Stephen Hillenburg's bible.\nFor the show's characters, Hillenburg started to draw and used character designs from his comic book—including starfish, crab, and sponge. He described Patrick as \"probably the dumbest guy in town\". The character was conceived as a starfish to embody the animal's nature; according to Hillenburg, starfish look \"dumb and slow\", but they are \"very active and aggressive\" in reality, like Patrick. Hillenburg incorporated character comedy rather than topical humor on the show to emphasize \"things that are more about humorous situations and about characters and their flaws.\" He designed Patrick and SpongeBob as such because \"they're whipping themselves up into situations—that's always where the humor comes from. The rule is: Follow the innocence and avoid topical [humor].\"\n\nIn spite of being depicted as having a good temperament or state of mind, Patrick has been shown in some episodes to have a tantrum. Patrick's emotional outbreak was originally written only for the first season episode \"Valentine's Day\", where SpongeBob and Sandy try to give Patrick a Valentine's Day gift, and \"was supposed to be a one-time thing\". However, according to episode writer Jay Lender, \"when that show came back it felt so right that his dark side started popping up everywhere. You can plan ahead all you want, but the characters eventually tell you who they are.\"\n\nEvery main character in the show has its own unique footstep sound. The sound of Patrick's footsteps is recorded by the show's Foley crew, with a Foley talent wearing a slip-on shoe. Jeff Hutchins, show's sound designer said, \"[Going] barefoot makes it tough to have much presence, so we decided that Patrick would be performed with shoes on.\"</div>";
+
+/***/ }),
+/* 58 */
+/***/ (function(module, exports) {
+
+module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>";
+
+/***/ }),
+/* 59 */
+/***/ (function(module, exports) {
+
+module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacles</h2>\n<div>Squidward Tentacles is a fictional character voiced by actor Rodger Bumpass in the American animated television series SpongeBob SquarePants. Squidward was created and designed by marine biologist and animator Stephen Hillenburg. He first appeared on television in the series' pilot episode \"Help Wanted\" on May 1, 1999.\n\nAlthough his name has the word \"squid\" in it and he has six arms, Squidward is an anthropomorphic octopus.[a] He lives in a moai between SpongeBob SquarePants' and Patrick Star's houses. The character is portrayed as ill-tempered, manipulative, pretentious, and cynical, and he strongly despises his neighbors for their constant boisterous, noisy behavior. However, the pair are unaware of Squidward's antipathy towards them and see him as a friend. Squidward works as a cashier at the Krusty Krab restaurant, a job that he is apathetic towards.\n\nThe character's critical reception from professionals and fans has been positive. Squidward has appeared in many SpongeBob SquarePants publications, toys, and other merchandise. He appears in the 2004 full-length feature film The SpongeBob SquarePants Movie and in its sequel which was released in 2015.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Squidward is depicted as a bitter, very unfortunate, desperate, somewhat depressed, curt, arrogant, turquoise octopus. He lives in the underwater city of Bikini Bottom in a moai situated between SpongeBob SquarePants' pineapple house and Patrick Star's rock. Squidward detests his neighbors for their perpetual laughter and boisterous behavior, though SpongeBob and Patrick are oblivious to Squidward's animosity towards them and regard him as a friend.\n\nSquidward lives in a constant state of self-pity and misery; he is unhappy with his humdrum lifestyle and yearns for celebrity status, wealth, hair, and a glamorous and distinguished career as a musician or painter with a passion for art and playing the clarinet. However, he is left to endure the lowly status as a fast-food cashier at the Krusty Krab restaurant. Squidward resents his job and is irritated by his greedy employer Mr. Krabs and by having SpongeBob as a colleague.\n\nSquidward longs for peace but his wishes remain unsatisfied. He believes he is talented and deserves a higher social status. The populace of Bikini Bottom do not consider him talented, and frequently boo him and walk out on his performances.</div>\n\n<hr>\n\n<h2>Development</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. After graduating in 1984, he joined the Ocean Institute, an ocean education organization, where he had the idea to create a comic book titled The Intertidal Zone, which led to the creation of SpongeBob SquarePants. In 1987, Hillenburg left the Institute to pursue a career in animation.\n\n\nEarly rough sketches of Squidward from creator Stephen Hillenburg's series bible.\nSeveral years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of Rocko's Modern Life, at an animation festival. Murray offered Hillenburg a job as a director of the series. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not considered creating his own series, but soon realized that this was his chance. Shortly after production on Rocko's Modern Life ended in 1996, Hillenburg began working on SpongeBob SquarePants.\n\nHillenburg used some character designs from his comic book. He designed \"SpongeBob's grumpy next door neighbor\" as an octopus because the species' large head; octopi, he said, \"have such a large bulbous head and Squidward thinks he's an intellectual so of course, he's gonna have a large bulbous head.\" Hillenburg drew Squidward with six tentacles because \"it was really just simpler for animation to draw him with six legs instead of eight\". Show writer and storyboard artist Vincent Waller said:\n\nSquidward is hard to draw—he has a very odd-shaped head. Fortunately, his emotions are pretty even, but to get a whole lot of big emoting out of him is a challenge. His nose splits everything in half, so it's always like, 'OK, how am I going to work this and still make it read?'\n\nHillenburg thought of making jokes with Squidward ejecting ink but retired it because, according to him, \"it always looks like he's pooping his pants\". However, it occurs in The SpongeBob Movie: Sponge Out of Water and the sixth season episode, \"Giant Squidward\".\n\nConflicting statements from Hillenburg and Nickelodeon's official website have led to some doubt over whether the character is an octopus or a squid. Hillenburg named him Squidward because the name Octoward—in the words of Squidward's voice actor Rodger Bumpass—\"just didn't work\". The sound of Squidward's footsteps is produced by rubbing hot water bottles. The footsteps, and those of the rest of the main characters, are recorded by the show's foley crew. Sound designer Jeff Hutchins said that footstep sounds \"[help] tell which character it is and what surface they're stepping on\". Bumpass inspired the idea of having Squidward ride a recumbent bicycle; Bumpass owns one of these bicycles, which he rides around Burbank, California. Bumpass described it as his \"little inside joke\".</div>";
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
+/* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
+    "use strict";
+
+    if (global.setImmediate) {
+        return;
+    }
+
+    var nextHandle = 1; // Spec says greater than zero
+    var tasksByHandle = {};
+    var currentlyRunningATask = false;
+    var doc = global.document;
+    var registerImmediate;
+
+    function setImmediate(callback) {
+      // Callback can either be a function or a string
+      if (typeof callback !== "function") {
+        callback = new Function("" + callback);
+      }
+      // Copy function arguments
+      var args = new Array(arguments.length - 1);
+      for (var i = 0; i < args.length; i++) {
+          args[i] = arguments[i + 1];
+      }
+      // Store and register the task
+      var task = { callback: callback, args: args };
+      tasksByHandle[nextHandle] = task;
+      registerImmediate(nextHandle);
+      return nextHandle++;
+    }
+
+    function clearImmediate(handle) {
+        delete tasksByHandle[handle];
+    }
+
+    function run(task) {
+        var callback = task.callback;
+        var args = task.args;
+        switch (args.length) {
+        case 0:
+            callback();
+            break;
+        case 1:
+            callback(args[0]);
+            break;
+        case 2:
+            callback(args[0], args[1]);
+            break;
+        case 3:
+            callback(args[0], args[1], args[2]);
+            break;
+        default:
+            callback.apply(undefined, args);
+            break;
+        }
+    }
+
+    function runIfPresent(handle) {
+        // From the spec: "Wait until any invocations of this algorithm started before this one have completed."
+        // So if we're currently running a task, we'll need to delay this invocation.
+        if (currentlyRunningATask) {
+            // Delay by doing a setTimeout. setImmediate was tried instead, but in Firefox 7 it generated a
+            // "too much recursion" error.
+            setTimeout(runIfPresent, 0, handle);
+        } else {
+            var task = tasksByHandle[handle];
+            if (task) {
+                currentlyRunningATask = true;
+                try {
+                    run(task);
+                } finally {
+                    clearImmediate(handle);
+                    currentlyRunningATask = false;
+                }
+            }
+        }
+    }
+
+    function installNextTickImplementation() {
+        registerImmediate = function(handle) {
+            process.nextTick(function () { runIfPresent(handle); });
+        };
+    }
+
+    function canUsePostMessage() {
+        // The test against `importScripts` prevents this implementation from being installed inside a web worker,
+        // where `global.postMessage` means something completely different and can't be used for this purpose.
+        if (global.postMessage && !global.importScripts) {
+            var postMessageIsAsynchronous = true;
+            var oldOnMessage = global.onmessage;
+            global.onmessage = function() {
+                postMessageIsAsynchronous = false;
+            };
+            global.postMessage("", "*");
+            global.onmessage = oldOnMessage;
+            return postMessageIsAsynchronous;
+        }
+    }
+
+    function installPostMessageImplementation() {
+        // Installs an event handler on `global` for the `message` event: see
+        // * https://developer.mozilla.org/en/DOM/window.postMessage
+        // * http://www.whatwg.org/specs/web-apps/current-work/multipage/comms.html#crossDocumentMessages
+
+        var messagePrefix = "setImmediate$" + Math.random() + "$";
+        var onGlobalMessage = function(event) {
+            if (event.source === global &&
+                typeof event.data === "string" &&
+                event.data.indexOf(messagePrefix) === 0) {
+                runIfPresent(+event.data.slice(messagePrefix.length));
+            }
+        };
+
+        if (global.addEventListener) {
+            global.addEventListener("message", onGlobalMessage, false);
+        } else {
+            global.attachEvent("onmessage", onGlobalMessage);
+        }
+
+        registerImmediate = function(handle) {
+            global.postMessage(messagePrefix + handle, "*");
+        };
+    }
+
+    function installMessageChannelImplementation() {
+        var channel = new MessageChannel();
+        channel.port1.onmessage = function(event) {
+            var handle = event.data;
+            runIfPresent(handle);
+        };
+
+        registerImmediate = function(handle) {
+            channel.port2.postMessage(handle);
+        };
+    }
+
+    function installReadyStateChangeImplementation() {
+        var html = doc.documentElement;
+        registerImmediate = function(handle) {
+            // Create a <script> element; its readystatechange event will be fired asynchronously once it is inserted
+            // into the document. Do so, thus queuing up the task. Remember to clean up once it's been called.
+            var script = doc.createElement("script");
+            script.onreadystatechange = function () {
+                runIfPresent(handle);
+                script.onreadystatechange = null;
+                html.removeChild(script);
+                script = null;
+            };
+            html.appendChild(script);
+        };
+    }
+
+    function installSetTimeoutImplementation() {
+        registerImmediate = function(handle) {
+            setTimeout(runIfPresent, 0, handle);
+        };
+    }
+
+    // If supported, we should attach to the prototype of global, since that is where setTimeout et al. live.
+    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
+    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
+
+    // Don't get fooled by e.g. browserify environments.
+    if ({}.toString.call(global.process) === "[object process]") {
+        // For Node.js before 0.9
+        installNextTickImplementation();
+
+    } else if (canUsePostMessage()) {
+        // For non-IE10 modern browsers
+        installPostMessageImplementation();
+
+    } else if (global.MessageChannel) {
+        // For web workers, where supported
+        installMessageChannelImplementation();
+
+    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
+        // For IE 6–8
+        installReadyStateChangeImplementation();
+
+    } else {
+        // For older browsers
+        installSetTimeoutImplementation();
+    }
+
+    attachTo.setImmediate = setImmediate;
+    attachTo.clearImmediate = clearImmediate;
+}(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
+
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(81), __webpack_require__(18)))
+
+/***/ }),
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(40);
+var content = __webpack_require__(42);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3284,981 +4760,13 @@ if(false) {
 }
 
 /***/ }),
-/* 29 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(53);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../css-loader/index.js!./sweetalert.css", function() {
-			var newContent = require("!!../../css-loader/index.js!./sweetalert.css");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 30 */
-/***/ (function(module, exports) {
-
-var endpoint;
-
-module.exports = {
-  endpoint: function(url) {
-    endpoint = url;
-  },
-  load: function(url, done) {
-    done();
-  }
-}
-
-/***/ }),
-/* 31 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var ctx = __webpack_require__(5);
-var Toolbar = __webpack_require__(8);
-
-__webpack_require__(28);
-__webpack_require__(29);
-
-var Part = __webpack_require__(3);
-var ArticlePart = __webpack_require__(21);
-var ParagraphPart = __webpack_require__(10);
-var TextPart = __webpack_require__(26);
-var SeparatorPart = __webpack_require__(25);
-var ImagePart = __webpack_require__(23);
-var VideoPart = __webpack_require__(27);
-var RowPart = __webpack_require__(24);
-var FilePart = __webpack_require__(22);
-
-ctx.Toolbar = Toolbar;
-ctx.Part = Part;
-ctx.Article = ArticlePart;
-ctx.Paragraph = ParagraphPart;
-ctx.Text = TextPart;
-ctx.Separator = SeparatorPart;
-ctx.Image = ImagePart;
-ctx.Video = VideoPart;
-ctx.Row = RowPart;
-ctx.File = FilePart;
-
-ctx.type('default', ParagraphPart);
-ctx.type('article', ArticlePart);
-ctx.type('paragraph', ParagraphPart);
-ctx.type('text', TextPart);
-ctx.type('separator', SeparatorPart);
-ctx.type('image', ImagePart);
-ctx.type('video', VideoPart);
-ctx.type('row', RowPart);
-ctx.type('file', FilePart);
-
-(function() {
-  var readyfn;
-  
-  document.addEventListener('DOMContentLoaded', function() {
-    ctx.scan();
-    readyfn && readyfn();
-  });
-
-  ctx.ready = function(fn) {
-    if( document.body ) fn();
-    else readyfn = fn;
-  };
-})();
-
-module.exports = ctx;
-
-
-/***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var Button = __webpack_require__(35);
-
-function Buttons(toolbar) {
-  this._toolbar = toolbar;
-  this._el = $(toolbar.dom());
-  this._first = [];
-  this._buttons = [];
-  this._last = [];
-}
-
-Buttons.prototype = {
-  toolbar: function() {
-    return this._toolbar;
-  },
-  update: function() {
-    var el = this._el[0];
-    var list = this._list = [];
-    var append = function(btns) {
-      btns.forEach(function(btn) {
-        btn.appendTo(el).update();
-        list.push(btn);
-        if( btn.id ) list[btn.id] = btn;
-      });
-    };
-    
-    append(this._first);
-    append(this._buttons);
-    append(this._last);
-    return this;
-  },
-  get: function(id) {
-    return this._list && this._list[id];
-  },
-  add: function(btn, index) {
-    if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
-    
-    var owner = this._toolbar.owner();
-    var btns = this._buttons;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
-      
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
-    });
-    
-    this.update();
-    return this;
-  },
-  first: function(btn, index) {
-    if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
-    
-    var owner = this._toolbar.owner();
-    var btns = this._first;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
-      
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
-    });
-    
-    this.update();
-    return this;
-  },
-  last: function(btn, index) {
-    if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
-    
-    var owner = this._toolbar.owner();
-    var btns = this._last;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
-      
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
-    });
-    
-    this.update();
-    return this;
-  },
-  remove: function(target) {
-    if( ~['string', 'number'].indexOf(typeof target) ) target = this.get(target);
-    if( !target ) return this;
-    
-    var remove = function(btns) {
-      btns.forEach(function(btn) {
-        if( btn === target ) btns.splice(btns.indexOf(btn), 1);
-      });
-    };
-    
-    remove(this._last);
-    remove(this._first);
-    remove(this._buttons);
-    
-    this.update();
-    return this;
-  },
-  clear: function() {
-    this._el.html();
-    return this;
-  }
-};
-
-module.exports = Buttons;
-
-/***/ }),
-/* 33 */
-/***/ (function(module, exports) {
-
-module.exports = function(el) {
-  var top = 0;
-  var left = 0;
-  
-  var c = el;
-  do {
-    if ( +c.offsetTop ) top += c.offsetTop;
-    if ( +c.offsetLeft ) left += c.offsetLeft;
-  } while( c = c.offsetParent );
-  
-  return {
-    top: top,
-    left: left,
-    width: el.offsetWidth,
-    height: el.offsetHeight
-  };
-};
-
-/***/ }),
-/* 34 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(33);
-var Buttons = __webpack_require__(32);
-__webpack_require__(54);
-
-function clone(o) {
-  var result = {};
-  for(var k in o) result[k] = o[k];
-  return result; 
-}
-
-function Toolbar(owner, options) {
-  if( !owner || typeof owner.dom !== 'function' ) throw new TypeError('illegal owner(owner.dom() requried)');
-  
-  this._owner = owner;
-  this._el = $('<div/>').css('opacity', 0).ac('ff-toolbar').hide();
-  this._buttons = new Buttons(this);
-  this._enable = true;
-  this.options(options);
-  
-  $(window).on('scroll resize', this);
-}
-
-Toolbar.prototype = {
-  handleEvent: function(e) {
-    this.update();
-  },
-  options: function(o) {
-    if( !arguments.length ) return this._options;
-    this._options = clone(o);
-    return this;
-  },
-  position: function(position) {
-    this.options().position = position;
-    this.update();
-    return this;
-  },
-  dom: function() {
-    return this._el[0];
-  },
-  owner: function() {
-    return this._owner;
-  },
-  buttons: function() {
-    return this._buttons;
-  },
-  update: function() {
-    var options = this.options();
-    var dom = this.dom();
-    var ownerElement = this.owner().dom();
-    var position = options.position || 'top center outside';
-    
-    if( !document.body.contains(ownerElement) ) {
-      $(window).off('scroll resize', this);
-      var p = dom.parentNode;
-      p && p.removeChild(dom);
-      return;
-    }
-    
-    $(window).on('scroll resize', this);
-    
-    var el = this._el
-    .css(options.style || {})
-    .ac(options.cls)
-    .appendTo(document.body);
-    
-    if( ownerElement ) {
-      var ownerposition = getPosition(ownerElement);
-      var posarr = position.split(' ');
-      var inside = ~posarr.indexOf('inside');
-      var vertical = ~posarr.indexOf('vertical');
-      var nomargin = ~posarr.indexOf('nomargin');
-      if( vertical ) el.ac('ff-toolbar-vertical');
-      
-      var width = ownerElement.clientWidth;
-      var height = ownerElement.clientHeight;
-      var tbarwidth = dom.clientWidth;
-      var tbarheight = dom.clientHeight;
-      var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
-      
-      posarr.forEach(function(pos) {
-        if( !vertical ) {
-          if( pos === 'top' ) {
-            if( inside ) top = ownerposition.top + margin;
-            else top = ownerposition.top - tbarheight - margin;
-          } else if( pos == 'bottom' ) {
-            if( inside ) top = ownerposition.top + height - tbarheight - margin;
-            else top = ownerposition.top + height + margin;
-          } else if( pos == 'left' ) {
-            left = ownerposition.left;
-            if( inside ) left += margin;
-          } else if( pos == 'center' ) {
-            left = ownerposition.left + (width - tbarwidth) / 2;
-          } else if( pos == 'right' ) {
-            left = ownerposition.left + width - tbarwidth;
-            if( inside ) left -= margin;
-          }
-        } else {
-          if( pos === 'top' ) {
-            top = ownerposition.top;
-            if( inside ) top += margin;
-          } else if( pos == 'middle' ) {
-            top = ownerposition.top + (height - tbarheight) / 2;
-          } else if( pos == 'bottom' ) {
-            top = ownerposition.top + height - tbarheight;
-            if( inside ) top -= margin;
-          } else if( pos == 'left' ) {
-            if( inside ) left = ownerposition.left + margin;
-            else left = ownerposition.left - tbarwidth - margin;
-          } else if( pos == 'right' ) {
-            if( inside ) left = ownerposition.left + width - tbarwidth - margin;
-            else left = ownerposition.left + width + margin;
-          }
-        }
-      });
-      
-      if( top <= 5 ) top = 5;
-      if( left <= 5 ) left = 5;
-      
-      if( vertical ) {
-        //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
-        if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
-      }
-    
-      dom.style.top = top + 'px';
-      dom.style.left = left + 'px';
-    }
-    
-    this.buttons().update();
-    
-    return this;
-  },
-  show: function() {
-    if( !this.enable() ) return this;
-    this._el.css('opacity', 0).show();
-    this.update();
-    this._el.css('opacity', 1);
-    return this;
-  },
-  hide: function(force) {
-    if( !force && this.always() ) return this;
-    $(window).off('scroll resize', this);
-    this._el.css('opacity', 0).hide();
-    return this;
-  },
-  refresh: function() {
-    this.update();
-    return this;
-  },
-  always: function(b) {
-    if( !arguments.length ) return this._always;
-    this._always = !!b;
-    this.update();
-    return this;
-  },
-  enable: function(b) {
-    if( !arguments.length ) return this._enable;
-    this._enable = !!b;
-    this.update();
-    return this;
-  },
-  add: function(btn, index) {
-    this.buttons().add(btn, index);
-    return this;
-  },
-  get: function(id) {
-    return this.buttons().get(id);
-  },
-  first: function(btn) {
-    this.buttons().first(btn);
-    return this;
-  },
-  last: function(btn) {
-    this.buttons().last(btn);
-    return this;
-  },
-  clear: function(btn) {
-    this.buttons().clear();
-    return this;
-  },
-  remove: function(btn) {
-    this.buttons().remove(btn);
-    return this;
-  }
-};
-
-
-module.exports = Toolbar;
-
-
-/***/ }),
-/* 35 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var Button = __webpack_require__(9);
-var Separator = __webpack_require__(12);
-var ListButton = __webpack_require__(11);
-
-Button.eval = function(o) {
-  if( !o ) return null;
-  if( o instanceof Button ) return o;
-  
-  if( o == '-' || o.type == 'separator' ) return new Separator(o);
-  else if( o.type == 'list' ) return new ListButton(o);
-  
-  return new Button(o);
-};
-
-Button.Separator = Separator;
-Button.ListButton = ListButton;
-
-module.exports = Button;
-
-/***/ }),
-/* 36 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var each = __webpack_require__(16);
-var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(15);
-
-__webpack_require__(57);
-
-function DnD(part, dom) {
-  var el = $(dom);
-  var marker = $('<div class="ff-dnd-marker ff-acc"></div>');
-  
-  function move(target, y) {
-    if( !target ) return;
-    
-    if( y < getOffsetTop(target) + (target.offsetHeight / 2) ) {
-      marker.insertBefore(target);
-    } else {
-      marker.insertAfter(target);
-    }
-  }
-  
-  function hide() {
-    marker.remove();
-  }
-  
-  function current(target) {
-    if( target === el || target === marker ) return;
-    var children = el.children();
-    var current;
-    children.each(function() {
-      if( this.contains(target) ) current = this;
-    });
-    
-    return current;
-  }
-  
-  function ondragover(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    var dragging = part.context().dragging;
-    if( !dragging || e.target === dragging || dragging.contains(e.target) ) return hide();
-    
-    if( !e.target.contains(dragging) ) {
-      move(current(e.target), e.pageY);
-    }
-  }
-  
-  function ondragend(e) {
-    hide();
-  }
-  
-  function ondrop(e) {
-    e.stopPropagation();
-    e.preventDefault();
-    
-    var dragging = part.context().dragging;
-    var ref = marker[0].nextSibling;
-    
-    if( dragging ) {
-      if( e.target === dragging || dragging.contains(e.target) || !dom.contains(marker[0]) ) return;
-      part.insert(dragging, ref);
-    } else if( e.dataTransfer && e.dataTransfer.files ) {
-      part.insert(e.dataTransfer.files, ref);
-    }
-    
-    hide();
-  }
-  
-  el.on('dragover', ondragover)
-  .on('dragend', ondragend)
-  .on('drop', ondrop);
-  
-  return {
-    move: move,
-    hide: hide,
-    destroy: function() {
-      el.off('dragover', ondragover)
-      .off('dragend', ondragend)
-      .off('drop', ondrop);
-      
-      marker.remove();
-    }
-  };
-}
-
-module.exports = DnD;
-
-/***/ }),
-/* 37 */
-/***/ (function(module, exports) {
-
-module.exports = function() {
-  return (function() {
-    var items = [];
-  
-    items.add = function(item) {
-      items.push(item);
-      return this;
-    };
-  
-    items.remove = function(item) {
-      for(var pos;~(pos = items.indexOf(item));) items.splice(pos, 1);
-      return this;
-    };
-  
-    return items;
-  })();
-};
-
-/***/ }),
-/* 38 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(15);
-var components = __webpack_require__(14);
-var Button = __webpack_require__(8).Button;
-
-__webpack_require__(58);
-
-function Marker(part, dom) {
-  var el = $(dom);
-  var marker = $('<div class="ff-marker ff-acc"><div class="ff-marker-head"></div><div class="ff-marker-tools"></div></div>');
-  var lastref;
-  
-  function update() {
-    var tools = marker.find('.ff-marker-tools').empty();
-    components.forEach(function(item) {
-      if( !item || !item.text ) return;
-      
-      new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
-    });
-  }
-  
-  function show(ref) {
-    ref = (typeof ref == 'number' ? el.children()[ref] : ref);
-    
-    if( lastref === ref ) return this;
-    lastref = ref;
-    
-    //marker.remove();
-    if( ref ) marker.insertBefore(ref);
-    else marker.appendTo(el);
-    
-    return this;
-  }
-  
-  function hide() {
-    collapse();
-    marker.remove();
-    return this;
-  }
-  
-  function expand() {
-    marker.ac('ff-marker-open');
-    return this;
-  }
-  
-  function collapse() {
-    marker.rc('ff-marker-open');
-    return this;
-  }
-  
-  function onclick(e) {
-    if( !marker[0].contains(e.target) ) marker.rc('ff-marker-open');
-  }
-  
-  function onmousemove(e) {
-    var target = e.target;
-    var y = e.pageY;
-    
-    if( target === el || target === marker ) return;
-    var children = el.children();
-    var current;
-    children.each(function() {
-      if( this.contains(target) ) current = this;
-    });
-    
-    if( !current ) return;
-    
-    var index = children.indexOf(current);
-    if( y > getOffsetTop(current) + (current.offsetHeight / 2) ) index = index + 1;
-    show(index);
-  }
-  
-  marker.find('.ff-marker-head').on('click', function() {
-    update();
-    marker.tc('ff-marker-open');
-  });
-  
-  el.on('click', onclick).on('mousemove', onmousemove);
-  
-  return {
-    show: show,
-    hide: hide,
-    expand: expand,
-    collapse: collapse,
-    getIndex: function() {
-      return el.children().indexOf(marker[0]);
-    },
-    getRef: function() {
-      return marker[0].nextSibling;
-    },
-    isExpanded: function() {
-      return marker.hc('ff-marker-open')
-    },
-    destroy: function() {
-      el.off('click', onclick).off('mousemove', onmousemove);
-      marker.remove();
-    }
-  };
-}
-
-module.exports = Marker;
-
-/***/ }),
-/* 39 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
-var swal = __webpack_require__(18);
-var Toolbar = context.Toolbar;
-
-function rangeitem(text, tooltip, selector, fn) {
-  return {
-    text: text,
-    tooltip: tooltip,
-    onupdate: function() {
-      var range = this.owner().range();
-      if( !range ) return this.enable(false);
-      
-      this.enable(true);
-      if( context.wrapped(range, selector) ) this.active(true);
-    },
-    fn: fn || function(e) {
-      context.toggleWrap(this.owner().range(), selector);
-    }
-  };
-}
-
-module.exports = function(part) {
-  return part.toolbar()
-  .add({
-    type: 'list',
-    text: '<i class="fa fa-font"></i>',
-    onselect: function(selected) {
-      
-    },
-    onupdate: function() {
-      
-    },
-    fn: function(e) {
-      
-    },
-    list: [
-      '기본폰트',
-      '나눔고딕',
-      '나눔명조',
-      'Helvetica',
-      'Times New Roman'
-    ]
-  })
-  .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
-  .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'span.underline'))
-  .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
-  .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'span.strike'))
-  .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
-    var range = this.owner().range();
-    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
-    
-    swal({
-      title: '링크 주소를 입력해주세요',
-      type: 'input',
-      showCancelButton: true,
-      closeOnConfirm: true,
-      animation: 'slide-from-top'
-    }, function(href){
-      if( !src ) return;
-      context.wrap(range, $('<a href="' + href + '" />')[0]);
-    });
-  }))
-  .add({
-    text: '<i class="fa fa-align-justify"></i>',
-    tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
-      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-      else btn.text('<i class="fa fa-align-justify"></i>');
-    },
-    fn: function(e) {
-      var btn = this;
-      var el = $(part.dom());
-      
-      if( btn.align == 'center' ) {
-        el.css('text-align', 'right');
-        btn.align = 'right';
-      } else if( btn.align == 'right' ) {
-        el.css('text-align', 'left');
-        btn.align = 'left';
-      } else if( btn.align == 'left' ) {
-        el.css('text-align', '');
-        btn.align = '';
-      } else {
-        el.css('text-align', 'center');
-        btn.align = 'center';
-      }
-    }
-  });
-};
-
-/***/ }),
-/* 40 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 41 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 42 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 43 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.ff-article img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-article hr {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-article hr:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-article hr:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 44 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #2796DD;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 45 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 46 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 47 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 48 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 49 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 50 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 150px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 51 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 52 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-video-embed-responsive {\n  position: relative;\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n}\n.ff-video .ff-video-embed-responsive-16by9 {\n  padding-bottom: 56.25%;\n}\n.ff-video .ff-video-embed-responsive .ff-video-embed-responsive-item {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video .mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.ff-video-size-narrow {\n  width: 50%;\n}\n.ff-video.ff-video-size-fit {\n  width: 100%;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 53 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, "body.stop-scrolling {\n  height: 100%;\n  overflow: hidden; }\n\n.sweet-overlay {\n  background-color: black;\n  /* IE8 */\n  -ms-filter: \"progid:DXImageTransform.Microsoft.Alpha(Opacity=40)\";\n  /* IE8 */\n  background-color: rgba(0, 0, 0, 0.4);\n  position: fixed;\n  left: 0;\n  right: 0;\n  top: 0;\n  bottom: 0;\n  display: none;\n  z-index: 10000; }\n\n.sweet-alert {\n  background-color: white;\n  font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;\n  width: 478px;\n  padding: 17px;\n  border-radius: 5px;\n  text-align: center;\n  position: fixed;\n  left: 50%;\n  top: 50%;\n  margin-left: -256px;\n  margin-top: -200px;\n  overflow: hidden;\n  display: none;\n  z-index: 99999; }\n  @media all and (max-width: 540px) {\n    .sweet-alert {\n      width: auto;\n      margin-left: 0;\n      margin-right: 0;\n      left: 15px;\n      right: 15px; } }\n  .sweet-alert h2 {\n    color: #575757;\n    font-size: 30px;\n    text-align: center;\n    font-weight: 600;\n    text-transform: none;\n    position: relative;\n    margin: 25px 0;\n    padding: 0;\n    line-height: 40px;\n    display: block; }\n  .sweet-alert p {\n    color: #797979;\n    font-size: 16px;\n    text-align: center;\n    font-weight: 300;\n    position: relative;\n    text-align: inherit;\n    float: none;\n    margin: 0;\n    padding: 0;\n    line-height: normal; }\n  .sweet-alert fieldset {\n    border: none;\n    position: relative; }\n  .sweet-alert .sa-error-container {\n    background-color: #f1f1f1;\n    margin-left: -17px;\n    margin-right: -17px;\n    overflow: hidden;\n    padding: 0 10px;\n    max-height: 0;\n    webkit-transition: padding 0.15s, max-height 0.15s;\n    transition: padding 0.15s, max-height 0.15s; }\n    .sweet-alert .sa-error-container.show {\n      padding: 10px 0;\n      max-height: 100px;\n      webkit-transition: padding 0.2s, max-height 0.2s;\n      transition: padding 0.25s, max-height 0.25s; }\n    .sweet-alert .sa-error-container .icon {\n      display: inline-block;\n      width: 24px;\n      height: 24px;\n      border-radius: 50%;\n      background-color: #ea7d7d;\n      color: white;\n      line-height: 24px;\n      text-align: center;\n      margin-right: 3px; }\n    .sweet-alert .sa-error-container p {\n      display: inline-block; }\n  .sweet-alert .sa-input-error {\n    position: absolute;\n    top: 29px;\n    right: 26px;\n    width: 20px;\n    height: 20px;\n    opacity: 0;\n    -webkit-transform: scale(0.5);\n    transform: scale(0.5);\n    -webkit-transform-origin: 50% 50%;\n    transform-origin: 50% 50%;\n    -webkit-transition: all 0.1s;\n    transition: all 0.1s; }\n    .sweet-alert .sa-input-error::before, .sweet-alert .sa-input-error::after {\n      content: \"\";\n      width: 20px;\n      height: 6px;\n      background-color: #f06e57;\n      border-radius: 3px;\n      position: absolute;\n      top: 50%;\n      margin-top: -4px;\n      left: 50%;\n      margin-left: -9px; }\n    .sweet-alert .sa-input-error::before {\n      -webkit-transform: rotate(-45deg);\n      transform: rotate(-45deg); }\n    .sweet-alert .sa-input-error::after {\n      -webkit-transform: rotate(45deg);\n      transform: rotate(45deg); }\n    .sweet-alert .sa-input-error.show {\n      opacity: 1;\n      -webkit-transform: scale(1);\n      transform: scale(1); }\n  .sweet-alert input {\n    width: 100%;\n    box-sizing: border-box;\n    border-radius: 3px;\n    border: 1px solid #d7d7d7;\n    height: 43px;\n    margin-top: 10px;\n    margin-bottom: 17px;\n    font-size: 18px;\n    box-shadow: inset 0px 1px 1px rgba(0, 0, 0, 0.06);\n    padding: 0 12px;\n    display: none;\n    -webkit-transition: all 0.3s;\n    transition: all 0.3s; }\n    .sweet-alert input:focus {\n      outline: none;\n      box-shadow: 0px 0px 3px #c4e6f5;\n      border: 1px solid #b4dbed; }\n      .sweet-alert input:focus::-moz-placeholder {\n        transition: opacity 0.3s 0.03s ease;\n        opacity: 0.5; }\n      .sweet-alert input:focus:-ms-input-placeholder {\n        transition: opacity 0.3s 0.03s ease;\n        opacity: 0.5; }\n      .sweet-alert input:focus::-webkit-input-placeholder {\n        transition: opacity 0.3s 0.03s ease;\n        opacity: 0.5; }\n    .sweet-alert input::-moz-placeholder {\n      color: #bdbdbd; }\n    .sweet-alert input:-ms-input-placeholder {\n      color: #bdbdbd; }\n    .sweet-alert input::-webkit-input-placeholder {\n      color: #bdbdbd; }\n  .sweet-alert.show-input input {\n    display: block; }\n  .sweet-alert .sa-confirm-button-container {\n    display: inline-block;\n    position: relative; }\n  .sweet-alert .la-ball-fall {\n    position: absolute;\n    left: 50%;\n    top: 50%;\n    margin-left: -27px;\n    margin-top: 4px;\n    opacity: 0;\n    visibility: hidden; }\n  .sweet-alert button {\n    background-color: #8CD4F5;\n    color: white;\n    border: none;\n    box-shadow: none;\n    font-size: 17px;\n    font-weight: 500;\n    -webkit-border-radius: 4px;\n    border-radius: 5px;\n    padding: 10px 32px;\n    margin: 26px 5px 0 5px;\n    cursor: pointer; }\n    .sweet-alert button:focus {\n      outline: none;\n      box-shadow: 0 0 2px rgba(128, 179, 235, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.05); }\n    .sweet-alert button:hover {\n      background-color: #7ecff4; }\n    .sweet-alert button:active {\n      background-color: #5dc2f1; }\n    .sweet-alert button.cancel {\n      background-color: #C1C1C1; }\n      .sweet-alert button.cancel:hover {\n        background-color: #b9b9b9; }\n      .sweet-alert button.cancel:active {\n        background-color: #a8a8a8; }\n      .sweet-alert button.cancel:focus {\n        box-shadow: rgba(197, 205, 211, 0.8) 0px 0px 2px, rgba(0, 0, 0, 0.0470588) 0px 0px 0px 1px inset !important; }\n    .sweet-alert button[disabled] {\n      opacity: .6;\n      cursor: default; }\n    .sweet-alert button.confirm[disabled] {\n      color: transparent; }\n      .sweet-alert button.confirm[disabled] ~ .la-ball-fall {\n        opacity: 1;\n        visibility: visible;\n        transition-delay: 0s; }\n    .sweet-alert button::-moz-focus-inner {\n      border: 0; }\n  .sweet-alert[data-has-cancel-button=false] button {\n    box-shadow: none !important; }\n  .sweet-alert[data-has-confirm-button=false][data-has-cancel-button=false] {\n    padding-bottom: 40px; }\n  .sweet-alert .sa-icon {\n    width: 80px;\n    height: 80px;\n    border: 4px solid gray;\n    -webkit-border-radius: 40px;\n    border-radius: 40px;\n    border-radius: 50%;\n    margin: 20px auto;\n    padding: 0;\n    position: relative;\n    box-sizing: content-box; }\n    .sweet-alert .sa-icon.sa-error {\n      border-color: #F27474; }\n      .sweet-alert .sa-icon.sa-error .sa-x-mark {\n        position: relative;\n        display: block; }\n      .sweet-alert .sa-icon.sa-error .sa-line {\n        position: absolute;\n        height: 5px;\n        width: 47px;\n        background-color: #F27474;\n        display: block;\n        top: 37px;\n        border-radius: 2px; }\n        .sweet-alert .sa-icon.sa-error .sa-line.sa-left {\n          -webkit-transform: rotate(45deg);\n          transform: rotate(45deg);\n          left: 17px; }\n        .sweet-alert .sa-icon.sa-error .sa-line.sa-right {\n          -webkit-transform: rotate(-45deg);\n          transform: rotate(-45deg);\n          right: 16px; }\n    .sweet-alert .sa-icon.sa-warning {\n      border-color: #F8BB86; }\n      .sweet-alert .sa-icon.sa-warning .sa-body {\n        position: absolute;\n        width: 5px;\n        height: 47px;\n        left: 50%;\n        top: 10px;\n        -webkit-border-radius: 2px;\n        border-radius: 2px;\n        margin-left: -2px;\n        background-color: #F8BB86; }\n      .sweet-alert .sa-icon.sa-warning .sa-dot {\n        position: absolute;\n        width: 7px;\n        height: 7px;\n        -webkit-border-radius: 50%;\n        border-radius: 50%;\n        margin-left: -3px;\n        left: 50%;\n        bottom: 10px;\n        background-color: #F8BB86; }\n    .sweet-alert .sa-icon.sa-info {\n      border-color: #C9DAE1; }\n      .sweet-alert .sa-icon.sa-info::before {\n        content: \"\";\n        position: absolute;\n        width: 5px;\n        height: 29px;\n        left: 50%;\n        bottom: 17px;\n        border-radius: 2px;\n        margin-left: -2px;\n        background-color: #C9DAE1; }\n      .sweet-alert .sa-icon.sa-info::after {\n        content: \"\";\n        position: absolute;\n        width: 7px;\n        height: 7px;\n        border-radius: 50%;\n        margin-left: -3px;\n        top: 19px;\n        background-color: #C9DAE1; }\n    .sweet-alert .sa-icon.sa-success {\n      border-color: #A5DC86; }\n      .sweet-alert .sa-icon.sa-success::before, .sweet-alert .sa-icon.sa-success::after {\n        content: '';\n        -webkit-border-radius: 40px;\n        border-radius: 40px;\n        border-radius: 50%;\n        position: absolute;\n        width: 60px;\n        height: 120px;\n        background: white;\n        -webkit-transform: rotate(45deg);\n        transform: rotate(45deg); }\n      .sweet-alert .sa-icon.sa-success::before {\n        -webkit-border-radius: 120px 0 0 120px;\n        border-radius: 120px 0 0 120px;\n        top: -7px;\n        left: -33px;\n        -webkit-transform: rotate(-45deg);\n        transform: rotate(-45deg);\n        -webkit-transform-origin: 60px 60px;\n        transform-origin: 60px 60px; }\n      .sweet-alert .sa-icon.sa-success::after {\n        -webkit-border-radius: 0 120px 120px 0;\n        border-radius: 0 120px 120px 0;\n        top: -11px;\n        left: 30px;\n        -webkit-transform: rotate(-45deg);\n        transform: rotate(-45deg);\n        -webkit-transform-origin: 0px 60px;\n        transform-origin: 0px 60px; }\n      .sweet-alert .sa-icon.sa-success .sa-placeholder {\n        width: 80px;\n        height: 80px;\n        border: 4px solid rgba(165, 220, 134, 0.2);\n        -webkit-border-radius: 40px;\n        border-radius: 40px;\n        border-radius: 50%;\n        box-sizing: content-box;\n        position: absolute;\n        left: -4px;\n        top: -4px;\n        z-index: 2; }\n      .sweet-alert .sa-icon.sa-success .sa-fix {\n        width: 5px;\n        height: 90px;\n        background-color: white;\n        position: absolute;\n        left: 28px;\n        top: 8px;\n        z-index: 1;\n        -webkit-transform: rotate(-45deg);\n        transform: rotate(-45deg); }\n      .sweet-alert .sa-icon.sa-success .sa-line {\n        height: 5px;\n        background-color: #A5DC86;\n        display: block;\n        border-radius: 2px;\n        position: absolute;\n        z-index: 2; }\n        .sweet-alert .sa-icon.sa-success .sa-line.sa-tip {\n          width: 25px;\n          left: 14px;\n          top: 46px;\n          -webkit-transform: rotate(45deg);\n          transform: rotate(45deg); }\n        .sweet-alert .sa-icon.sa-success .sa-line.sa-long {\n          width: 47px;\n          right: 8px;\n          top: 38px;\n          -webkit-transform: rotate(-45deg);\n          transform: rotate(-45deg); }\n    .sweet-alert .sa-icon.sa-custom {\n      background-size: contain;\n      border-radius: 0;\n      border: none;\n      background-position: center center;\n      background-repeat: no-repeat; }\n\n/*\n * Animations\n */\n@-webkit-keyframes showSweetAlert {\n  0% {\n    transform: scale(0.7);\n    -webkit-transform: scale(0.7); }\n  45% {\n    transform: scale(1.05);\n    -webkit-transform: scale(1.05); }\n  80% {\n    transform: scale(0.95);\n    -webkit-transform: scale(0.95); }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1); } }\n\n@keyframes showSweetAlert {\n  0% {\n    transform: scale(0.7);\n    -webkit-transform: scale(0.7); }\n  45% {\n    transform: scale(1.05);\n    -webkit-transform: scale(1.05); }\n  80% {\n    transform: scale(0.95);\n    -webkit-transform: scale(0.95); }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1); } }\n\n@-webkit-keyframes hideSweetAlert {\n  0% {\n    transform: scale(1);\n    -webkit-transform: scale(1); }\n  100% {\n    transform: scale(0.5);\n    -webkit-transform: scale(0.5); } }\n\n@keyframes hideSweetAlert {\n  0% {\n    transform: scale(1);\n    -webkit-transform: scale(1); }\n  100% {\n    transform: scale(0.5);\n    -webkit-transform: scale(0.5); } }\n\n@-webkit-keyframes slideFromTop {\n  0% {\n    top: 0%; }\n  100% {\n    top: 50%; } }\n\n@keyframes slideFromTop {\n  0% {\n    top: 0%; }\n  100% {\n    top: 50%; } }\n\n@-webkit-keyframes slideToTop {\n  0% {\n    top: 50%; }\n  100% {\n    top: 0%; } }\n\n@keyframes slideToTop {\n  0% {\n    top: 50%; }\n  100% {\n    top: 0%; } }\n\n@-webkit-keyframes slideFromBottom {\n  0% {\n    top: 70%; }\n  100% {\n    top: 50%; } }\n\n@keyframes slideFromBottom {\n  0% {\n    top: 70%; }\n  100% {\n    top: 50%; } }\n\n@-webkit-keyframes slideToBottom {\n  0% {\n    top: 50%; }\n  100% {\n    top: 70%; } }\n\n@keyframes slideToBottom {\n  0% {\n    top: 50%; }\n  100% {\n    top: 70%; } }\n\n.showSweetAlert[data-animation=pop] {\n  -webkit-animation: showSweetAlert 0.3s;\n  animation: showSweetAlert 0.3s; }\n\n.showSweetAlert[data-animation=none] {\n  -webkit-animation: none;\n  animation: none; }\n\n.showSweetAlert[data-animation=slide-from-top] {\n  -webkit-animation: slideFromTop 0.3s;\n  animation: slideFromTop 0.3s; }\n\n.showSweetAlert[data-animation=slide-from-bottom] {\n  -webkit-animation: slideFromBottom 0.3s;\n  animation: slideFromBottom 0.3s; }\n\n.hideSweetAlert[data-animation=pop] {\n  -webkit-animation: hideSweetAlert 0.2s;\n  animation: hideSweetAlert 0.2s; }\n\n.hideSweetAlert[data-animation=none] {\n  -webkit-animation: none;\n  animation: none; }\n\n.hideSweetAlert[data-animation=slide-from-top] {\n  -webkit-animation: slideToTop 0.4s;\n  animation: slideToTop 0.4s; }\n\n.hideSweetAlert[data-animation=slide-from-bottom] {\n  -webkit-animation: slideToBottom 0.3s;\n  animation: slideToBottom 0.3s; }\n\n@-webkit-keyframes animateSuccessTip {\n  0% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  54% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  70% {\n    width: 50px;\n    left: -8px;\n    top: 37px; }\n  84% {\n    width: 17px;\n    left: 21px;\n    top: 48px; }\n  100% {\n    width: 25px;\n    left: 14px;\n    top: 45px; } }\n\n@keyframes animateSuccessTip {\n  0% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  54% {\n    width: 0;\n    left: 1px;\n    top: 19px; }\n  70% {\n    width: 50px;\n    left: -8px;\n    top: 37px; }\n  84% {\n    width: 17px;\n    left: 21px;\n    top: 48px; }\n  100% {\n    width: 25px;\n    left: 14px;\n    top: 45px; } }\n\n@-webkit-keyframes animateSuccessLong {\n  0% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  65% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  84% {\n    width: 55px;\n    right: 0px;\n    top: 35px; }\n  100% {\n    width: 47px;\n    right: 8px;\n    top: 38px; } }\n\n@keyframes animateSuccessLong {\n  0% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  65% {\n    width: 0;\n    right: 46px;\n    top: 54px; }\n  84% {\n    width: 55px;\n    right: 0px;\n    top: 35px; }\n  100% {\n    width: 47px;\n    right: 8px;\n    top: 38px; } }\n\n@-webkit-keyframes rotatePlaceholder {\n  0% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  5% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  12% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); }\n  100% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); } }\n\n@keyframes rotatePlaceholder {\n  0% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  5% {\n    transform: rotate(-45deg);\n    -webkit-transform: rotate(-45deg); }\n  12% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); }\n  100% {\n    transform: rotate(-405deg);\n    -webkit-transform: rotate(-405deg); } }\n\n.animateSuccessTip {\n  -webkit-animation: animateSuccessTip 0.75s;\n  animation: animateSuccessTip 0.75s; }\n\n.animateSuccessLong {\n  -webkit-animation: animateSuccessLong 0.75s;\n  animation: animateSuccessLong 0.75s; }\n\n.sa-icon.sa-success.animate::after {\n  -webkit-animation: rotatePlaceholder 4.25s ease-in;\n  animation: rotatePlaceholder 4.25s ease-in; }\n\n@-webkit-keyframes animateErrorIcon {\n  0% {\n    transform: rotateX(100deg);\n    -webkit-transform: rotateX(100deg);\n    opacity: 0; }\n  100% {\n    transform: rotateX(0deg);\n    -webkit-transform: rotateX(0deg);\n    opacity: 1; } }\n\n@keyframes animateErrorIcon {\n  0% {\n    transform: rotateX(100deg);\n    -webkit-transform: rotateX(100deg);\n    opacity: 0; }\n  100% {\n    transform: rotateX(0deg);\n    -webkit-transform: rotateX(0deg);\n    opacity: 1; } }\n\n.animateErrorIcon {\n  -webkit-animation: animateErrorIcon 0.5s;\n  animation: animateErrorIcon 0.5s; }\n\n@-webkit-keyframes animateXMark {\n  0% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  50% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  80% {\n    transform: scale(1.15);\n    -webkit-transform: scale(1.15);\n    margin-top: -6px; }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1);\n    margin-top: 0;\n    opacity: 1; } }\n\n@keyframes animateXMark {\n  0% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  50% {\n    transform: scale(0.4);\n    -webkit-transform: scale(0.4);\n    margin-top: 26px;\n    opacity: 0; }\n  80% {\n    transform: scale(1.15);\n    -webkit-transform: scale(1.15);\n    margin-top: -6px; }\n  100% {\n    transform: scale(1);\n    -webkit-transform: scale(1);\n    margin-top: 0;\n    opacity: 1; } }\n\n.animateXMark {\n  -webkit-animation: animateXMark 0.5s;\n  animation: animateXMark 0.5s; }\n\n@-webkit-keyframes pulseWarning {\n  0% {\n    border-color: #F8D486; }\n  100% {\n    border-color: #F8BB86; } }\n\n@keyframes pulseWarning {\n  0% {\n    border-color: #F8D486; }\n  100% {\n    border-color: #F8BB86; } }\n\n.pulseWarning {\n  -webkit-animation: pulseWarning 0.75s infinite alternate;\n  animation: pulseWarning 0.75s infinite alternate; }\n\n@-webkit-keyframes pulseWarningIns {\n  0% {\n    background-color: #F8D486; }\n  100% {\n    background-color: #F8BB86; } }\n\n@keyframes pulseWarningIns {\n  0% {\n    background-color: #F8D486; }\n  100% {\n    background-color: #F8BB86; } }\n\n.pulseWarningIns {\n  -webkit-animation: pulseWarningIns 0.75s infinite alternate;\n  animation: pulseWarningIns 0.75s infinite alternate; }\n\n@-webkit-keyframes rotate-loading {\n  0% {\n    transform: rotate(0deg); }\n  100% {\n    transform: rotate(360deg); } }\n\n@keyframes rotate-loading {\n  0% {\n    transform: rotate(0deg); }\n  100% {\n    transform: rotate(360deg); } }\n\n/* Internet Explorer 9 has some special quirks that are fixed here */\n/* The icons are not animated. */\n/* This file is automatically merged into sweet-alert.min.js through Gulp */\n/* Error icon */\n.sweet-alert .sa-icon.sa-error .sa-line.sa-left {\n  -ms-transform: rotate(45deg) \\9; }\n\n.sweet-alert .sa-icon.sa-error .sa-line.sa-right {\n  -ms-transform: rotate(-45deg) \\9; }\n\n/* Success icon */\n.sweet-alert .sa-icon.sa-success {\n  border-color: transparent\\9; }\n\n.sweet-alert .sa-icon.sa-success .sa-line.sa-tip {\n  -ms-transform: rotate(45deg) \\9; }\n\n.sweet-alert .sa-icon.sa-success .sa-line.sa-long {\n  -ms-transform: rotate(-45deg) \\9; }\n\n/*!\n * Load Awesome v1.1.0 (http://github.danielcardoso.net/load-awesome/)\n * Copyright 2015 Daniel Cardoso <@DanielCardoso>\n * Licensed under MIT\n */\n.la-ball-fall,\n.la-ball-fall > div {\n  position: relative;\n  -webkit-box-sizing: border-box;\n  -moz-box-sizing: border-box;\n  box-sizing: border-box; }\n\n.la-ball-fall {\n  display: block;\n  font-size: 0;\n  color: #fff; }\n\n.la-ball-fall.la-dark {\n  color: #333; }\n\n.la-ball-fall > div {\n  display: inline-block;\n  float: none;\n  background-color: currentColor;\n  border: 0 solid currentColor; }\n\n.la-ball-fall {\n  width: 54px;\n  height: 18px; }\n\n.la-ball-fall > div {\n  width: 10px;\n  height: 10px;\n  margin: 4px;\n  border-radius: 100%;\n  opacity: 0;\n  -webkit-animation: ball-fall 1s ease-in-out infinite;\n  -moz-animation: ball-fall 1s ease-in-out infinite;\n  -o-animation: ball-fall 1s ease-in-out infinite;\n  animation: ball-fall 1s ease-in-out infinite; }\n\n.la-ball-fall > div:nth-child(1) {\n  -webkit-animation-delay: -200ms;\n  -moz-animation-delay: -200ms;\n  -o-animation-delay: -200ms;\n  animation-delay: -200ms; }\n\n.la-ball-fall > div:nth-child(2) {\n  -webkit-animation-delay: -100ms;\n  -moz-animation-delay: -100ms;\n  -o-animation-delay: -100ms;\n  animation-delay: -100ms; }\n\n.la-ball-fall > div:nth-child(3) {\n  -webkit-animation-delay: 0ms;\n  -moz-animation-delay: 0ms;\n  -o-animation-delay: 0ms;\n  animation-delay: 0ms; }\n\n.la-ball-fall.la-sm {\n  width: 26px;\n  height: 8px; }\n\n.la-ball-fall.la-sm > div {\n  width: 4px;\n  height: 4px;\n  margin: 2px; }\n\n.la-ball-fall.la-2x {\n  width: 108px;\n  height: 36px; }\n\n.la-ball-fall.la-2x > div {\n  width: 20px;\n  height: 20px;\n  margin: 8px; }\n\n.la-ball-fall.la-3x {\n  width: 162px;\n  height: 54px; }\n\n.la-ball-fall.la-3x > div {\n  width: 30px;\n  height: 30px;\n  margin: 12px; }\n\n/*\n * Animation\n */\n@-webkit-keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -webkit-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -webkit-transform: translateY(145%);\n    transform: translateY(145%); } }\n\n@-moz-keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -moz-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -moz-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -moz-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -moz-transform: translateY(145%);\n    transform: translateY(145%); } }\n\n@-o-keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -o-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -o-transform: translateY(145%);\n    transform: translateY(145%); } }\n\n@keyframes ball-fall {\n  0% {\n    opacity: 0;\n    -webkit-transform: translateY(-145%);\n    -moz-transform: translateY(-145%);\n    -o-transform: translateY(-145%);\n    transform: translateY(-145%); }\n  10% {\n    opacity: .5; }\n  20% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    -moz-transform: translateY(0);\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  80% {\n    opacity: 1;\n    -webkit-transform: translateY(0);\n    -moz-transform: translateY(0);\n    -o-transform: translateY(0);\n    transform: translateY(0); }\n  90% {\n    opacity: .5; }\n  100% {\n    opacity: 0;\n    -webkit-transform: translateY(145%);\n    -moz-transform: translateY(145%);\n    -o-transform: translateY(145%);\n    transform: translateY(145%); } }\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 54 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(41);
+var content = __webpack_require__(43);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4278,13 +4786,13 @@ if(false) {
 }
 
 /***/ }),
-/* 55 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(42);
+var content = __webpack_require__(44);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4304,13 +4812,13 @@ if(false) {
 }
 
 /***/ }),
-/* 56 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(43);
+var content = __webpack_require__(45);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4330,13 +4838,13 @@ if(false) {
 }
 
 /***/ }),
-/* 57 */
+/* 65 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(44);
+var content = __webpack_require__(46);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4356,13 +4864,13 @@ if(false) {
 }
 
 /***/ }),
-/* 58 */
+/* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(45);
+var content = __webpack_require__(47);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4382,13 +4890,13 @@ if(false) {
 }
 
 /***/ }),
-/* 59 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(46);
+var content = __webpack_require__(48);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4408,13 +4916,13 @@ if(false) {
 }
 
 /***/ }),
-/* 60 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(47);
+var content = __webpack_require__(49);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4434,13 +4942,13 @@ if(false) {
 }
 
 /***/ }),
-/* 61 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(48);
+var content = __webpack_require__(50);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4460,13 +4968,13 @@ if(false) {
 }
 
 /***/ }),
-/* 62 */
+/* 70 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(49);
+var content = __webpack_require__(51);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4486,13 +4994,13 @@ if(false) {
 }
 
 /***/ }),
-/* 63 */
+/* 71 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(50);
+var content = __webpack_require__(52);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4512,13 +5020,13 @@ if(false) {
 }
 
 /***/ }),
-/* 64 */
+/* 72 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(51);
+var content = __webpack_require__(53);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4538,13 +5046,13 @@ if(false) {
 }
 
 /***/ }),
-/* 65 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(52);
+var content = __webpack_require__(54);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -4564,7 +5072,33 @@ if(false) {
 }
 
 /***/ }),
-/* 66 */
+/* 74 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(55);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../css-loader/index.js!./sweetalert.css", function() {
+			var newContent = require("!!../../css-loader/index.js!./sweetalert.css");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4705,7 +5239,7 @@ exports['default'] = {
 module.exports = exports['default'];
 
 /***/ }),
-/* 67 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4790,7 +5324,7 @@ exports['default'] = handleKeyDown;
 module.exports = exports['default'];
 
 /***/ }),
-/* 68 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -4838,7 +5372,7 @@ exports["default"] = injectedHTML;
 module.exports = exports["default"];
 
 /***/ }),
-/* 69 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5069,7 +5603,7 @@ exports['default'] = setParameters;
 module.exports = exports['default'];
 
 /***/ }),
-/* 70 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -5077,7 +5611,7 @@ var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(20);
+var util = __webpack_require__(22);
 var isArrayLike = util.isArrayLike;
 var isElement = util.isElement;
 var create = util.create;
@@ -5144,10 +5678,10 @@ Context.fn = extensions;
 module.exports = Context;
 
 /***/ }),
-/* 71 */
+/* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(20);
+var util = __webpack_require__(22);
 
 module.exports = function(ctx) {
   var fn = ctx.fn;
@@ -5690,7 +6224,92 @@ module.exports = function(ctx) {
   };
 };
 
+/***/ }),
+/* 81 */
+/***/ (function(module, exports) {
+
+var g;
+
+// This works in non-strict mode
+g = (function() {
+	return this;
+})();
+
+try {
+	// This works if eval is allowed (see CSP)
+	g = g || Function("return this")() || (1,eval)("this");
+} catch(e) {
+	// This works if the window reference is available
+	if(typeof window === "object")
+		g = window;
+}
+
+// g can still be undefined, but nothing to do about it...
+// We return undefined, instead of nothing here, so it's
+// easier to handle this case. if(!global) { ...}
+
+module.exports = g;
+
+
+/***/ }),
+/* 82 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var apply = Function.prototype.apply;
+
+// DOM APIs, for completeness
+
+exports.setTimeout = function() {
+  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
+};
+exports.setInterval = function() {
+  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
+};
+exports.clearTimeout =
+exports.clearInterval = function(timeout) {
+  if (timeout) {
+    timeout.close();
+  }
+};
+
+function Timeout(id, clearFn) {
+  this._id = id;
+  this._clearFn = clearFn;
+}
+Timeout.prototype.unref = Timeout.prototype.ref = function() {};
+Timeout.prototype.close = function() {
+  this._clearFn.call(window, this._id);
+};
+
+// Does not start the time, just sets up the members needed.
+exports.enroll = function(item, msecs) {
+  clearTimeout(item._idleTimeoutId);
+  item._idleTimeout = msecs;
+};
+
+exports.unenroll = function(item) {
+  clearTimeout(item._idleTimeoutId);
+  item._idleTimeout = -1;
+};
+
+exports._unrefActive = exports.active = function(item) {
+  clearTimeout(item._idleTimeoutId);
+
+  var msecs = item._idleTimeout;
+  if (msecs >= 0) {
+    item._idleTimeoutId = setTimeout(function onTimeout() {
+      if (item._onTimeout)
+        item._onTimeout();
+    }, msecs);
+  }
+};
+
+// setimmediate attaches itself to the global object
+__webpack_require__(60);
+exports.setImmediate = setImmediate;
+exports.clearImmediate = clearImmediate;
+
+
 /***/ })
 /******/ ]);
-});
-//# sourceMappingURL=ff.js.map
+//# sourceMappingURL=article.js.map

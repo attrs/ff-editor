@@ -1,4 +1,4 @@
-var ff = require('firefront');
+var ff = require('ff-editor');
 var $ = require('tinyselector');
 var Part = ff.Part;
 var CustomPart = require('./custom/index.es6.js').default;
