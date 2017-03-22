@@ -13,10 +13,9 @@
   "license": "MIT",
   "dependencies": {
     "async-each-series": "^1.1.0",
-    "gulp-uglify": "^2.1.2",
+    "sweetalert": "^1.1.3",
     "tinyevent": "^0.1.2",
-    "tinyselector": "^0.1.7",
-    "x-modal": "^0.1.11"
+    "tinyselector": "^0.1.7"
   },
   "devDependencies": {
     "babel-core": "^6.24.0",

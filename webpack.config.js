@@ -33,6 +33,13 @@ module.exports = [
       libraryTarget: 'umd',
       umdNamedDefine: true
     },
+    node: {
+      console: false,
+      global: false,
+      process: false,
+      Buffer: false,
+      setImmediate: false
+    },
     module: {
       loaders: loaders
     },
