@@ -3111,6 +3111,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	      this.insert(new context.Paragraph());
 	    }
 	    
+	    viewport.find('.ff-video').each(function() {
+	      if( !this.__ff__) new context.Video(this);
+	    });
+	    
 	    viewport.find('.ff-image').each(function() {
 	      if( !this.__ff__) new context.Image(this);
 	    });
@@ -7204,7 +7208,8 @@ return /******/ (function(modules) { // webpackBootstrap
 	      show: function() {
 	        if( part.editmode() ) el.attr('contenteditable', null);
 	        node.html(text).remove();
-	        if( !part.text() ) el.empty().append(node);
+	        var text = el.text().split('\n').join().trim();
+	        if( !text ) el.empty().append(node);
 	        return this;
 	      },
 	      hide: function() {
@@ -7224,22 +7229,29 @@ return /******/ (function(modules) { // webpackBootstrap
 	
 	proto.text = function(text) {
 	  var el = $(this.dom());
-	  if( !arguments.length ) return el.text().split('\n').join().trim();
+	  if( !arguments.length ) {
+	    var editmode = this.editmode();
+	    this.editmode(false);
+	    var text = el.text().split('\n').join().trim();
+	    this.editmode(editmode);
+	    return text;
+	  }
 	  
 	  el.text(text);
 	  return this;
 	};
 	
 	proto.html = function(html) {
+	  var el = $(this.dom());
 	  if( !arguments.length ) {
 	    var editmode = this.editmode();
 	    this.editmode(false);
-	    var html = this.dom().innerHTML;
+	    var html = el.html();
 	    this.editmode(editmode);
 	    return html;
 	  }
 	  
-	  this.dom().innerHTML = html || '';
+	  el.html(html);
 	  return this;
 	};
 	
@@ -7462,14 +7474,14 @@ return /******/ (function(modules) { // webpackBootstrap
 	  });
 	}
 	
-	TextPart.prototype = Object.create(ParagraphPart.prototype, {
-	  create: {
-	    value: function(arg) {
-	      var html = typeof arg == 'string' ? arg : '';
-	      return $('<span/>').html(html)[0];
-	    }
-	  }
-	});
+	var proto = TextPart.prototype = Object.create(ParagraphPart.prototype);
+	
+	proto.create = function(arg) {
+	  var html = typeof arg == 'string' ? arg : '';
+	  return $('<span/>').html(html)[0];
+	};
+	
+	proto.html = ParagraphPart.prototype.text;
 	
 	module.exports = TextPart;
 
