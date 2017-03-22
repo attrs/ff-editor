@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 25);
+/******/ 	return __webpack_require__(__webpack_require__.s = 26);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -397,7 +397,7 @@ function updateLink(linkElement, obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var context = __webpack_require__(5);
-var Events = __webpack_require__(21);
+var Events = __webpack_require__(20);
 var Types = __webpack_require__(13);
 var Toolbar = __webpack_require__(8);
 var $ = __webpack_require__(0);
@@ -822,10 +822,10 @@ exports.stopEventPropagation = stopEventPropagation;
 /***/ (function(module, exports, __webpack_require__) {
 
 var each = __webpack_require__(17);
-var Events = __webpack_require__(21);
+var Events = __webpack_require__(20);
 var $ = __webpack_require__(0);
 var types = __webpack_require__(13);
-var connector = __webpack_require__(26);
+var connector = __webpack_require__(27);
 
 var parts = [];
 var data = {};
@@ -1011,23 +1011,53 @@ var context = {
     if( this.wrapped(range, selector) ) this.unwrap(range, selector);
     else this.wrap(range, selector);
     return this;
-  }
-  /*getRange: function(index) {
-    if( !window.getSelection ) return null;
-    
-    var selection = window.getSelection();
-    if( selection.rangeCount && selection.rangeCount > (index || 0) ) return selection.getRangeAt(index || 0);
-    return null;
   },
-  setRange: function(range) {
-    if( !range || !window.getSelection ) return this;
-    
-    var selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
+  
+  prompt: function(message, callback) {
+    if( dispatcher.fire('prompt', {
+      message: message,
+      callback: callback
+    }, true) ) {
+      callback && callback.call(this, prompt(message));
+    }
     
     return this;
-  }*/
+  },
+  confirm: function(message, callback) {
+    if( dispatcher.fire('prompt', {
+      message: message,
+      callback: callback
+    }, true) ) {
+      callback && callback.call(this, confirm(message));
+    }
+    
+    return this;
+  },
+  alert: function(message, callback) {
+    if( dispatcher.fire('alert', {
+      message: message,
+      callback: callback
+    }, true) ) {
+      callback && callback.call(this);
+      alert(message);
+    }
+    
+    return this;
+  },
+  error: function(error, callback) {
+    if( typeof error == 'string' ) error = new Error(error);
+    
+    if( dispatcher.fire('error', {
+      error: error,
+      message: error.message,
+      callback: callback
+    }, true) ) {
+      callback && callback.call(this);
+      alert('Error: ' + error.message);
+    }
+    
+    return this;
+  }
 };
 
 dispatcher.scope(context);
@@ -1047,9 +1077,23 @@ module.exports = context;
 
 
 
-
 /*
-
+getRange: function(index) {
+  if( !window.getSelection ) return null;
+  
+  var selection = window.getSelection();
+  if( selection.rangeCount && selection.rangeCount > (index || 0) ) return selection.getRangeAt(index || 0);
+  return null;
+},
+setRange: function(range) {
+  if( !range || !window.getSelection ) return this;
+  
+  var selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  return this;
+}
 getCaretPosition: function(node) {
   if( !window.getSelection ) return -1;
   if( !node ) return -1;
@@ -1323,7 +1367,7 @@ exports.colorLuminance = colorLuminance;
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(29);
+var Toolbar = __webpack_require__(30);
 
 Toolbar.Button = __webpack_require__(9);
 Toolbar.Separator = __webpack_require__(12);
@@ -1337,7 +1381,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(63);
+__webpack_require__(64);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1433,18 +1477,17 @@ module.exports = Button;
 var ctx = __webpack_require__(5);
 var Toolbar = __webpack_require__(8);
 
-__webpack_require__(61);
-__webpack_require__(74);
+__webpack_require__(62);
 
 var Part = __webpack_require__(3);
-var ArticlePart = __webpack_require__(31);
+var ArticlePart = __webpack_require__(32);
 var ParagraphPart = __webpack_require__(16);
-var TextPart = __webpack_require__(40);
-var SeparatorPart = __webpack_require__(39);
-var ImagePart = __webpack_require__(36);
-var VideoPart = __webpack_require__(41);
-var RowPart = __webpack_require__(38);
-var FilePart = __webpack_require__(35);
+var TextPart = __webpack_require__(41);
+var SeparatorPart = __webpack_require__(40);
+var ImagePart = __webpack_require__(37);
+var VideoPart = __webpack_require__(42);
+var RowPart = __webpack_require__(39);
+var FilePart = __webpack_require__(36);
 
 ctx.Toolbar = Toolbar;
 ctx.Part = Part;
@@ -1579,18 +1622,10 @@ module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var swal = __webpack_require__(20);
-var Items = __webpack_require__(33);
+var Items = __webpack_require__(34);
 var context = __webpack_require__(5);
 
-var items = Items();
-
-function error(msg) {
-  if( !msg ) msg = 'Error';
-  swal(msg.message || msg, 'error');
-}
-
-items
+module.exports = Items()
 .add({
   text: '<i class="fa fa-font"></i>',
   tooltip: '문단',
@@ -1605,7 +1640,7 @@ items
   fn: function(e) {
     var part = this.owner();
     part.context().selectFiles(function(err, files) {
-      if( err ) return error(err);
+      if( err ) return context.error(err);
       if( !files.length ) return;
       
       if( files.length === 1 ) {
@@ -1626,13 +1661,7 @@ items
   fn: function(e) {
     var part = this.owner();
     
-    swal({
-      title: '이미지 URL을 입력해주세요',
-      type: 'input',
-      showCancelButton: true,
-      closeOnConfirm: true,
-      animation: 'slide-from-top'
-    }, function(src){
+    context.prompt('Please enter the image URL.', function(src) {
       if( !src ) return;
       
       if( ~src.indexOf('instagram.com') ) {
@@ -1653,13 +1682,7 @@ items
   fn: function(e) {
     var part = this.owner();
     
-    swal({
-      title: '동영상 URL을 입력해주세요',
-      type: 'input',
-      showCancelButton: true,
-      closeOnConfirm: true,
-      animation: 'slide-from-top'
-    }, function(src){
+    context.prompt('Please enter the video URL', function(src) {
       if( !src ) return;
       
       if( ~src.indexOf('youtube.com') ) {
@@ -1667,7 +1690,7 @@ items
         vid = vid && vid.split('&')[0];
         vid = vid && vid.split('#')[0];
         
-        if( !vid ) return error('URL을 정확히 입력해주세요');
+        if( !vid ) return context.error('URL을 정확히 입력해주세요');
         src = 'https://www.youtube.com/embed/' + vid;
       } else if( ~src.indexOf('vimeo.com') ) {
         var vid = src.split('//')[1];
@@ -1676,7 +1699,7 @@ items
         vid = vid && vid.split('&')[0];
         vid = vid && vid.split('#')[0];
         
-        if( !vid ) return error('URL을 정확히 입력해주세요');
+        if( !vid ) return context.error('URL을 정확히 입력해주세요');
         src = 'https://player.vimeo.com/video/' + vid;
       }
       
@@ -1697,14 +1720,13 @@ items
   fn: function(e) {
     var part = this.owner();
     part.context().selectFile(function(err, file) {
-      if( err ) return error(err);
+      if( err ) return context.error(err);
       
       part.insert(new context.File(file));
     });
   }
 });
 
-module.exports = items;
 
 /***/ }),
 /* 15 */
@@ -1724,9 +1746,9 @@ module.exports = function(el) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
-var buildtoolbar = __webpack_require__(37);
+var buildtoolbar = __webpack_require__(38);
 
-__webpack_require__(69);
+__webpack_require__(70);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -2133,6 +2155,412 @@ module.exports = exports['default'];
 
 /***/ }),
 /* 20 */
+/***/ (function(module, exports) {
+
+if( !Array.prototype.every ) {
+  Array.prototype.every = function(callbackfn, thisArg) {
+    var T, k;
+    
+    if (this == null) {
+      throw new TypeError('this is null or not defined');
+    }
+    
+    var O = Object(this);
+    var len = O.length >>> 0;
+    if (typeof callbackfn !== 'function') {
+      throw new TypeError();
+    }
+    if (arguments.length > 1) {
+      T = thisArg;
+    }
+    k = 0;
+    while (k < len) {
+      var kValue;
+      if (k in O) {
+        kValue = O[k];
+        var testResult = callbackfn.call(T, kValue, k, O);
+        if (!testResult) {
+          return false;
+        }
+      }
+      k++;
+    }
+    return true;
+  };
+}
+
+if( !Array.isArray ) {
+  Array.isArray = function(arg) {
+    return Object.prototype.toString.call(arg) === '[object Array]';
+  };
+}
+
+function EventObject(type, detail, target, cancelable) {
+  this.type = type;
+  this.detail = detail || {};
+  this.target = this.currentTarget = target;
+  this.cancelable = cancelable === true ? true : false;
+  this.defaultPrevented = false;
+  this.stopped = false;
+  this.stoppedImmediate = false;
+  this.timeStamp = new Date().getTime();
+}
+
+EventObject.prototype = {
+  preventDefault: function() {
+    if( this.cancelable ) this.defaultPrevented = true;
+  },
+  /*stopPropagation: function() {
+    this.stopped = true;
+  },*/
+  stopImmediatePropagation: function() {
+    this.stoppedImmediate = true;
+    this.stopped = true;
+  }
+};
+
+EventObject.createEvent = function(type, detail, target, cancelable) {
+  return new EventObject(type, detail, target, cancelable);
+};
+
+
+module.exports = function(scope) {
+  var listeners = {}, paused = false;
+  
+  var on = function(type, fn) {
+    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
+    if( typeof fn !== 'function' ) return console.error('listener must be a function');
+    
+    var types = type.split(' ');
+    types.forEach(function(type) {
+      listeners[type] = listeners[type] || [];
+      listeners[type].push(fn);
+    });
+    
+    return this;
+  };
+  
+  var once = function(type, fn) {
+    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
+    if( typeof fn !== 'function' ) return console.error('listener must be a function');
+    
+    var types = type.split(' ');
+    types.forEach(function(type) {
+      if( !type ) return;
+      
+      var wrap = function(e) {
+        off(type, wrap);
+        return fn.call(this, e);
+      };
+      on(type, wrap);
+    });
+    
+    return this;
+  };
+  
+  var off = function(type, fn) {
+    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
+    if( typeof fn !== 'function' ) return console.error('listener must be a function');
+    
+    var types = type.split(' ');
+    types.forEach(function(type) {
+      var fns = listeners[type];
+      if( fns ) for(var i;~(i = fns.indexOf(fn));) fns.splice(i, 1);
+    });
+    
+    return this;
+  };
+  
+  var has = function(type) {
+    if( typeof type === 'function' ) {
+      var found = false;
+      listeners.forEach(function(fn) {
+        if( found ) return;
+        if( fn === type ) found = true;
+      });
+      return found;
+    }
+    return listeners[type] && listeners[type].length ? true : false;
+  };
+  
+  var fire = function(type, detail, cancellable) {
+    if( paused ) return false;
+    
+    var event;
+    if( typeof type === 'string' ) {
+      event = EventObject.createEvent(type, detail, scope, cancellable);
+    } else if( type instanceof window.Event ) {
+      event = type;
+    } else if( type instanceof EventObject ) {
+      event = type;
+    } else {
+      return console.error('type must be a string or Event but,', type);
+    }
+    event.currentTarget = scope;
+    
+    var stopped = false;
+    var action = function(listener) {
+      if( stopped || event.stoppedImmediate ) return stopped = true;
+      if( listener.call(scope, event) === false ) event.preventDefault();
+    };
+    
+    (listeners['*'] || []).slice().reverse().forEach(action);
+    (listeners[event.type] || []).slice().reverse().forEach(action);
+    
+    return !event.defaultPrevented;
+  };
+  
+  return {
+    handleEvent: function(e) {
+      return fire(e);
+    },
+    scope: function(o) {
+      if( !arguments.length ) return scope;
+      scope = o;
+    },
+    on: on,
+    once: once,
+    off: off,
+    fire: fire,
+    has: has,
+    destroy: function() {
+      listeners = null;
+      return this;
+    },
+    pause: function() {
+      paused = true;
+      return this;
+    },
+    resume: function() {
+      paused = false;
+      return this;
+    }
+  };
+};
+
+/***/ }),
+/* 21 */
+/***/ (function(module, exports) {
+
+function isNull(value) {
+  return value === null || value === undefined;
+}
+
+function isArrayLike(o) {
+  if( !o || typeof o != 'object' || o === window || typeof o.length != 'number' ) return false;
+  if( o instanceof Array || (Array.isArray && Array.isArray(o)) ) return true;
+  
+  var type = Object.prototype.toString.call(o);
+  return /^\[object (HTMLCollection|NodeList|Array|FileList|Arguments)\]$/.test(type);
+}
+
+function create(html) {
+  if( !html || typeof html != 'string' ) return null;
+  var div = document.createElement('div');
+  div.innerHTML = html.trim();
+  
+  var arr = [];
+  [].forEach.call(div.childNodes, function(node) {
+    var p = node.parentNode;
+    p && p.removeChild(node);
+    arr.push(node);
+  });
+  
+  return arr;
+}
+
+function isHTML(html) {
+  return (typeof html === 'string' && html.match(/(<([^>]+)>)/ig) ) ? true : false;
+}
+
+function matches(el, selector) {
+  try {
+    if( typeof selector == 'function' )
+      return !!selector.call(el);
+    
+    return !!(el && el.matches && el.matches(selector));
+  } catch(e) {
+    return false;
+  }
+}
+
+function each(arr, fn) {
+  var i = 0;
+  [].every.call(arr, function(el) {
+    i = i + 1;
+    if( !el ) return true;
+    return ( fn && fn.apply(el, [i, el]) === false ) ? false : true;
+  });
+  return arr;
+}
+
+function offset(el, abs) {
+  if( !el || !el.offsetTop ) return null;
+  
+  var top = el.offsetTop, left = el.offsetLeft;
+  if( abs !== false ) {
+    while( el = el.offsetParent ) {
+      top += el.offsetTop;
+      left += el.offsetLeft;
+    }
+  }
+  
+  return {
+    top: top,
+    left: left
+  };
+}
+
+function isElement(node) {
+  return (
+    typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
+  );
+}
+
+module.exports = {
+  isNull: isNull,
+  isArrayLike: isArrayLike,
+  create: create,
+  isHTML: isHTML,
+  matches: matches,
+  each: each,
+  offset: offset,
+  isElement: isElement
+};
+
+/***/ }),
+/* 22 */
+/***/ (function(module, exports, __webpack_require__) {
+
+module.exports = {
+  spongebob: {
+    title: {
+      html: 'SpongeBob SquarePants'
+    },
+    content: {
+      html: __webpack_require__(59)
+    }
+  },
+  patrick: {
+    title: {
+      html: 'Patrick Star'
+    },
+    content: {
+      html: __webpack_require__(58)
+    }
+  },
+  squidward: {
+    title: {
+      html: 'Squidward Tentacles'
+    },
+    content: {
+      html: __webpack_require__(60)
+    }
+  },
+  mrkrabs: {
+    title: {
+      html: 'Eugene H. Krabs'
+    },
+    content: {
+      html: __webpack_require__(57)
+    }
+  }
+};
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _ffEditor = __webpack_require__(10);
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var CustomPart = function (_Part) {
+  _inherits(CustomPart, _Part);
+
+  function CustomPart(el) {
+    _classCallCheck(this, CustomPart);
+
+    var _this = _possibleConstructorReturn(this, (CustomPart.__proto__ || Object.getPrototypeOf(CustomPart)).call(this, el));
+
+    _this.toolbar().clear().add({
+      text: '<i class="fa fa-pencil"></i>',
+      fn: function fn(e) {}
+    }).add({
+      text: '<i class="fa fa-list"></i>',
+      fn: function fn(e) {}
+    });
+    return _this;
+  }
+
+  _createClass(CustomPart, [{
+    key: 'onfocus',
+    value: function onfocus(e) {
+      console.log('focus', e);
+    }
+  }, {
+    key: 'onrender',
+    value: function onrender(e) {
+      console.log('render', e);
+    }
+  }, {
+    key: 'onupdate',
+    value: function onupdate(e) {
+      console.log('update', e);
+    }
+  }, {
+    key: 'test',
+    value: function test() {
+      console.log('OK!', this);
+    }
+  }]);
+
+  return CustomPart;
+}(_ffEditor.Part);
+
+exports.default = CustomPart;
+
+/***/ }),
+/* 24 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(56);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../css-loader/index.js!./sweetalert.css", function() {
+			var newContent = require("!!../../css-loader/index.js!./sweetalert.css");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2441,454 +2869,41 @@ if (typeof window !== 'undefined') {
 module.exports = exports['default'];
 
 /***/ }),
-/* 21 */
-/***/ (function(module, exports) {
-
-if( !Array.prototype.every ) {
-  Array.prototype.every = function(callbackfn, thisArg) {
-    var T, k;
-    
-    if (this == null) {
-      throw new TypeError('this is null or not defined');
-    }
-    
-    var O = Object(this);
-    var len = O.length >>> 0;
-    if (typeof callbackfn !== 'function') {
-      throw new TypeError();
-    }
-    if (arguments.length > 1) {
-      T = thisArg;
-    }
-    k = 0;
-    while (k < len) {
-      var kValue;
-      if (k in O) {
-        kValue = O[k];
-        var testResult = callbackfn.call(T, kValue, k, O);
-        if (!testResult) {
-          return false;
-        }
-      }
-      k++;
-    }
-    return true;
-  };
-}
-
-if( !Array.isArray ) {
-  Array.isArray = function(arg) {
-    return Object.prototype.toString.call(arg) === '[object Array]';
-  };
-}
-
-function EventObject(type, detail, target, cancelable) {
-  this.type = type;
-  this.detail = detail || {};
-  this.target = this.currentTarget = target;
-  this.cancelable = cancelable === true ? true : false;
-  this.defaultPrevented = false;
-  this.stopped = false;
-  this.timeStamp = new Date().getTime();
-}
-
-EventObject.prototype = {
-  preventDefault: function() {
-    if( this.cancelable ) this.defaultPrevented = true;
-  },
-  stopPropagation: function() {
-    this.stopped = true;
-  },
-  stopImmediatePropagation: function() {
-    this.stoppedImmediate = true;
-    this.stopped = true;
-  }
-};
-
-EventObject.createEvent = function(type, detail, target, cancelable) {
-  return new EventObject(type, detail, target, cancelable);
-};
-
-
-module.exports = function(scope) {
-  var listeners = {}, paused = false;
-  
-  var on = function(type, fn) {
-    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
-    if( typeof fn !== 'function' ) return console.error('listener must be a function');
-    
-    var types = type.split(' ');
-    types.forEach(function(type) {
-      listeners[type] = listeners[type] || [];
-      listeners[type].push(fn);
-    });
-    
-    return this;
-  };
-  
-  var once = function(type, fn) {
-    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
-    if( typeof fn !== 'function' ) return console.error('listener must be a function');
-    
-    var types = type.split(' ');
-    types.forEach(function(type) {
-      if( !type ) return;
-      
-      var wrap = function(e) {
-        off(type, wrap);
-        return fn.call(this, e);
-      };
-      on(type, wrap);
-    });
-    
-    return this;
-  };
-  
-  var off = function(type, fn) {
-    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
-    if( typeof fn !== 'function' ) return console.error('listener must be a function');
-    
-    var types = type.split(' ');
-    types.forEach(function(type) {
-      var fns = listeners[type];
-      if( fns ) for(var i;~(i = fns.indexOf(fn));) fns.splice(i, 1);
-    });
-    
-    return this;
-  };
-  
-  var has = function(type) {
-    if( typeof type === 'function' ) {
-      var found = false;
-      listeners.forEach(function(fn) {
-        if( found ) return;
-        if( fn === type ) found = true;
-      });
-      return found;
-    }
-    return listeners[type] && listeners[type].length ? true : false;
-  };
-  
-  var fire = function(type, detail, direction, includeself) {
-    if( paused ) return;
-    
-    var typename = (type && type.type) || type;
-    
-    var event;
-    if( typeof type === 'string' ) {
-      event = EventObject.createEvent(type, detail, scope);
-    } else if( type instanceof window.Event ) {
-      event = type;
-    } else if( type instanceof EventObject ) {
-      event = type;
-    } else {
-      return console.error('illegal arguments, type is must be a string or event', type);
-    }
-    event.currentTarget = scope;
-    
-    var action = function(listener) {
-      if( event.stoppedImmediate ) return;
-      listener.call(scope, event);
-    };
-    
-    if( !direction || includeself !== false ) {
-      (listeners['*'] || []).slice().reverse().forEach(action);
-      (listeners[event.type] || []).slice().reverse().forEach(action);
-    }
-    
-    if( direction && !event.stopped ) {
-      if( direction === 'up' ) {
-        upstream.every(function(target) {
-          target.fire && target.fire(event, null, direction);
-          return !event.stopped;
-        });
-      } else if( direction === 'down' ) {
-        downstream.every(function(target) {
-          target.fire && target.fire(event, null, direction);
-          return !event.stopped;
-        });
-      } else if(Array.isArray(direction)) {
-        direction.every(function(target) {
-          //console.log('fire', event.type, target.id);
-          target.fire && target.fire(event);
-          return !event.stopped;
-        });
-      } else {
-        console.warn('invalid type of direction', direction);
-      }
-    }
-    
-    return !event.defaultPrevented;
-  };
-  
-  var destroy = function() {
-    listeners = null;
-    return this;
-  };
-  
-  var pause = function() {
-    paused = true;
-    return this;
-  };
-  
-  var resume = function() {
-    paused = false;
-    return this;
-  };
-  
-  var upstream = [];
-  var downstream = [];
-  
-  var connect = function(target, direction) {
-    if( !target ) return console.warn('illegal argument: target cannot be null', target);
-    if( typeof target.fire !== 'function' ) return console.warn('illegal argument: target must have fire method', target);
-    
-    if( direction === 'up' && ~upstream.indexOf(target) ) return;
-    else if( direction === 'down' && ~downstream.indexOf(target) ) return;
-    else if( direction === 'up' ) upstream.push(target);
-    else if( direction === 'down' ) downstream.push(target);
-    else return console.warn('illegal argument: direction must be "up" or "down" but ', direction);
-    
-    return this;
-  };
-  
-  var disconnect = function(target, direction) {
-    if( !target ) return this;
-    
-    if( (!direction || direction === 'up') && ~upstream.indexOf(target) ) upstream.splice(upstream.indexOf(fn), 1);
-    if( (!direction || direction === 'down') && ~downstream.indexOf(target) ) downstream.splice(downstream.indexOf(fn), 1);
-    
-    return this;
-  };
-  
-  // make dom event adaptable
-  var handleEvent = function(e) {
-    return fire(e);
-  };
-  
-  return {
-    handleEvent: handleEvent,
-    scope: function(o) {
-      if( !arguments.length ) return scope;
-      scope = o;
-    },
-    on: on,
-    once: once,
-    off: off,
-    fire: fire,
-    has: has,
-    destroy: destroy,
-    pause: pause,
-    resume: resume,
-    connect: connect,
-    disconnect: disconnect
-  };
-};
-
-/***/ }),
-/* 22 */
-/***/ (function(module, exports) {
-
-function isNull(value) {
-  return value === null || value === undefined;
-}
-
-function isArrayLike(o) {
-  if( !o || typeof o != 'object' || o === window || typeof o.length != 'number' ) return false;
-  if( o instanceof Array || (Array.isArray && Array.isArray(o)) ) return true;
-  
-  var type = Object.prototype.toString.call(o);
-  return /^\[object (HTMLCollection|NodeList|Array|FileList|Arguments)\]$/.test(type);
-}
-
-function create(html) {
-  if( !html || typeof html != 'string' ) return null;
-  var div = document.createElement('div');
-  div.innerHTML = html.trim();
-  
-  var arr = [];
-  [].forEach.call(div.childNodes, function(node) {
-    var p = node.parentNode;
-    p && p.removeChild(node);
-    arr.push(node);
-  });
-  
-  return arr;
-}
-
-function isHTML(html) {
-  return (typeof html === 'string' && html.match(/(<([^>]+)>)/ig) ) ? true : false;
-}
-
-function matches(el, selector) {
-  try {
-    if( typeof selector == 'function' )
-      return !!selector.call(el);
-    
-    return !!(el && el.matches && el.matches(selector));
-  } catch(e) {
-    return false;
-  }
-}
-
-function each(arr, fn) {
-  var i = 0;
-  [].every.call(arr, function(el) {
-    i = i + 1;
-    if( !el ) return true;
-    return ( fn && fn.apply(el, [i, el]) === false ) ? false : true;
-  });
-  return arr;
-}
-
-function offset(el, abs) {
-  if( !el || !el.offsetTop ) return null;
-  
-  var top = el.offsetTop, left = el.offsetLeft;
-  if( abs !== false ) {
-    while( el = el.offsetParent ) {
-      top += el.offsetTop;
-      left += el.offsetLeft;
-    }
-  }
-  
-  return {
-    top: top,
-    left: left
-  };
-}
-
-function isElement(node) {
-  return (
-    typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
-  );
-}
-
-module.exports = {
-  isNull: isNull,
-  isArrayLike: isArrayLike,
-  create: create,
-  isHTML: isHTML,
-  matches: matches,
-  each: each,
-  offset: offset,
-  isElement: isElement
-};
-
-/***/ }),
-/* 23 */
-/***/ (function(module, exports, __webpack_require__) {
-
-module.exports = {
-  spongebob: {
-    title: {
-      html: 'SpongeBob SquarePants'
-    },
-    content: {
-      html: __webpack_require__(58)
-    }
-  },
-  patrick: {
-    title: {
-      html: 'Patrick Star'
-    },
-    content: {
-      html: __webpack_require__(57)
-    }
-  },
-  squidward: {
-    title: {
-      html: 'Squidward Tentacles'
-    },
-    content: {
-      html: __webpack_require__(59)
-    }
-  },
-  mrkrabs: {
-    title: {
-      html: 'Eugene H. Krabs'
-    },
-    content: {
-      html: __webpack_require__(56)
-    }
-  }
-};
-
-/***/ }),
-/* 24 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _ffEditor = __webpack_require__(10);
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-var CustomPart = function (_Part) {
-  _inherits(CustomPart, _Part);
-
-  function CustomPart(el) {
-    _classCallCheck(this, CustomPart);
-
-    var _this = _possibleConstructorReturn(this, (CustomPart.__proto__ || Object.getPrototypeOf(CustomPart)).call(this, el));
-
-    _this.toolbar().clear().add({
-      text: '<i class="fa fa-pencil"></i>',
-      fn: function fn(e) {}
-    }).add({
-      text: '<i class="fa fa-list"></i>',
-      fn: function fn(e) {}
-    });
-    return _this;
-  }
-
-  _createClass(CustomPart, [{
-    key: 'onfocus',
-    value: function onfocus(e) {
-      console.log('focus', e);
-    }
-  }, {
-    key: 'onrender',
-    value: function onrender(e) {
-      console.log('render', e);
-    }
-  }, {
-    key: 'onupdate',
-    value: function onupdate(e) {
-      console.log('update', e);
-    }
-  }, {
-    key: 'test',
-    value: function test() {
-      console.log('OK!', this);
-    }
-  }]);
-
-  return CustomPart;
-}(_ffEditor.Part);
-
-exports.default = CustomPart;
-
-/***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ff = __webpack_require__(10);
 var $ = __webpack_require__(0);
 var Part = ff.Part;
-var CustomPart = __webpack_require__(24).default;
-var tpls = __webpack_require__(23);
+var CustomPart = __webpack_require__(23).default;
+var tpls = __webpack_require__(22);
+
+// override alert/prompt action
+(function() {
+  var swal = __webpack_require__(25);
+  __webpack_require__(24);
+
+  ff.on('alert', function(e) {
+    e.preventDefault();
+    swal(e.detail.message);
+  })
+  .on('error', function(e) {
+    e.preventDefault();
+    swal('Error', e.detail.error.message, 'error');
+  })
+  .on('prompt', function(e) {
+    e.preventDefault();
+    swal({
+      title: e.detail.message,
+      type: 'input',
+      showCancelButton: true,
+      closeOnConfirm: true
+    }, function(value) {
+      if( value === false ) return;
+      e.detail.callback(value);
+    });
+  });
+})();
 
 ff.ready(function() {
   $('.dropdown').on('click', function() {
@@ -2924,7 +2939,7 @@ ff.ready(function() {
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports) {
 
 var endpoint;
@@ -2939,11 +2954,11 @@ module.exports = {
 }
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(30);
+var Button = __webpack_require__(31);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -3056,7 +3071,7 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -3078,13 +3093,13 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(28);
-var Buttons = __webpack_require__(27);
-__webpack_require__(62);
+var getPosition = __webpack_require__(29);
+var Buttons = __webpack_require__(28);
+__webpack_require__(63);
 
 function clone(o) {
   var result = {};
@@ -3272,7 +3287,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(9);
@@ -3295,16 +3310,16 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 var components = __webpack_require__(14);
-var Marker = __webpack_require__(34);
-var DnD = __webpack_require__(32);
+var Marker = __webpack_require__(35);
+var DnD = __webpack_require__(33);
 
-__webpack_require__(64);
+__webpack_require__(65);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -3555,14 +3570,14 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var each = __webpack_require__(17);
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(15);
 
-__webpack_require__(65);
+__webpack_require__(66);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3646,7 +3661,7 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports) {
 
 module.exports = function() {
@@ -3668,7 +3683,7 @@ module.exports = function() {
 };
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3676,7 +3691,7 @@ var getOffsetTop = __webpack_require__(15);
 var components = __webpack_require__(14);
 var Button = __webpack_require__(8).Button;
 
-__webpack_require__(66);
+__webpack_require__(67);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3774,13 +3789,13 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(67);
+__webpack_require__(68);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -3837,13 +3852,13 @@ FilePart.defaultLabel = 'Download';
 module.exports = FilePart;
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(68);
+__webpack_require__(69);
 
 function ImagePart(el) {
   Part.apply(this, arguments);
@@ -3990,12 +4005,11 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(5);
-var swal = __webpack_require__(20);
 var Toolbar = context.Toolbar;
 
 function rangeitem(text, tooltip, selector, fn) {
@@ -4045,14 +4059,8 @@ module.exports = function(part) {
     var range = this.owner().range();
     if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
     
-    swal({
-      title: '링크 주소를 입력해주세요',
-      type: 'input',
-      showCancelButton: true,
-      closeOnConfirm: true,
-      animation: 'slide-from-top'
-    }, function(href){
-      if( !src ) return;
+    context.prompt('링크 주소를 입력해주세요', function(href) {
+      if( !href ) return;
       context.wrap(range, $('<a href="' + href + '" />')[0]);
     });
   }))
@@ -4088,13 +4096,13 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(70);
+__webpack_require__(71);
 
 function RowPart(el) {
   Part.call(this, el);
@@ -4190,13 +4198,13 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(71);
+__webpack_require__(72);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -4231,13 +4239,13 @@ Separator.prototype = Object.create(Part.prototype, {
 module.exports = Separator;
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var ParagraphPart = __webpack_require__(16);
 
-__webpack_require__(72);
+__webpack_require__(73);
 
 function TextPart() {
   ParagraphPart.apply(this, arguments);
@@ -4263,13 +4271,13 @@ proto.html = ParagraphPart.prototype.text;
 module.exports = TextPart;
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(73);
+__webpack_require__(74);
 
 function VideoPart() {
   Part.apply(this, arguments);
@@ -4321,7 +4329,7 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4335,7 +4343,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-ed
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4349,7 +4357,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4363,7 +4371,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: 
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4377,7 +4385,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4391,7 +4399,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4405,7 +4413,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 48 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4419,7 +4427,7 @@ exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  displ
 
 
 /***/ }),
-/* 49 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4433,7 +4441,7 @@ exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  m
 
 
 /***/ }),
-/* 50 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4447,7 +4455,7 @@ exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  ma
 
 
 /***/ }),
-/* 51 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4461,7 +4469,7 @@ exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}
 
 
 /***/ }),
-/* 52 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4475,7 +4483,7 @@ exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  pad
 
 
 /***/ }),
-/* 53 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4489,7 +4497,7 @@ exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select
 
 
 /***/ }),
-/* 54 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4503,7 +4511,7 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 
 /***/ }),
-/* 55 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4517,31 +4525,31 @@ exports.push([module.i, "body.stop-scrolling {\n  height: 100%;\n  overflow: hid
 
 
 /***/ }),
-/* 56 */
+/* 57 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/YcfIqI\" />\n\n<h2>Mr. Krabs</h2>\n<div>Eugene H. Krabs, nicknamed \"Armor Abs\", \"Krabs\" and commonly known as Mr. Krabs, is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Clancy Brown, and first appeared in the series' first episode \"Help Wanted\" on May 1, 1999. Mr. Krabs was created and designed by marine biologist, animator, and creator of the show Stephen Hillenburg.</div>\n\n<hr>\n\n<h2>Role in Spongebob Squarepants</h2>\n<div>Mr. Krabs is the greedy founder and owner of the Krusty Krab restaurant, where Spongebob works as a frycook, and Squidward works as a cashier. The success of the restaurant is built in part on a lack of competition and in part on the success of the Krusty Krab's signature sandwich, the Krabby Patty, the formula to which is a closely guarded trade secret.\n\nHis rival and former best friend, Plankton, has a struggling restaurant called the Chum Bucket located across the street from the Krusty Krab. A recurring gag throughout the series is Plankton's futile attempts to steal the Krabby Patty formula, under the assumption that it would eventually put the Krusty Krab out of business. To avoid this, Krabs goes to extreme lengths to prevent Plankton from obtaining the formula (going so far as to refuse to allow him to even buy a Krabby Patty legitimately, out of fear that Plankton might reverse-engineer the formula) or to prevent the Chum Bucket from having any business whatsoever, not even just one single customer (as seen in the episode \"Plankton's Regular\").\n\nKrabs values money above all, and he views the other characters in regard to how they affect his money. He tolerates his two employees because of their low cost and positive impact on his finances, but he is quick to rebuke them, especially Spongebob, if they engage in behavior that drives away customers or costs him money. Krabs and Spongebob have a tentative father-son relationship - Krabs often scolds Spongebob if he gets in trouble, but at times gives him fatherly advice. However, Squidward strongly abhors Krabs for often taking money out of his paycheck for little reason at all.\n\nMr. Krabs has served in the navy, and in the episode \"Krusty Krab Training Video\" it is revealed that Mr. Krabs served during a time of war, and fell into a depression after finishing his service. His depression was alleviated after founding the Krusty Krab.</div>\n\n<hr>\n\n<h2>Daughter</h2>\n<div>Mr. Krabs has a daughter, a sperm whale named Pearl. Pearl is a stereotypical teenage girl, extremely socially conscious and embarrassed by her father's miserliness. She made her first appearance in the season one episode, \"Squeaky Boots,\" which aired on September 4, 1999. Due to her frequent appearances, Pearl has been featured in many types of merchandise, such as plush toys and action figures. Although she is officially Mr. Krabs' daughter, her mother is neither seen nor named, and in fact in the season two episode \"Krusty Love\" it is implied that Mr. Krabs is not (currently) married.\n\nPearl is voiced by Lori Alan.</div>";
 
 /***/ }),
-/* 57 */
+/* 58 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>\n<div>Patrick Star is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Bill Fagerbakke, who also voices numerous other characters on the show. Created and designed by marine biologist and cartoonist Stephen Hillenburg, the series creator, Patrick first appeared on television in the show's pilot episode \"Help Wanted\" on May 1, 1999.\n\nSeen as an overweight, dimwitted pink starfish, Patrick lives under a rock in the underwater city of Bikini Bottom next door to Squidward Tentacles' moai. His most significant character trait is his lack of common sense, which sometimes leads him and his best friend, main character SpongeBob SquarePants, into trouble. Patrick is unemployed and a self-proclaimed expert in the \"art of doing nothing\".\n\nThe character has received positive reactions from critics and fans alike. Patrick has been included in various SpongeBob SquarePants-related merchandise, including trading cards, video games, plush toys, and comic books. He has been seen in the 2004 full-length feature film The SpongeBob SquarePants Movie and its 2015 sequel The SpongeBob Movie: Sponge Out of Water.\n\nDespite not appearing as frequently in episodes as Squidward, he is generally considered to be the show's most prominent character besides SpongeBob.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Patrick is the ignorant but humorous best friend of main character SpongeBob SquarePants. He is portrayed as being an overweight, dimwitted, pink starfish residing in the underwater city of Bikini Bottom. Patrick has been shown to make many ludicrous mistakes; despite this, he has occasionally been portrayed as a savant, with articulate observance to certain subjects in specific detail. However, he always reverts quickly back to his usual, unintelligent self after displaying a moment of wisdom. He holds no form of occupation except for several very brief stints working at the Krusty Krab and at the Chum Bucket in a variety of positions, and mostly spends his time either clowning around with SpongeBob, catching jellyfish with him, or lounging beneath the rock under which he resides.\n\nAt home, Patrick is typically depicted either sleeping, watching TV, or engaged in the \"art of doing nothing\", at which he is an expert. All the furnishings in the space under his rock are made of sand, and Patrick can simply opt to quickly build up furniture as needed; even so, his living space is sparse and contains only the barest essentials. Aside from his best friend SpongeBob, who is often impressed by Patrick's capacity to come up with naïve yet genius plans or solutions, Patrick frequently irritates those around him and is confounded by the simplest of questions or subjects. The characters of Mr. Krabs and Squidward have no patience for Patrick's stupidity, and the former does not pay him much regard; Clancy Brown, who provides Mr. Krabs' voice, said, \"The only person that he [Mr. Krabs] doesn't hire is Patrick because Patrick is just too stupid to work for nothing.\" Sandy often gets annoyed by Patrick, but still sees him as a friend.</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. In 1987, Hillenburg left the institute to pursue a career in animation.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of the Nickelodeon series Rocko's Modern Life, at an animation festival, and was offered a job as a director of the show. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not even considered creating his own series. However, he realized that if he ever did, this would be the best approach. Production on Rocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants.\n\n\nEarly drawings of Patrick from Stephen Hillenburg's bible.\nFor the show's characters, Hillenburg started to draw and used character designs from his comic book—including starfish, crab, and sponge. He described Patrick as \"probably the dumbest guy in town\". The character was conceived as a starfish to embody the animal's nature; according to Hillenburg, starfish look \"dumb and slow\", but they are \"very active and aggressive\" in reality, like Patrick. Hillenburg incorporated character comedy rather than topical humor on the show to emphasize \"things that are more about humorous situations and about characters and their flaws.\" He designed Patrick and SpongeBob as such because \"they're whipping themselves up into situations—that's always where the humor comes from. The rule is: Follow the innocence and avoid topical [humor].\"\n\nIn spite of being depicted as having a good temperament or state of mind, Patrick has been shown in some episodes to have a tantrum. Patrick's emotional outbreak was originally written only for the first season episode \"Valentine's Day\", where SpongeBob and Sandy try to give Patrick a Valentine's Day gift, and \"was supposed to be a one-time thing\". However, according to episode writer Jay Lender, \"when that show came back it felt so right that his dark side started popping up everywhere. You can plan ahead all you want, but the characters eventually tell you who they are.\"\n\nEvery main character in the show has its own unique footstep sound. The sound of Patrick's footsteps is recorded by the show's Foley crew, with a Foley talent wearing a slip-on shoe. Jeff Hutchins, show's sound designer said, \"[Going] barefoot makes it tough to have much presence, so we decided that Patrick would be performed with shoes on.\"</div>";
 
 /***/ }),
-/* 58 */
+/* 59 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>";
 
 /***/ }),
-/* 59 */
+/* 60 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacles</h2>\n<div>Squidward Tentacles is a fictional character voiced by actor Rodger Bumpass in the American animated television series SpongeBob SquarePants. Squidward was created and designed by marine biologist and animator Stephen Hillenburg. He first appeared on television in the series' pilot episode \"Help Wanted\" on May 1, 1999.\n\nAlthough his name has the word \"squid\" in it and he has six arms, Squidward is an anthropomorphic octopus.[a] He lives in a moai between SpongeBob SquarePants' and Patrick Star's houses. The character is portrayed as ill-tempered, manipulative, pretentious, and cynical, and he strongly despises his neighbors for their constant boisterous, noisy behavior. However, the pair are unaware of Squidward's antipathy towards them and see him as a friend. Squidward works as a cashier at the Krusty Krab restaurant, a job that he is apathetic towards.\n\nThe character's critical reception from professionals and fans has been positive. Squidward has appeared in many SpongeBob SquarePants publications, toys, and other merchandise. He appears in the 2004 full-length feature film The SpongeBob SquarePants Movie and in its sequel which was released in 2015.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Squidward is depicted as a bitter, very unfortunate, desperate, somewhat depressed, curt, arrogant, turquoise octopus. He lives in the underwater city of Bikini Bottom in a moai situated between SpongeBob SquarePants' pineapple house and Patrick Star's rock. Squidward detests his neighbors for their perpetual laughter and boisterous behavior, though SpongeBob and Patrick are oblivious to Squidward's animosity towards them and regard him as a friend.\n\nSquidward lives in a constant state of self-pity and misery; he is unhappy with his humdrum lifestyle and yearns for celebrity status, wealth, hair, and a glamorous and distinguished career as a musician or painter with a passion for art and playing the clarinet. However, he is left to endure the lowly status as a fast-food cashier at the Krusty Krab restaurant. Squidward resents his job and is irritated by his greedy employer Mr. Krabs and by having SpongeBob as a colleague.\n\nSquidward longs for peace but his wishes remain unsatisfied. He believes he is talented and deserves a higher social status. The populace of Bikini Bottom do not consider him talented, and frequently boo him and walk out on his performances.</div>\n\n<hr>\n\n<h2>Development</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. After graduating in 1984, he joined the Ocean Institute, an ocean education organization, where he had the idea to create a comic book titled The Intertidal Zone, which led to the creation of SpongeBob SquarePants. In 1987, Hillenburg left the Institute to pursue a career in animation.\n\n\nEarly rough sketches of Squidward from creator Stephen Hillenburg's series bible.\nSeveral years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of Rocko's Modern Life, at an animation festival. Murray offered Hillenburg a job as a director of the series. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not considered creating his own series, but soon realized that this was his chance. Shortly after production on Rocko's Modern Life ended in 1996, Hillenburg began working on SpongeBob SquarePants.\n\nHillenburg used some character designs from his comic book. He designed \"SpongeBob's grumpy next door neighbor\" as an octopus because the species' large head; octopi, he said, \"have such a large bulbous head and Squidward thinks he's an intellectual so of course, he's gonna have a large bulbous head.\" Hillenburg drew Squidward with six tentacles because \"it was really just simpler for animation to draw him with six legs instead of eight\". Show writer and storyboard artist Vincent Waller said:\n\nSquidward is hard to draw—he has a very odd-shaped head. Fortunately, his emotions are pretty even, but to get a whole lot of big emoting out of him is a challenge. His nose splits everything in half, so it's always like, 'OK, how am I going to work this and still make it read?'\n\nHillenburg thought of making jokes with Squidward ejecting ink but retired it because, according to him, \"it always looks like he's pooping his pants\". However, it occurs in The SpongeBob Movie: Sponge Out of Water and the sixth season episode, \"Giant Squidward\".\n\nConflicting statements from Hillenburg and Nickelodeon's official website have led to some doubt over whether the character is an octopus or a squid. Hillenburg named him Squidward because the name Octoward—in the words of Squidward's voice actor Rodger Bumpass—\"just didn't work\". The sound of Squidward's footsteps is produced by rubbing hot water bottles. The footsteps, and those of the rest of the main characters, are recorded by the show's foley crew. Sound designer Jeff Hutchins said that footstep sounds \"[help] tell which character it is and what surface they're stepping on\". Bumpass inspired the idea of having Squidward ride a recumbent bicycle; Bumpass owns one of these bicycles, which he rides around Burbank, California. Bumpass described it as his \"little inside joke\".</div>";
 
 /***/ }),
-/* 60 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -4734,32 +4742,6 @@ module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacl
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(81), __webpack_require__(18)))
 
 /***/ }),
-/* 61 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(42);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
 /* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -4775,8 +4757,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4801,8 +4783,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4827,8 +4809,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4853,8 +4835,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4879,8 +4861,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4905,8 +4887,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4931,8 +4913,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4957,8 +4939,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4983,8 +4965,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5009,8 +4991,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5035,8 +5017,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5061,8 +5043,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5087,8 +5069,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../css-loader/index.js!./sweetalert.css", function() {
-			var newContent = require("!!../../css-loader/index.js!./sweetalert.css");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5611,7 +5593,7 @@ var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(22);
+var util = __webpack_require__(21);
 var isArrayLike = util.isArrayLike;
 var isElement = util.isElement;
 var create = util.create;
@@ -5681,7 +5663,7 @@ module.exports = Context;
 /* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(22);
+var util = __webpack_require__(21);
 
 module.exports = function(ctx) {
   var fn = ctx.fn;
@@ -6305,7 +6287,7 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(60);
+__webpack_require__(61);
 exports.setImmediate = setImmediate;
 exports.clearImmediate = clearImmediate;
 

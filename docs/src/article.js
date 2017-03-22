@@ -4,6 +4,33 @@ var Part = ff.Part;
 var CustomPart = require('./custom/index.es6.js').default;
 var tpls = require('./tpls/');
 
+// override alert/prompt action
+(function() {
+  var swal = require('sweetalert');
+  require('sweetalert/dist/sweetalert.css');
+
+  ff.on('alert', function(e) {
+    e.preventDefault();
+    swal(e.detail.message);
+  })
+  .on('error', function(e) {
+    e.preventDefault();
+    swal('Error', e.detail.error.message, 'error');
+  })
+  .on('prompt', function(e) {
+    e.preventDefault();
+    swal({
+      title: e.detail.message,
+      type: 'input',
+      showCancelButton: true,
+      closeOnConfirm: true
+    }, function(value) {
+      if( value === false ) return;
+      e.detail.callback(value);
+    });
+  });
+})();
+
 ff.ready(function() {
   $('.dropdown').on('click', function() {
     $(this).tc('open');
