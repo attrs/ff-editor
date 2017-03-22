@@ -7255,6 +7255,19 @@
 	  return this;
 	};
 	
+	proto.html = function(html) {
+	  if( !arguments.length ) {
+	    var editmode = this.editmode();
+	    this.editmode(false);
+	    var html = this.dom().innerHTML;
+	    this.editmode(editmode);
+	    return html;
+	  }
+	  
+	  this.dom().innerHTML = html || '';
+	  return this;
+	};
+	
 	proto.onfocus = function() {
 	  if( !this.editmode() ) return;
 	  
@@ -7466,7 +7479,12 @@
 	  ParagraphPart.apply(this, arguments);
 	  
 	  this.toolbar().enable(false);
-	  $(this.dom()).rc('ff-paragraph').ac('ff-text');
+	  $(this.dom()).rc('ff-paragraph').ac('ff-text')
+	  .on('keydown', function(e) {
+	    if( e.keyCode === 13 ) {
+	      e.preventDefault();
+	    }
+	  });
 	}
 	
 	TextPart.prototype = Object.create(ParagraphPart.prototype, {
