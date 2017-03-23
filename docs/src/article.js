@@ -40,6 +40,10 @@ $(document).ready(function($) {
 
 // ready
 ff.ready(function() {
+  window.create = function() {
+    ff.data(null).editmode(true);
+  };
+  
   window.toggleMode = function(el) {
     var editmode = ff.editmode();
     if( editmode ) ff.editmode(false);
@@ -52,7 +56,7 @@ ff.ready(function() {
   };
   
   window.load = function() {
-    ff.data(JSON.parse(localStorage.getItem('article') || '{}'));
+    ff.data(JSON.parse(localStorage.getItem('article') || '{}')).editmode(false);
   };
   
   window.save = function() {

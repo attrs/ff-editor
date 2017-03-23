@@ -1315,7 +1315,7 @@ proto.getData = function() {
 
 proto.setData = function(data) {
   var html = (!data || typeof data == 'string') ? data : data.html;
-  if( html ) this.dom().innerHTML = html;
+  this.dom().innerHTML = html || '';
   return this;
 };
 
