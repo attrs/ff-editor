@@ -773,7 +773,7 @@ var context = {
       part.editmode(!!b);
     });
     
-    dispatcher.fire('editmode', {
+    dispatcher.fire('modechange', {
       editmode: editmode
     });
     
@@ -1187,7 +1187,8 @@ var proto = ParagraphPart.prototype = Object.create(Part.prototype);
 
 proto.oninit = function(e) {
   var part = this;
-  var el = $(part.dom()).ac('ff-paragraph')
+  var dom = part.dom();
+  var el = $(dom).ac('ff-paragraph')
   .on('dragstart', function(e) {
     if( part.editmode() ) {
       e.stopPropagation();
@@ -1198,7 +1199,7 @@ proto.oninit = function(e) {
   buildtoolbar(this);
   
   var placeholder = part._placeholder = (function() {
-    var node = $('<div class="ff-placeholder"/>'), text;
+    var node = $('<div class="ff-placeholder"/>'), text, minWidthWrited = false;
     
     return {
       text: function(o) {
@@ -1211,11 +1212,21 @@ proto.oninit = function(e) {
         if( part.editmode() ) el.attr('contenteditable', null);
         node.html(text).remove();
         var t = el.text().split('\n').join().trim();
+        
         if( !t ) el.empty().append(node);
+        
+        var display = window.getComputedStyle(dom, null).display;
+        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
+          dom.style.minWidth = node[0].clientWidth + 'px';
+          minWidthWrited = true;
+        }
+        
         return this;
       },
       hide: function() {
         if( part.editmode() ) el.attr('contenteditable', true);
+        else if( minWidthWrited ) dom.style.minWidth = '';
+        
         node.remove();
         return this;
       }
@@ -1316,6 +1327,7 @@ proto.getData = function() {
 proto.setData = function(data) {
   var html = (!data || typeof data == 'string') ? data : data.html;
   this.dom().innerHTML = html || '';
+  this.placeholder().show();
   return this;
 };
 
@@ -3507,7 +3519,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-width: 50px;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
+exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
 
 // exports
 

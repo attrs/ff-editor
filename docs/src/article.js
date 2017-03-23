@@ -40,19 +40,16 @@ $(document).ready(function($) {
 
 // ready
 ff.ready(function() {
+  ff.on('modechange', function(e) {
+    $('#modebtn').html(e.detail.editmode ? 'View Mode' : 'Edit Mode');
+  });
+  
   window.create = function() {
     ff.data(null).editmode(true);
   };
   
-  window.toggleMode = function(el) {
-    var editmode = ff.editmode();
-    if( editmode ) ff.editmode(false);
-    else ff.editmode(true);
-    
-    if( el ) {
-      if( editmode ) el.innerHTML = 'Edit Mode';
-      else el.innerHTML = 'View Mode';
-    }
+  window.toggleMode = function() {
+    ff.editmode(!ff.editmode());
   };
   
   window.load = function() {
