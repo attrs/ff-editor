@@ -3306,7 +3306,7 @@ module.exports = function(part) {
     var range = this.owner().range();
     if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
     
-    context.prompt('링크 주소를 입력해주세요', function(href) {
+    context.prompt('Please enter the anchor URL.', function(href) {
       if( !href ) return;
       var a = context.wrap(range, 'a');
       a.href = href;
