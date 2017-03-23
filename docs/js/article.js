@@ -1906,6 +1906,13 @@ proto.oninit = function(e) {
       e.stopPropagation();
       e.preventDefault();
     }
+  })
+  .on('paste', function(e) {
+    e.preventDefault();
+    
+    var clipboard = e.clipboardData || window.clipboardData;
+    var text = clipboard.getData('Text');
+    this.innerText = text.split('\n').join(' ');
   });
   
   buildtoolbar(this);
@@ -1921,7 +1928,12 @@ proto.oninit = function(e) {
         return this;
       },
       show: function() {
-        if( part.editmode() ) el.attr('contenteditable', null);
+        if( !part.editmode() ) {
+          this.hide();
+          return this;
+        }
+        
+        el.attr('contenteditable', null);
         node.html(text).remove();
         var t = el.text().split('\n').join().trim();
         
@@ -7719,12 +7731,12 @@ var tpls = __webpack_require__(22);
 (function() {
   var PhotoSwipe = __webpack_require__(26);
   var PhotoSwipeDefaultUI = __webpack_require__(25);
-  var swal = __webpack_require__(30);
+  var slidetpl = $(__webpack_require__(24));
   __webpack_require__(28);
   __webpack_require__(27);
-  __webpack_require__(29);
   
-  var pwspel = $(__webpack_require__(24));
+  var swal = __webpack_require__(30);
+  __webpack_require__(29);
   
   ff.on('alert', function(e) {
     e.preventDefault();
@@ -7751,7 +7763,7 @@ var tpls = __webpack_require__(22);
     
     var image = e.detail.image;
     var images = $('#content img');
-    var index = images.indexOf(image);
+    var index = images.index(image);
     var items = [];
     
     if( ~index ) {
@@ -7772,7 +7784,7 @@ var tpls = __webpack_require__(22);
       });
     }
     
-    new PhotoSwipe(pwspel.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
+    new PhotoSwipe(slidetpl.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
       index: index,
       bgOpacity: 0.95
     }).init();
@@ -8288,8 +8300,12 @@ proto.scan = function() {
     if( !this.__ff__) new context.File(this);
   });
   
+  viewport.find('.ff-row').each(function() {
+    if( !this.__ff__) new context.Row(this);
+  });
+  
   viewport.children().each(function() {
-    if( !this.matches || this.matches('.ff-acc') ) return;
+    if( !this.matches || this.matches('.ff-acc') || this.matches('.ff') ) return;
     
     var tag = this.tagName;
     var part = this.__ff__;
@@ -9165,7 +9181,7 @@ function Separator() {
 Separator.prototype = Object.create(Part.prototype, {
   create: {
     value: function(arg) {
-      return $('<hr/>').ac('ff-separator-narrow ff-separator-zigzag')[0];
+      return $('<hr/>')[0];
     }
   }
 });
@@ -9190,13 +9206,6 @@ function TextPart() {
     if( e.keyCode === 13 ) {
       e.preventDefault();
     }
-  })
-  .on('paste', function(e) {
-    e.preventDefault();
-    
-    var clipboard = e.clipboardData || window.clipboardData;
-    var text = clipboard.getData('Text');
-    this.innerText = text.split('\n').join(' ');
   });
 }
 

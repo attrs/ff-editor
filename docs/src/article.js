@@ -8,12 +8,12 @@ var tpls = require('./tpls/');
 (function() {
   var PhotoSwipe = require('photoswipe');
   var PhotoSwipeDefaultUI = require('photoswipe/dist/photoswipe-ui-default.js');
-  var swal = require('sweetalert');
+  var slidetpl = $(require('./slidetpl.html'));
   require('photoswipe/dist/photoswipe.css');
   require('photoswipe/dist/default-skin/default-skin.css');
-  require('sweetalert/dist/sweetalert.css');
   
-  var pwspel = $(require('./pwsp.html'));
+  var swal = require('sweetalert');
+  require('sweetalert/dist/sweetalert.css');
   
   ff.on('alert', function(e) {
     e.preventDefault();
@@ -40,7 +40,7 @@ var tpls = require('./tpls/');
     
     var image = e.detail.image;
     var images = $('#content img');
-    var index = images.indexOf(image);
+    var index = images.index(image);
     var items = [];
     
     if( ~index ) {
@@ -61,7 +61,7 @@ var tpls = require('./tpls/');
       });
     }
     
-    new PhotoSwipe(pwspel.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
+    new PhotoSwipe(slidetpl.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
       index: index,
       bgOpacity: 0.95
     }).init();
