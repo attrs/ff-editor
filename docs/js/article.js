@@ -399,228 +399,6 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var context = __webpack_require__(4);
-var Events = __webpack_require__(20);
-var Types = __webpack_require__(13);
-var Toolbar = __webpack_require__(8);
-var $ = __webpack_require__(0);
-
-function Part(arg) {
-  var dom = arg;
-  if( dom && dom.__ff__ ) return dom.__ff__;
-  if( !(this instanceof Part) ) return null;
-  if( !dom || !context.isElement(dom) ) dom = this.create.apply(this, arguments);
-  if( !context.isElement(dom) ) throw new TypeError('illegal arguments: dom');
-  
-  var el = $(dom).ac('ff');
-  var self = dom.__ff__ = this;
-  
-  var dispatcher = Events(this)
-  .on('focus', function(e) {
-    if( e.defaultPrevented || !this.editmode() ) return;
-    
-    el.ac('ff-focus-state');
-    this.toolbar().show();
-  })
-  .on('blur', function(e) {
-    if( e.defaultPrevented || !this.editmode() ) return;
-    
-    el.rc('ff-focus-state');
-    this.toolbar().hide();
-  })
-  .on('data', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    dispatcher.fire('render', {
-      type: 'data',
-      originalEvent: e
-    });
-  })
-  .on('modechange', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    var toolbar = this.toolbar();
-    if( this.editmode() ) {
-      if( toolbar.always() ) toolbar.show();
-      el.attr('draggable', true).ac('ff-edit-state');
-      dispatcher.fire('editmode');
-    } else {
-      toolbar.hide(true);
-      el.attr('draggable', null).rc('ff-edit-state');
-      dispatcher.fire('viewmode');
-    }
-    
-    dispatcher.fire('render', {
-      type: 'modechange',
-      originalEvent: e
-    });
-  })
-  .on('*', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    var type = e.type;
-    var name = 'on' + type;
-    
-    if( typeof this.handleEvent == 'function' ) this.handleEvent(e);
-    if( typeof this[name] == 'function' ) this[name](e);
-  });
-  
-  el
-  .on('mouseenter', function(e) {
-    if( !self.editmode() ) return;
-    
-    self.toolbar().update();
-    el.ac('ff-enter-state');
-  })
-  .on('mousedown mouseup', function(e) {
-    if( !self.editmode() ) return;
-    setTimeout(function() {
-      self.toolbar().update();
-    }, 0);
-  })
-  .on('mouseleave', function(e) {
-    if( !self.editmode() ) return;
-    
-    el.removeClass('ff-enter-state');
-  })
-  .on('dragstart', function(e) {
-    if( !self.editmode() ) return;
-    
-    if( e.target === dom ) {
-      self.blur();
-      context.dragging = dom;
-      el.ac('ff-dragging');
-    }
-  })
-  .on('dragend', function(e) {
-    if( e.target === dom ) {
-      context.dragging = null;
-      el.rc('ff-dragging');
-    }
-  });
-  
-  this._d = null;
-  this._n = dom;
-  this._e = dispatcher;
-  
-  if( dom !== arg ) this.removable(true);
-  if( el.attr('ff-toolbar') === 'false' ) this.toolbar().enable(false);
-  
-  dispatcher.fire('init');
-  if( context.editmode() ) self.editmode(true);
-}
-
-Part.prototype = {
-  context: function() {
-    return context;
-  },
-  toolbar: function() {
-    return this._t || (this._t = new Toolbar(this));
-  },
-  removable: function(removable) {
-    var toolbar = this.toolbar();
-    var removebtn = toolbar.get('remove');
-    if( !arguments.length ) return removebtn ? true : false;
-    
-    if( !removable ) toolbar.remove('remove');
-    
-    if( !removebtn ) toolbar.last({
-      id: 'remove',
-      text: '<i class="fa fa-remove"></i>',
-      fn: function(e) {
-        this.owner().remove();
-      }
-    });
-    
-    return this;
-  },
-  dom: function() {
-    return this._n;
-  },
-  create: function(arg) {
-    return $('<div/>').html(arg)[0];
-  },
-  remove: function() {
-    this.blur();
-    this.toolbar().hide();
-    this.fire('remove');
-    $(this.dom()).remove();
-    return this;
-  },
-  editmode: function(b) {
-    if( !arguments.length ) return !!this._md;
-    var prev = this._md;
-    var editmode = this._md = !!b;
-  
-    if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
-    return this;
-  },
-  data: function(data) {
-    if( !arguments.length ) {
-      if( this.getData ) return this.getData();
-      return this._d;
-    }
-    
-    if( this.setData ) this.setData(data);
-    else this._d = data;
-    
-    this.fire('data', {old: this._d, data: data});
-    return this;
-  },
-  fire: function() {
-    this._e.fire.apply(this._e, arguments);
-    return this;
-  },
-  on: function(type, fn) {
-    this._e.on(type, fn);
-    return this;
-  },
-  once: function(type, fn) {
-    this._e.once(type, fn);
-    return this;
-  },
-  off: function(type, fn) {
-    this._e.off(type, fn);
-    return this;
-  },
-  clear: function() {
-    this.data(null);
-    this.fire('clear');
-    return this;
-  },
-  click: function() {
-    this.dom().click();
-    return this;
-  },
-  focus: function() {
-    if( this !== context.focused ) {
-      if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
-      this.fire('focus');
-      context.focused = this;
-    }
-    return this;
-  },
-  blur: function() {
-    if( this === context.focused ) {
-      this.fire('blur');
-      context.focused = null;
-    }
-    return this;
-  },
-  ranges: function() {
-    return context.ranges(this.dom());
-  },
-  range: function() {
-    return context.range(this.dom());
-  }
-};
-
-module.exports = Part;
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
 var each = __webpack_require__(17);
 var Events = __webpack_require__(20);
 var $ = __webpack_require__(0);
@@ -1009,6 +787,7 @@ $(document).on('mousedown', function(e) {
   }
 });
 
+
 module.exports = context;
 
 
@@ -1046,6 +825,232 @@ getCaretPosition: function(node) {
 
   return position;
 },*/
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var Events = __webpack_require__(20);
+var Types = __webpack_require__(13);
+var Toolbar = __webpack_require__(8);
+var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
+
+function Part(arg) {
+  var dom = arg;
+  if( dom && dom.__ff__ ) return dom.__ff__;
+  if( !(this instanceof Part) ) return null;
+  
+  if( !dom || !context.isElement(dom) ) dom = this.create.apply(this, arguments);
+  if( !context.isElement(dom) ) throw new TypeError('illegal arguments: dom');
+  
+  var el = $(dom).ac('ff');
+  var self = dom.__ff__ = this;
+  
+  var dispatcher = Events(this)
+  .on('focus', function(e) {
+    if( e.defaultPrevented || !this.editmode() ) return;
+    
+    el.ac('ff-focus-state');
+    this.toolbar().show();
+  })
+  .on('blur', function(e) {
+    if( e.defaultPrevented || !this.editmode() ) return;
+    
+    el.rc('ff-focus-state');
+    this.toolbar().hide();
+  })
+  .on('data', function(e) {
+    if( e.defaultPrevented ) return;
+    
+    dispatcher.fire('render', {
+      type: 'data',
+      originalEvent: e
+    });
+  })
+  .on('modechange', function(e) {
+    if( e.defaultPrevented ) return;
+    
+    var toolbar = this.toolbar();
+    if( this.editmode() ) {
+      if( toolbar.always() ) toolbar.show();
+      el.attr('draggable', true).ac('ff-edit-state');
+      dispatcher.fire('editmode');
+    } else {
+      toolbar.hide(true);
+      el.attr('draggable', null).rc('ff-edit-state');
+      dispatcher.fire('viewmode');
+    }
+    
+    dispatcher.fire('render', {
+      type: 'modechange',
+      originalEvent: e
+    });
+  })
+  .on('*', function(e) {
+    if( e.defaultPrevented ) return;
+    
+    var type = e.type;
+    var name = 'on' + type;
+    
+    if( typeof this.handleEvent == 'function' ) this.handleEvent(e);
+    if( typeof this[name] == 'function' ) this[name](e);
+  });
+  
+  el
+  .on('mouseenter', function(e) {
+    if( !self.editmode() ) return;
+    
+    self.toolbar().update();
+    el.ac('ff-enter-state');
+  })
+  .on('mousedown mouseup', function(e) {
+    if( !self.editmode() ) return;
+    setTimeout(function() {
+      self.toolbar().update();
+    }, 0);
+  })
+  .on('mouseleave', function(e) {
+    if( !self.editmode() ) return;
+    
+    el.removeClass('ff-enter-state');
+  })
+  .on('dragstart', function(e) {
+    if( !self.editmode() ) return;
+    
+    if( e.target === dom ) {
+      self.blur();
+      context.dragging = dom;
+      el.ac('ff-dragging');
+    }
+  })
+  .on('dragend', function(e) {
+    if( e.target === dom ) {
+      context.dragging = null;
+      el.rc('ff-dragging');
+    }
+  });
+  
+  this._d = null;
+  this._n = dom;
+  this._e = dispatcher;
+  
+  if( dom !== arg ) this.removable(true);
+  if( el.attr('ff-toolbar') === 'false' ) this.toolbar().enable(false);
+  
+  dispatcher.fire('init');
+  if( context.editmode() ) self.editmode(true);
+}
+
+Part.prototype = {
+  context: function() {
+    return context;
+  },
+  createToolbar: function() {
+    return new Toolbar(this);
+  },
+  toolbar: function() {
+    return this._t || (this._t = this.createToolbar());
+  },
+  removable: function(removable) {
+    var toolbar = this.toolbar();
+    var removebtn = toolbar.get('remove');
+    if( !arguments.length ) return removebtn ? true : false;
+    
+    if( !removable ) toolbar.remove('remove');
+    
+    if( !removebtn ) toolbar.last({
+      id: 'remove',
+      text: '<i class="fa fa-remove"></i>',
+      fn: function(e) {
+        this.owner().remove();
+      }
+    });
+    
+    return this;
+  },
+  dom: function() {
+    return this._n;
+  },
+  create: function(arg) {
+    return $('<div/>').html(arg)[0];
+  },
+  remove: function() {
+    this.blur();
+    this.toolbar().hide();
+    this.fire('remove');
+    $(this.dom()).remove();
+    return this;
+  },
+  editmode: function(b) {
+    if( !arguments.length ) return !!this._md;
+    var prev = this._md;
+    var editmode = this._md = !!b;
+  
+    if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
+    return this;
+  },
+  data: function(data) {
+    if( !arguments.length ) {
+      if( this.getData ) return this.getData();
+      return this._d;
+    }
+    
+    if( this.setData ) this.setData(data);
+    else this._d = data;
+    
+    this.fire('data', {old: this._d, data: data});
+    return this;
+  },
+  fire: function() {
+    this._e.fire.apply(this._e, arguments);
+    return this;
+  },
+  on: function(type, fn) {
+    this._e.on(type, fn);
+    return this;
+  },
+  once: function(type, fn) {
+    this._e.once(type, fn);
+    return this;
+  },
+  off: function(type, fn) {
+    this._e.off(type, fn);
+    return this;
+  },
+  clear: function() {
+    this.data(null);
+    this.fire('clear');
+    return this;
+  },
+  click: function() {
+    this.dom().click();
+    return this;
+  },
+  focus: function() {
+    if( this !== context.focused ) {
+      if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
+      this.fire('focus');
+      context.focused = this;
+    }
+    return this;
+  },
+  blur: function() {
+    if( this === context.focused ) {
+      this.fire('blur');
+      context.focused = null;
+    }
+    return this;
+  },
+  ranges: function() {
+    return context.ranges(this.dom());
+  },
+  range: function() {
+    return context.range(this.dom());
+  }
+};
+
+module.exports = Part;
 
 /***/ }),
 /* 5 */
@@ -1500,7 +1505,7 @@ exports.colorLuminance = colorLuminance;
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(35);
+var Toolbar = __webpack_require__(36);
 
 Toolbar.Button = __webpack_require__(9);
 Toolbar.Separator = __webpack_require__(12);
@@ -1607,13 +1612,18 @@ module.exports = Button;
 /* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var ctx = __webpack_require__(4);
+var ctx = __webpack_require__(3);
 var Toolbar = __webpack_require__(8);
+var Part = __webpack_require__(4);
+var Items = __webpack_require__(33);
 
 __webpack_require__(70);
 
-var Part = __webpack_require__(3);
-var ArticlePart = __webpack_require__(37);
+ctx.Part = Part;
+ctx.Toolbar = Toolbar;
+ctx.Items = Items;
+
+var ArticlePart = __webpack_require__(38);
 var ParagraphPart = __webpack_require__(16);
 var TextPart = __webpack_require__(47);
 var SeparatorPart = __webpack_require__(46);
@@ -1622,8 +1632,6 @@ var VideoPart = __webpack_require__(48);
 var RowPart = __webpack_require__(45);
 var FilePart = __webpack_require__(41);
 
-ctx.Toolbar = Toolbar;
-ctx.Part = Part;
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
 ctx.Text = TextPart;
@@ -1752,13 +1760,25 @@ module.exports = {
 
 /***/ }),
 /* 14 */
+/***/ (function(module, exports) {
+
+module.exports = function(el) {
+  var top = 0;
+  do {
+    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
+  } while( el = el.offsetParent );
+  return top;
+};
+
+/***/ }),
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Items = __webpack_require__(39);
-var context = __webpack_require__(4);
+var context = __webpack_require__(3);
+var Items = context.Items;
 
-module.exports = Items()
+module.exports = new Items()
 .add({
   text: '<i class="fa fa-font"></i>',
   tooltip: '문단',
@@ -1862,23 +1882,11 @@ module.exports = Items()
 
 
 /***/ }),
-/* 15 */
-/***/ (function(module, exports) {
-
-module.exports = function(el) {
-  var top = 0;
-  do {
-    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
-  } while( el = el.offsetParent );
-  return top;
-};
-
-/***/ }),
 /* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 var buildtoolbar = __webpack_require__(44);
 
 __webpack_require__(78);
@@ -2710,7 +2718,7 @@ exports.default = CustomPart;
 /* 24 */
 /***/ (function(module, exports) {
 
-module.exports = "<div id=\"pwsp\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">\n\n  <!-- Background of PhotoSwipe. \n     It's a separate element as animating opacity is faster than rgba(). -->\n  <div class=\"pswp__bg\"></div>\n\n  <!-- Slides wrapper with overflow:hidden. -->\n  <div class=\"pswp__scroll-wrap\">\n\n    <!-- Container that holds slides. \n      PhotoSwipe keeps only 3 of them in the DOM to save memory.\n      Don't modify these 3 pswp__item elements, data is added later on. -->\n    <div class=\"pswp__container\">\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n    </div>\n\n    <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->\n    <div class=\"pswp__ui pswp__ui--hidden\">\n\n      <div class=\"pswp__top-bar\">\n\n        <!-- Controls are self-explanatory. Order can be changed. -->\n\n        <div class=\"pswp__counter\"></div>\n\n        <button class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"></button>\n\n        <button class=\"pswp__button pswp__button--share\" title=\"Share\"></button>\n\n        <button class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"></button>\n\n        <button class=\"pswp__button pswp__button--zoom\" title=\"Zoom in/out\"></button>\n\n        <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->\n        <!-- element will get class pswp__preloader--active when preloader is running -->\n        <div class=\"pswp__preloader\">\n          <div class=\"pswp__preloader__icn\">\n           <div class=\"pswp__preloader__cut\">\n            <div class=\"pswp__preloader__donut\"></div>\n           </div>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">\n        <div class=\"pswp__share-tooltip\"></div> \n      </div>\n\n      <button class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\">\n      </button>\n\n      <button class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\">\n      </button>\n\n      <div class=\"pswp__caption\">\n        <div class=\"pswp__caption__center\"></div>\n      </div>\n\n    </div>\n\n  </div>\n\n</div>";
+module.exports = "<div id=\"pwsp\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">\n\n  <!-- Background of PhotoSwipe. \n     It's a separate element as animating opacity is faster than rgba(). -->\n  <div class=\"pswp__bg\"></div>\n\n  <!-- Slides wrapper with overflow:hidden. -->\n  <div class=\"pswp__scroll-wrap\">\n\n    <!-- Container that holds slides. \n      PhotoSwipe keeps only 3 of them in the DOM to save memory.\n      Don't modify these 3 pswp__item elements, data is added later on. -->\n    <div class=\"pswp__container\">\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n    </div>\n\n    <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->\n    <div class=\"pswp__ui pswp__ui--hidden\">\n\n      <div class=\"pswp__top-bar\">\n\n        <!-- Controls are self-explanatory. Order can be changed. -->\n\n        <div class=\"pswp__counter\"></div>\n\n        <button class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"></button>\n\n        <button class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"></button>\n\n        <button class=\"pswp__button pswp__button--zoom\" title=\"Zoom in/out\"></button>\n\n        <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->\n        <!-- element will get class pswp__preloader--active when preloader is running -->\n        <div class=\"pswp__preloader\">\n          <div class=\"pswp__preloader__icn\">\n           <div class=\"pswp__preloader__cut\">\n            <div class=\"pswp__preloader__donut\"></div>\n           </div>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">\n        <div class=\"pswp__share-tooltip\"></div> \n      </div>\n\n      <button class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\">\n      </button>\n\n      <button class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\">\n      </button>\n\n      <div class=\"pswp__caption\">\n        <div class=\"pswp__caption__center\"></div>\n      </div>\n\n    </div>\n\n  </div>\n\n</div>";
 
 /***/ }),
 /* 25 */
@@ -7740,16 +7748,33 @@ var tpls = __webpack_require__(22);
   })
   .on('imageshow', function(e) {
     e.preventDefault();
-    var items = [
-      {
-        src: e.detail.src,
-        w: e.detail.image.naturalWidth,
-        h: e.detail.image.naturalHeight
-      }
-    ];
+    
+    var image = e.detail.image;
+    var images = $('#content img');
+    var index = images.indexOf(image);
+    var items = [];
+    
+    if( ~index ) {
+      images.each(function() {
+        var img = this;
+        items.push({
+          src: img.src,
+          w: img.naturalWidth,
+          h: img.naturalHeight
+        });
+      });
+    } else {
+      index = 0;
+      items.push({
+        src: image.src,
+        w: image.naturalWidth,
+        h: image.naturalHeight
+      });
+    }
     
     new PhotoSwipe(pwspel.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
-      index: 0
+      index: index,
+      bgOpacity: 0.95
     }).init();
   });
 })();
@@ -7814,10 +7839,30 @@ module.exports = {
 
 /***/ }),
 /* 33 */
+/***/ (function(module, exports) {
+
+function Items() {}
+
+var proto = Items.prototype = [];
+
+proto.add = function(item) {
+  this.push(item);
+  return this;
+};
+
+proto.remove = function(item) {
+  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
+  return this;
+};
+
+module.exports = Items;
+
+/***/ }),
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(36);
+var Button = __webpack_require__(37);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -7852,17 +7897,16 @@ Buttons.prototype = {
   },
   add: function(btn, index) {
     if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
     
     var owner = this._toolbar.owner();
     var btns = this._buttons;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
+    
+    $(btn).each(function() {
+      var btn = Button.eval(this).owner(owner);
+      if( !btn ) return;
       
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
+      if( index >= 0 ) btns.splice(index++, 0, btn);
+      else btns.push(btn);
     });
     
     this.update();
@@ -7870,17 +7914,16 @@ Buttons.prototype = {
   },
   first: function(btn, index) {
     if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
     
     var owner = this._toolbar.owner();
     var btns = this._first;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
+    
+    $(btn).each(function() {
+      var btn = Button.eval(this).owner(owner);
+      if( !btn ) return;
       
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
+      if( index >= 0 ) btns.splice(index++, 0, btn);
+      else btns.push(btn);
     });
     
     this.update();
@@ -7888,17 +7931,16 @@ Buttons.prototype = {
   },
   last: function(btn, index) {
     if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
     
     var owner = this._toolbar.owner();
     var btns = this._last;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
+    
+    $(btn).each(function() {
+      var btn = Button.eval(this).owner(owner);
+      if( !btn ) return;
       
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
+      if( index >= 0 ) btns.splice(index++, 0, btn);
+      else btns.push(btn);
     });
     
     this.update();
@@ -7930,7 +7972,7 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -7952,12 +7994,12 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(34);
-var Buttons = __webpack_require__(33);
+var getPosition = __webpack_require__(35);
+var Buttons = __webpack_require__(34);
 __webpack_require__(71);
 
 function clone(o) {
@@ -8146,7 +8188,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(9);
@@ -8169,14 +8211,15 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
-var components = __webpack_require__(14);
+var context = __webpack_require__(3);
+var Part = context.Part;
+var Toolbar = context.Toolbar;
 var Marker = __webpack_require__(40);
-var DnD = __webpack_require__(38);
+var DnD = __webpack_require__(39);
 
 __webpack_require__(73);
 
@@ -8184,7 +8227,21 @@ function ArticlePart() {
   Part.apply(this, arguments);
 }
 
+var items = ArticlePart.toolbar = __webpack_require__(15);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(items.position || 'vertical top right outside')
+  .add({
+    text: '<i class="fa fa-eraser"></i>',
+    tooltip: '내용 삭제',
+    fn: function(e) {
+      this.owner().clear();
+    }
+  }, 0)
+  .add(items)
+  .always(true);
+};
 
 proto.oninit = function(e) {
   $(this.dom()).ac('ff-article')
@@ -8200,24 +8257,65 @@ proto.oninit = function(e) {
     }
   }.bind(this));
   
-  this.toolbar()
-  .position('vertical top right outside')
-  .add({
-    text: '<i class="fa fa-eraser"></i>',
-    tooltip: '내용 삭제',
-    fn: function(e) {
-      this.owner().clear();
+  this.scan();
+};
+
+proto.scan = function() {
+  var viewport = $(this.viewport());
+  var editmode = this.editmode();
+  
+  viewport.find('.ff-video').each(function() {
+    if( !this.__ff__) new context.Video(this);
+  });
+  
+  viewport.find('.ff-image').each(function() {
+    if( !this.__ff__) new context.Image(this);
+  });
+  
+  viewport.find('.ff-paragraph').each(function() {
+    if( !this.__ff__) new context.Paragraph(this);
+  });
+  
+  viewport.find('.ff-separator').each(function() {
+    if( !this.__ff__) new context.Separator(this);
+  });
+  
+  viewport.find('.ff-text').each(function() {
+    if( !this.__ff__) new context.Text(this);
+  });
+  
+  viewport.find('.ff-file').each(function() {
+    if( !this.__ff__) new context.File(this);
+  });
+  
+  viewport.children().each(function() {
+    if( !this.matches || this.matches('.ff-acc') ) return;
+    
+    var tag = this.tagName;
+    var part = this.__ff__;
+    
+    if( !part ) {
+      if( tag == 'IMG' ) part = new context.Image(this);
+      else if( tag == 'HR' ) part = new context.Separator(this);
+      else part = new context.Paragraph(this);
     }
-  }, 0)
-  .add(components)
-  .always(true);
+  });
+  
+  var placeholder = $(this.dom()).attr('placeholder');
+  viewport.find('.ff').each(function() {
+    var part = Part(this);
+    if( part ) {
+      part.removable(true);
+      if( part.editmode() !== editmode ) part.editmode(editmode);
+      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
+    }
+  });
 };
 
 proto.validate = function() {
   var dom = this.dom();
   var el = $(dom);
   var editmode = this.editmode();
-  var context = this.context();
   
   if( this.editmode() ) {
     var marker = this.marker();
@@ -8227,7 +8325,7 @@ proto.validate = function() {
       
       el.nodes().each(function() {
         viewport.append(this);
-      })
+      });
     
       el.append(viewport);
       this._viewport = viewport[0];
@@ -8241,43 +8339,6 @@ proto.validate = function() {
     if( !this.children().length ) {
       this.insert(new context.Paragraph());
     }
-    
-    viewport.find('.ff-video').each(function() {
-      if( !this.__ff__) new context.Video(this);
-    });
-    
-    viewport.find('.ff-image').each(function() {
-      if( !this.__ff__) new context.Image(this);
-    });
-    
-    viewport.find('.ff-paragraph').each(function() {
-      if( !this.__ff__) new context.Paragraph(this);
-    });
-    
-    viewport.find('.ff-separator').each(function() {
-      if( !this.__ff__) new context.Separator(this);
-    });
-    
-    viewport.find('.ff-text').each(function() {
-      if( !this.__ff__) new context.Text(this);
-    });
-    
-    viewport.find('.ff-file').each(function() {
-      if( !this.__ff__) new context.File(this);
-    });
-    
-    viewport.children().each(function() {
-      if( !this.matches || this.matches('.ff-acc') ) return;
-      
-      var tag = this.tagName;
-      var part = this.__ff__;
-      
-      if( !part ) {
-        if( tag == 'IMG' ) part = new context.Image(this);
-        else if( tag == 'HR' ) part = new context.Separator(this);
-        else part = new context.Paragraph(this);
-      }
-    });
   } else {
     var viewport = el.children('.ff-article-viewport');
     if( viewport.length ) {
@@ -8294,15 +8355,9 @@ proto.validate = function() {
     delete this._viewport;
   }
   
-  var placeholder = el.attr('placeholder');
-  el.find('.ff').each(function() {
-    var part = Part(this);
-    if( part ) {
-      part.removable(true);
-      if( part.editmode() !== editmode ) part.editmode(editmode);
-      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
-    }
-  });
+  this.scan();
+  
+  return this;
 };
 
 proto.onmodechange = function(e) {
@@ -8417,19 +8472,18 @@ proto.setData = function(data) {
 };
 
 
-ArticlePart.components = components;
 ArticlePart.Marker = Marker;
 ArticlePart.DnD = DnD;
 
 module.exports = ArticlePart;
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var each = __webpack_require__(17);
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(15);
+var getOffsetTop = __webpack_require__(14);
 
 __webpack_require__(74);
 
@@ -8515,34 +8569,12 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 39 */
-/***/ (function(module, exports) {
-
-module.exports = function() {
-  return (function() {
-    var items = [];
-  
-    items.add = function(item) {
-      items.push(item);
-      return this;
-    };
-  
-    items.remove = function(item) {
-      for(var pos;~(pos = items.indexOf(item));) items.splice(pos, 1);
-      return this;
-    };
-  
-    return items;
-  })();
-};
-
-/***/ }),
 /* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(15);
-var components = __webpack_require__(14);
+var getOffsetTop = __webpack_require__(14);
+var toolbar = __webpack_require__(15);
 var Button = __webpack_require__(8).Button;
 
 __webpack_require__(75);
@@ -8554,7 +8586,7 @@ function Marker(part, dom) {
   
   function update() {
     var tools = marker.find('.ff-marker-tools').empty();
-    components.forEach(function(item) {
+    toolbar.forEach(function(item) {
       if( !item || !item.text ) return;
       
       new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
@@ -8648,7 +8680,7 @@ module.exports = Marker;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(76);
 
@@ -8711,8 +8743,9 @@ module.exports = FilePart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
-var context = __webpack_require__(4);
+var context = __webpack_require__(3);
+var Part = context.Part;
+var Toolbar = context.Toolbar;
 
 __webpack_require__(77);
 
@@ -8720,9 +8753,13 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var toolbar = ImagePart.toolbar = __webpack_require__(43);
+var items = ImagePart.toolbar = __webpack_require__(43);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(items.position || 'inside top center').add(items);
+};
 
 proto.oninit = function() {
   var self = this;
@@ -8737,73 +8774,6 @@ proto.oninit = function() {
       src: dom.src,
       part: self
     });
-  });
-  
-  this.toolbar()
-  .position('inside top center')
-  .add({
-    text: '<i class="fa fa-dedent"></i>',
-    tooltip: '좌측플로팅',
-    fn: function(e) {
-      this.owner().floating('left');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-angle-up"></i>',
-    tooltip: '플로팅제거',
-    onupdate: function() {
-      if( this.owner().floating() ) this.show();
-      else this.hide();
-    },
-    fn: function(e) {
-      this.owner().floating(false);
-    }
-  })
-  .add({
-    text: '<i class="fa fa-dedent ff-flip"></i>',
-    tooltip: '우측플로팅',
-    fn: function(e) {
-      this.owner().floating('right');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-circle-o"></i>',
-    tooltip: '원본크기',
-    onupdate: function() {
-      if( this.owner().floating() ) this.hide();
-      else this.show();
-    },
-    fn: function(e) {
-      el
-      .rc('ff-image-size-full')
-      .rc('ff-image-size-medium');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-square-o"></i>',
-    tooltip: '기본크기',
-    onupdate: function() {
-      if( this.owner().floating() ) this.hide();
-      else this.show();
-    },
-    fn: function(e) {
-      el
-      .rc('ff-image-size-full')
-      .ac('ff-image-size-medium');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-arrows-alt"></i>',
-    tooltip: '풀사이즈',
-    onupdate: function() {
-      if( this.owner().floating() ) this.hide();
-      else this.show();
-    },
-    fn: function(e) {
-      el
-      .rc('ff-image-size-medium')
-      .ac('ff-image-size-full');
-    }
   });
   
   el.on('dragend', function(e) {
@@ -8878,100 +8848,81 @@ module.exports = ImagePart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(4);
-var Toolbar = context.Toolbar;
+var context = __webpack_require__(3);
+var Items = context.Items;
 
-function rangeitem(text, tooltip, selector, fn) {
-  return {
-    text: text,
-    tooltip: tooltip,
-    onupdate: function() {
-      var range = this.owner().range();
-      if( !range ) return this.enable(false);
-      
-      this.enable(true);
-      this.active(context.wrapped(range, selector));
-    },
-    fn: fn || function(e) {
-      context.toggleWrap(this.owner().range(), selector);
-    }
-  };
-}
-
-module.exports = function(part) {
-  return part.toolbar()
-  /*.add({
-    type: 'list',
-    text: '<i class="fa fa-font"></i>',
-    onselect: function(selected) {
-      
-    },
-    onupdate: function() {
-      
-    },
-    fn: function(e) {
-      
-    },
-    list: [
-      '기본폰트',
-      '나눔고딕',
-      '나눔명조',
-      'Helvetica',
-      'Times New Roman'
-    ]
-  })*/
-  .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
-  .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'u'))
-  .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
-  .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
-  .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
-    var range = this.owner().range();
-    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
-    
-    context.prompt('Please enter the anchor URL.', function(href) {
-      if( !href ) return;
-      var a = context.wrap(range, 'a');
-      a.href = href;
-      a.target = '_blank';
-    });
-  }))
-  .add({
-    text: '<i class="fa fa-align-justify"></i>',
-    tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
-      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-      else btn.text('<i class="fa fa-align-justify"></i>');
-    },
-    fn: function(e) {
-      var btn = this;
-      var el = $(part.dom());
-      
-      if( btn.align == 'center' ) {
-        el.css('text-align', 'right');
-        btn.align = 'right';
-      } else if( btn.align == 'right' ) {
-        el.css('text-align', 'left');
-        btn.align = 'left';
-      } else if( btn.align == 'left' ) {
-        el.css('text-align', '');
-        btn.align = '';
-      } else {
-        el.css('text-align', 'center');
-        btn.align = 'center';
-      }
-    }
-  });
-};
+module.exports = new Items()
+.add({
+  text: '<i class="fa fa-dedent"></i>',
+  tooltip: '좌측플로팅',
+  fn: function(e) {
+    this.owner().floating('left');
+  }
+})
+.add({
+  text: '<i class="fa fa-angle-up"></i>',
+  tooltip: '플로팅제거',
+  onupdate: function() {
+    if( this.owner().floating() ) this.show();
+    else this.hide();
+  },
+  fn: function(e) {
+    this.owner().floating(false);
+  }
+})
+.add({
+  text: '<i class="fa fa-dedent ff-flip"></i>',
+  tooltip: '우측플로팅',
+  fn: function(e) {
+    this.owner().floating('right');
+  }
+})
+.add({
+  text: '<i class="fa fa-circle-o"></i>',
+  tooltip: '원본크기',
+  onupdate: function() {
+    if( this.owner().floating() ) this.hide();
+    else this.show();
+  },
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('ff-image-size-full')
+    .rc('ff-image-size-medium');
+  }
+})
+.add({
+  text: '<i class="fa fa-square-o"></i>',
+  tooltip: '기본크기',
+  onupdate: function() {
+    if( this.owner().floating() ) this.hide();
+    else this.show();
+  },
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('ff-image-size-full')
+    .ac('ff-image-size-medium');
+  }
+})
+.add({
+  text: '<i class="fa fa-arrows-alt"></i>',
+  tooltip: '풀사이즈',
+  onupdate: function() {
+    if( this.owner().floating() ) this.hide();
+    else this.show();
+  },
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('ff-image-size-medium')
+    .ac('ff-image-size-full');
+  }
+});
 
 /***/ }),
 /* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(4);
+var context = __webpack_require__(3);
 var Toolbar = context.Toolbar;
 
 function rangeitem(text, tooltip, selector, fn) {
@@ -9064,7 +9015,7 @@ module.exports = function(part) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(79);
 
@@ -9115,9 +9066,9 @@ function RowPart(el) {
 
 RowPart.prototype = Object.create(Part.prototype, {
   create: {
-    value: function(items) {
+    value: function(arg) {
       var el = $('<div ff-type="row" />')[0];
-      this.add(items);
+      this.add(arg);
       return el;
     }
   },
@@ -9138,13 +9089,13 @@ RowPart.prototype = Object.create(Part.prototype, {
     }
   },
   add: {
-    value: function(items) {
+    value: function(arg) {
       var el = $(this.dom());
       var row = el.find('.ff-row-row');
       
       if( !row.length ) row = $('<div class="ff-row-row" />').appendTo(el);
       
-      $(items).each(function(i, item) {
+      $(arg).each(function(i, item) {
         $('<div class="ff-row-cell" />')
         .append(function() {
           return (item && item.dom && item.dom()) || item;
@@ -9166,7 +9117,7 @@ module.exports = RowPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(80);
 
@@ -9265,7 +9216,7 @@ module.exports = TextPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(82);
 
@@ -9546,25 +9497,25 @@ exports.push([module.i, "body.stop-scrolling {\n  height: 100%;\n  overflow: hid
 /* 65 */
 /***/ (function(module, exports) {
 
-module.exports = "<img src=\"https://goo.gl/YcfIqI\" />\n\n<h2>Mr. Krabs</h2>\n<div>Eugene H. Krabs, nicknamed \"Armor Abs\", \"Krabs\" and commonly known as Mr. Krabs, is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Clancy Brown, and first appeared in the series' first episode \"Help Wanted\" on May 1, 1999. Mr. Krabs was created and designed by marine biologist, animator, and creator of the show Stephen Hillenburg.</div>\n\n<hr>\n\n<h2>Role in Spongebob Squarepants</h2>\n<div>Mr. Krabs is the greedy founder and owner of the Krusty Krab restaurant, where Spongebob works as a frycook, and Squidward works as a cashier. The success of the restaurant is built in part on a lack of competition and in part on the success of the Krusty Krab's signature sandwich, the Krabby Patty, the formula to which is a closely guarded trade secret.\n\nHis rival and former best friend, Plankton, has a struggling restaurant called the Chum Bucket located across the street from the Krusty Krab. A recurring gag throughout the series is Plankton's futile attempts to steal the Krabby Patty formula, under the assumption that it would eventually put the Krusty Krab out of business. To avoid this, Krabs goes to extreme lengths to prevent Plankton from obtaining the formula (going so far as to refuse to allow him to even buy a Krabby Patty legitimately, out of fear that Plankton might reverse-engineer the formula) or to prevent the Chum Bucket from having any business whatsoever, not even just one single customer (as seen in the episode \"Plankton's Regular\").\n\nKrabs values money above all, and he views the other characters in regard to how they affect his money. He tolerates his two employees because of their low cost and positive impact on his finances, but he is quick to rebuke them, especially Spongebob, if they engage in behavior that drives away customers or costs him money. Krabs and Spongebob have a tentative father-son relationship - Krabs often scolds Spongebob if he gets in trouble, but at times gives him fatherly advice. However, Squidward strongly abhors Krabs for often taking money out of his paycheck for little reason at all.\n\nMr. Krabs has served in the navy, and in the episode \"Krusty Krab Training Video\" it is revealed that Mr. Krabs served during a time of war, and fell into a depression after finishing his service. His depression was alleviated after founding the Krusty Krab.</div>\n\n<hr>\n\n<h2>Daughter</h2>\n<div>Mr. Krabs has a daughter, a sperm whale named Pearl. Pearl is a stereotypical teenage girl, extremely socially conscious and embarrassed by her father's miserliness. She made her first appearance in the season one episode, \"Squeaky Boots,\" which aired on September 4, 1999. Due to her frequent appearances, Pearl has been featured in many types of merchandise, such as plush toys and action figures. Although she is officially Mr. Krabs' daughter, her mother is neither seen nor named, and in fact in the season two episode \"Krusty Love\" it is implied that Mr. Krabs is not (currently) married.\n\nPearl is voiced by Lori Alan.</div>";
+module.exports = "<img src=\"https://goo.gl/YcfIqI\">\n\n<h2>Mr. Krabs</h2>\n<div>Eugene H. Krabs, nicknamed \"Armor Abs\", \"Krabs\" and commonly known as Mr. Krabs, is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Clancy Brown, and first appeared in the series' first episode \"Help Wanted\" on May 1, 1999. Mr. Krabs was created and designed by marine biologist, animator, and creator of the show Stephen Hillenburg.</div>\n\n<hr>\n\n<h2>Role in Spongebob Squarepants</h2>\n<div>Mr. Krabs is the greedy founder and owner of the Krusty Krab restaurant, where Spongebob works as a frycook, and Squidward works as a cashier. The success of the restaurant is built in part on a lack of competition and in part on the success of the Krusty Krab's signature sandwich, the Krabby Patty, the formula to which is a closely guarded trade secret.\n\nHis rival and former best friend, Plankton, has a struggling restaurant called the Chum Bucket located across the street from the Krusty Krab. A recurring gag throughout the series is Plankton's futile attempts to steal the Krabby Patty formula, under the assumption that it would eventually put the Krusty Krab out of business. To avoid this, Krabs goes to extreme lengths to prevent Plankton from obtaining the formula (going so far as to refuse to allow him to even buy a Krabby Patty legitimately, out of fear that Plankton might reverse-engineer the formula) or to prevent the Chum Bucket from having any business whatsoever, not even just one single customer (as seen in the episode \"Plankton's Regular\").\n\nKrabs values money above all, and he views the other characters in regard to how they affect his money. He tolerates his two employees because of their low cost and positive impact on his finances, but he is quick to rebuke them, especially Spongebob, if they engage in behavior that drives away customers or costs him money. Krabs and Spongebob have a tentative father-son relationship - Krabs often scolds Spongebob if he gets in trouble, but at times gives him fatherly advice. However, Squidward strongly abhors Krabs for often taking money out of his paycheck for little reason at all.\n\nMr. Krabs has served in the navy, and in the episode \"Krusty Krab Training Video\" it is revealed that Mr. Krabs served during a time of war, and fell into a depression after finishing his service. His depression was alleviated after founding the Krusty Krab.</div>\n\n<hr>\n\n<h2>Daughter</h2>\n<div>Mr. Krabs has a daughter, a sperm whale named Pearl. Pearl is a stereotypical teenage girl, extremely socially conscious and embarrassed by her father's miserliness. She made her first appearance in the season one episode, \"Squeaky Boots,\" which aired on September 4, 1999. Due to her frequent appearances, Pearl has been featured in many types of merchandise, such as plush toys and action figures. Although she is officially Mr. Krabs' daughter, her mother is neither seen nor named, and in fact in the season two episode \"Krusty Love\" it is implied that Mr. Krabs is not (currently) married.\n\nPearl is voiced by Lori Alan.</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
 /* 66 */
 /***/ (function(module, exports) {
 
-module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>\n<div>Patrick Star is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Bill Fagerbakke, who also voices numerous other characters on the show. Created and designed by marine biologist and cartoonist Stephen Hillenburg, the series creator, Patrick first appeared on television in the show's pilot episode \"Help Wanted\" on May 1, 1999.\n\nSeen as an overweight, dimwitted pink starfish, Patrick lives under a rock in the underwater city of Bikini Bottom next door to Squidward Tentacles' moai. His most significant character trait is his lack of common sense, which sometimes leads him and his best friend, main character SpongeBob SquarePants, into trouble. Patrick is unemployed and a self-proclaimed expert in the \"art of doing nothing\".\n\nThe character has received positive reactions from critics and fans alike. Patrick has been included in various SpongeBob SquarePants-related merchandise, including trading cards, video games, plush toys, and comic books. He has been seen in the 2004 full-length feature film The SpongeBob SquarePants Movie and its 2015 sequel The SpongeBob Movie: Sponge Out of Water.\n\nDespite not appearing as frequently in episodes as Squidward, he is generally considered to be the show's most prominent character besides SpongeBob.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Patrick is the ignorant but humorous best friend of main character SpongeBob SquarePants. He is portrayed as being an overweight, dimwitted, pink starfish residing in the underwater city of Bikini Bottom. Patrick has been shown to make many ludicrous mistakes; despite this, he has occasionally been portrayed as a savant, with articulate observance to certain subjects in specific detail. However, he always reverts quickly back to his usual, unintelligent self after displaying a moment of wisdom. He holds no form of occupation except for several very brief stints working at the Krusty Krab and at the Chum Bucket in a variety of positions, and mostly spends his time either clowning around with SpongeBob, catching jellyfish with him, or lounging beneath the rock under which he resides.\n\nAt home, Patrick is typically depicted either sleeping, watching TV, or engaged in the \"art of doing nothing\", at which he is an expert. All the furnishings in the space under his rock are made of sand, and Patrick can simply opt to quickly build up furniture as needed; even so, his living space is sparse and contains only the barest essentials. Aside from his best friend SpongeBob, who is often impressed by Patrick's capacity to come up with naïve yet genius plans or solutions, Patrick frequently irritates those around him and is confounded by the simplest of questions or subjects. The characters of Mr. Krabs and Squidward have no patience for Patrick's stupidity, and the former does not pay him much regard; Clancy Brown, who provides Mr. Krabs' voice, said, \"The only person that he [Mr. Krabs] doesn't hire is Patrick because Patrick is just too stupid to work for nothing.\" Sandy often gets annoyed by Patrick, but still sees him as a friend.</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. In 1987, Hillenburg left the institute to pursue a career in animation.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of the Nickelodeon series Rocko's Modern Life, at an animation festival, and was offered a job as a director of the show. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not even considered creating his own series. However, he realized that if he ever did, this would be the best approach. Production on Rocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants.\n\n\nEarly drawings of Patrick from Stephen Hillenburg's bible.\nFor the show's characters, Hillenburg started to draw and used character designs from his comic book—including starfish, crab, and sponge. He described Patrick as \"probably the dumbest guy in town\". The character was conceived as a starfish to embody the animal's nature; according to Hillenburg, starfish look \"dumb and slow\", but they are \"very active and aggressive\" in reality, like Patrick. Hillenburg incorporated character comedy rather than topical humor on the show to emphasize \"things that are more about humorous situations and about characters and their flaws.\" He designed Patrick and SpongeBob as such because \"they're whipping themselves up into situations—that's always where the humor comes from. The rule is: Follow the innocence and avoid topical [humor].\"\n\nIn spite of being depicted as having a good temperament or state of mind, Patrick has been shown in some episodes to have a tantrum. Patrick's emotional outbreak was originally written only for the first season episode \"Valentine's Day\", where SpongeBob and Sandy try to give Patrick a Valentine's Day gift, and \"was supposed to be a one-time thing\". However, according to episode writer Jay Lender, \"when that show came back it felt so right that his dark side started popping up everywhere. You can plan ahead all you want, but the characters eventually tell you who they are.\"\n\nEvery main character in the show has its own unique footstep sound. The sound of Patrick's footsteps is recorded by the show's Foley crew, with a Foley talent wearing a slip-on shoe. Jeff Hutchins, show's sound designer said, \"[Going] barefoot makes it tough to have much presence, so we decided that Patrick would be performed with shoes on.\"</div>";
+module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>\n<div>Patrick Star is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Bill Fagerbakke, who also voices numerous other characters on the show. Created and designed by marine biologist and cartoonist Stephen Hillenburg, the series creator, Patrick first appeared on television in the show's pilot episode \"Help Wanted\" on May 1, 1999.\n\nSeen as an overweight, dimwitted pink starfish, Patrick lives under a rock in the underwater city of Bikini Bottom next door to Squidward Tentacles' moai. His most significant character trait is his lack of common sense, which sometimes leads him and his best friend, main character SpongeBob SquarePants, into trouble. Patrick is unemployed and a self-proclaimed expert in the \"art of doing nothing\".\n\nThe character has received positive reactions from critics and fans alike. Patrick has been included in various SpongeBob SquarePants-related merchandise, including trading cards, video games, plush toys, and comic books. He has been seen in the 2004 full-length feature film The SpongeBob SquarePants Movie and its 2015 sequel The SpongeBob Movie: Sponge Out of Water.\n\nDespite not appearing as frequently in episodes as Squidward, he is generally considered to be the show's most prominent character besides SpongeBob.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Patrick is the ignorant but humorous best friend of main character SpongeBob SquarePants. He is portrayed as being an overweight, dimwitted, pink starfish residing in the underwater city of Bikini Bottom. Patrick has been shown to make many ludicrous mistakes; despite this, he has occasionally been portrayed as a savant, with articulate observance to certain subjects in specific detail. However, he always reverts quickly back to his usual, unintelligent self after displaying a moment of wisdom. He holds no form of occupation except for several very brief stints working at the Krusty Krab and at the Chum Bucket in a variety of positions, and mostly spends his time either clowning around with SpongeBob, catching jellyfish with him, or lounging beneath the rock under which he resides.\n\nAt home, Patrick is typically depicted either sleeping, watching TV, or engaged in the \"art of doing nothing\", at which he is an expert. All the furnishings in the space under his rock are made of sand, and Patrick can simply opt to quickly build up furniture as needed; even so, his living space is sparse and contains only the barest essentials. Aside from his best friend SpongeBob, who is often impressed by Patrick's capacity to come up with naïve yet genius plans or solutions, Patrick frequently irritates those around him and is confounded by the simplest of questions or subjects. The characters of Mr. Krabs and Squidward have no patience for Patrick's stupidity, and the former does not pay him much regard; Clancy Brown, who provides Mr. Krabs' voice, said, \"The only person that he [Mr. Krabs] doesn't hire is Patrick because Patrick is just too stupid to work for nothing.\" Sandy often gets annoyed by Patrick, but still sees him as a friend.</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. In 1987, Hillenburg left the institute to pursue a career in animation.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of the Nickelodeon series Rocko's Modern Life, at an animation festival, and was offered a job as a director of the show. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not even considered creating his own series. However, he realized that if he ever did, this would be the best approach. Production on Rocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants.\n\n\nEarly drawings of Patrick from Stephen Hillenburg's bible.\nFor the show's characters, Hillenburg started to draw and used character designs from his comic book—including starfish, crab, and sponge. He described Patrick as \"probably the dumbest guy in town\". The character was conceived as a starfish to embody the animal's nature; according to Hillenburg, starfish look \"dumb and slow\", but they are \"very active and aggressive\" in reality, like Patrick. Hillenburg incorporated character comedy rather than topical humor on the show to emphasize \"things that are more about humorous situations and about characters and their flaws.\" He designed Patrick and SpongeBob as such because \"they're whipping themselves up into situations—that's always where the humor comes from. The rule is: Follow the innocence and avoid topical [humor].\"\n\nIn spite of being depicted as having a good temperament or state of mind, Patrick has been shown in some episodes to have a tantrum. Patrick's emotional outbreak was originally written only for the first season episode \"Valentine's Day\", where SpongeBob and Sandy try to give Patrick a Valentine's Day gift, and \"was supposed to be a one-time thing\". However, according to episode writer Jay Lender, \"when that show came back it felt so right that his dark side started popping up everywhere. You can plan ahead all you want, but the characters eventually tell you who they are.\"\n\nEvery main character in the show has its own unique footstep sound. The sound of Patrick's footsteps is recorded by the show's Foley crew, with a Foley talent wearing a slip-on shoe. Jeff Hutchins, show's sound designer said, \"[Going] barefoot makes it tough to have much presence, so we decided that Patrick would be performed with shoes on.\"</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
 /* 67 */
 /***/ (function(module, exports) {
 
-module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>";
+module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
 /* 68 */
 /***/ (function(module, exports) {
 
-module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacles</h2>\n<div>Squidward Tentacles is a fictional character voiced by actor Rodger Bumpass in the American animated television series SpongeBob SquarePants. Squidward was created and designed by marine biologist and animator Stephen Hillenburg. He first appeared on television in the series' pilot episode \"Help Wanted\" on May 1, 1999.\n\nAlthough his name has the word \"squid\" in it and he has six arms, Squidward is an anthropomorphic octopus.[a] He lives in a moai between SpongeBob SquarePants' and Patrick Star's houses. The character is portrayed as ill-tempered, manipulative, pretentious, and cynical, and he strongly despises his neighbors for their constant boisterous, noisy behavior. However, the pair are unaware of Squidward's antipathy towards them and see him as a friend. Squidward works as a cashier at the Krusty Krab restaurant, a job that he is apathetic towards.\n\nThe character's critical reception from professionals and fans has been positive. Squidward has appeared in many SpongeBob SquarePants publications, toys, and other merchandise. He appears in the 2004 full-length feature film The SpongeBob SquarePants Movie and in its sequel which was released in 2015.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Squidward is depicted as a bitter, very unfortunate, desperate, somewhat depressed, curt, arrogant, turquoise octopus. He lives in the underwater city of Bikini Bottom in a moai situated between SpongeBob SquarePants' pineapple house and Patrick Star's rock. Squidward detests his neighbors for their perpetual laughter and boisterous behavior, though SpongeBob and Patrick are oblivious to Squidward's animosity towards them and regard him as a friend.\n\nSquidward lives in a constant state of self-pity and misery; he is unhappy with his humdrum lifestyle and yearns for celebrity status, wealth, hair, and a glamorous and distinguished career as a musician or painter with a passion for art and playing the clarinet. However, he is left to endure the lowly status as a fast-food cashier at the Krusty Krab restaurant. Squidward resents his job and is irritated by his greedy employer Mr. Krabs and by having SpongeBob as a colleague.\n\nSquidward longs for peace but his wishes remain unsatisfied. He believes he is talented and deserves a higher social status. The populace of Bikini Bottom do not consider him talented, and frequently boo him and walk out on his performances.</div>\n\n<hr>\n\n<h2>Development</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. After graduating in 1984, he joined the Ocean Institute, an ocean education organization, where he had the idea to create a comic book titled The Intertidal Zone, which led to the creation of SpongeBob SquarePants. In 1987, Hillenburg left the Institute to pursue a career in animation.\n\n\nEarly rough sketches of Squidward from creator Stephen Hillenburg's series bible.\nSeveral years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of Rocko's Modern Life, at an animation festival. Murray offered Hillenburg a job as a director of the series. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not considered creating his own series, but soon realized that this was his chance. Shortly after production on Rocko's Modern Life ended in 1996, Hillenburg began working on SpongeBob SquarePants.\n\nHillenburg used some character designs from his comic book. He designed \"SpongeBob's grumpy next door neighbor\" as an octopus because the species' large head; octopi, he said, \"have such a large bulbous head and Squidward thinks he's an intellectual so of course, he's gonna have a large bulbous head.\" Hillenburg drew Squidward with six tentacles because \"it was really just simpler for animation to draw him with six legs instead of eight\". Show writer and storyboard artist Vincent Waller said:\n\nSquidward is hard to draw—he has a very odd-shaped head. Fortunately, his emotions are pretty even, but to get a whole lot of big emoting out of him is a challenge. His nose splits everything in half, so it's always like, 'OK, how am I going to work this and still make it read?'\n\nHillenburg thought of making jokes with Squidward ejecting ink but retired it because, according to him, \"it always looks like he's pooping his pants\". However, it occurs in The SpongeBob Movie: Sponge Out of Water and the sixth season episode, \"Giant Squidward\".\n\nConflicting statements from Hillenburg and Nickelodeon's official website have led to some doubt over whether the character is an octopus or a squid. Hillenburg named him Squidward because the name Octoward—in the words of Squidward's voice actor Rodger Bumpass—\"just didn't work\". The sound of Squidward's footsteps is produced by rubbing hot water bottles. The footsteps, and those of the rest of the main characters, are recorded by the show's foley crew. Sound designer Jeff Hutchins said that footstep sounds \"[help] tell which character it is and what surface they're stepping on\". Bumpass inspired the idea of having Squidward ride a recumbent bicycle; Bumpass owns one of these bicycles, which he rides around Burbank, California. Bumpass described it as his \"little inside joke\".</div>";
+module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacles</h2>\n<div>Squidward Tentacles is a fictional character voiced by actor Rodger Bumpass in the American animated television series SpongeBob SquarePants. Squidward was created and designed by marine biologist and animator Stephen Hillenburg. He first appeared on television in the series' pilot episode \"Help Wanted\" on May 1, 1999.\n\nAlthough his name has the word \"squid\" in it and he has six arms, Squidward is an anthropomorphic octopus.[a] He lives in a moai between SpongeBob SquarePants' and Patrick Star's houses. The character is portrayed as ill-tempered, manipulative, pretentious, and cynical, and he strongly despises his neighbors for their constant boisterous, noisy behavior. However, the pair are unaware of Squidward's antipathy towards them and see him as a friend. Squidward works as a cashier at the Krusty Krab restaurant, a job that he is apathetic towards.\n\nThe character's critical reception from professionals and fans has been positive. Squidward has appeared in many SpongeBob SquarePants publications, toys, and other merchandise. He appears in the 2004 full-length feature film The SpongeBob SquarePants Movie and in its sequel which was released in 2015.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Squidward is depicted as a bitter, very unfortunate, desperate, somewhat depressed, curt, arrogant, turquoise octopus. He lives in the underwater city of Bikini Bottom in a moai situated between SpongeBob SquarePants' pineapple house and Patrick Star's rock. Squidward detests his neighbors for their perpetual laughter and boisterous behavior, though SpongeBob and Patrick are oblivious to Squidward's animosity towards them and regard him as a friend.\n\nSquidward lives in a constant state of self-pity and misery; he is unhappy with his humdrum lifestyle and yearns for celebrity status, wealth, hair, and a glamorous and distinguished career as a musician or painter with a passion for art and playing the clarinet. However, he is left to endure the lowly status as a fast-food cashier at the Krusty Krab restaurant. Squidward resents his job and is irritated by his greedy employer Mr. Krabs and by having SpongeBob as a colleague.\n\nSquidward longs for peace but his wishes remain unsatisfied. He believes he is talented and deserves a higher social status. The populace of Bikini Bottom do not consider him talented, and frequently boo him and walk out on his performances.</div>\n\n<hr>\n\n<h2>Development</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. After graduating in 1984, he joined the Ocean Institute, an ocean education organization, where he had the idea to create a comic book titled The Intertidal Zone, which led to the creation of SpongeBob SquarePants. In 1987, Hillenburg left the Institute to pursue a career in animation.\n\n\nEarly rough sketches of Squidward from creator Stephen Hillenburg's series bible.\nSeveral years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of Rocko's Modern Life, at an animation festival. Murray offered Hillenburg a job as a director of the series. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not considered creating his own series, but soon realized that this was his chance. Shortly after production on Rocko's Modern Life ended in 1996, Hillenburg began working on SpongeBob SquarePants.\n\nHillenburg used some character designs from his comic book. He designed \"SpongeBob's grumpy next door neighbor\" as an octopus because the species' large head; octopi, he said, \"have such a large bulbous head and Squidward thinks he's an intellectual so of course, he's gonna have a large bulbous head.\" Hillenburg drew Squidward with six tentacles because \"it was really just simpler for animation to draw him with six legs instead of eight\". Show writer and storyboard artist Vincent Waller said:\n\nSquidward is hard to draw—he has a very odd-shaped head. Fortunately, his emotions are pretty even, but to get a whole lot of big emoting out of him is a challenge. His nose splits everything in half, so it's always like, 'OK, how am I going to work this and still make it read?'\n\nHillenburg thought of making jokes with Squidward ejecting ink but retired it because, according to him, \"it always looks like he's pooping his pants\". However, it occurs in The SpongeBob Movie: Sponge Out of Water and the sixth season episode, \"Giant Squidward\".\n\nConflicting statements from Hillenburg and Nickelodeon's official website have led to some doubt over whether the character is an octopus or a squid. Hillenburg named him Squidward because the name Octoward—in the words of Squidward's voice actor Rodger Bumpass—\"just didn't work\". The sound of Squidward's footsteps is produced by rubbing hot water bottles. The footsteps, and those of the rest of the main characters, are recorded by the show's foley crew. Sound designer Jeff Hutchins said that footstep sounds \"[help] tell which character it is and what surface they're stepping on\". Bumpass inspired the idea of having Squidward ride a recumbent bicycle; Bumpass owns one of these bicycles, which he rides around Burbank, California. Bumpass described it as his \"little inside joke\".</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
 /* 69 */

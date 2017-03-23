@@ -81,7 +81,7 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 25);
+/******/ 	return __webpack_require__(__webpack_require__.s = 26);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -417,233 +417,11 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var context = __webpack_require__(4);
-var Events = __webpack_require__(14);
-var Types = __webpack_require__(10);
-var Toolbar = __webpack_require__(5);
-var $ = __webpack_require__(0);
-
-function Part(arg) {
-  var dom = arg;
-  if( dom && dom.__ff__ ) return dom.__ff__;
-  if( !(this instanceof Part) ) return null;
-  if( !dom || !context.isElement(dom) ) dom = this.create.apply(this, arguments);
-  if( !context.isElement(dom) ) throw new TypeError('illegal arguments: dom');
-  
-  var el = $(dom).ac('ff');
-  var self = dom.__ff__ = this;
-  
-  var dispatcher = Events(this)
-  .on('focus', function(e) {
-    if( e.defaultPrevented || !this.editmode() ) return;
-    
-    el.ac('ff-focus-state');
-    this.toolbar().show();
-  })
-  .on('blur', function(e) {
-    if( e.defaultPrevented || !this.editmode() ) return;
-    
-    el.rc('ff-focus-state');
-    this.toolbar().hide();
-  })
-  .on('data', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    dispatcher.fire('render', {
-      type: 'data',
-      originalEvent: e
-    });
-  })
-  .on('modechange', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    var toolbar = this.toolbar();
-    if( this.editmode() ) {
-      if( toolbar.always() ) toolbar.show();
-      el.attr('draggable', true).ac('ff-edit-state');
-      dispatcher.fire('editmode');
-    } else {
-      toolbar.hide(true);
-      el.attr('draggable', null).rc('ff-edit-state');
-      dispatcher.fire('viewmode');
-    }
-    
-    dispatcher.fire('render', {
-      type: 'modechange',
-      originalEvent: e
-    });
-  })
-  .on('*', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    var type = e.type;
-    var name = 'on' + type;
-    
-    if( typeof this.handleEvent == 'function' ) this.handleEvent(e);
-    if( typeof this[name] == 'function' ) this[name](e);
-  });
-  
-  el
-  .on('mouseenter', function(e) {
-    if( !self.editmode() ) return;
-    
-    self.toolbar().update();
-    el.ac('ff-enter-state');
-  })
-  .on('mousedown mouseup', function(e) {
-    if( !self.editmode() ) return;
-    setTimeout(function() {
-      self.toolbar().update();
-    }, 0);
-  })
-  .on('mouseleave', function(e) {
-    if( !self.editmode() ) return;
-    
-    el.removeClass('ff-enter-state');
-  })
-  .on('dragstart', function(e) {
-    if( !self.editmode() ) return;
-    
-    if( e.target === dom ) {
-      self.blur();
-      context.dragging = dom;
-      el.ac('ff-dragging');
-    }
-  })
-  .on('dragend', function(e) {
-    if( e.target === dom ) {
-      context.dragging = null;
-      el.rc('ff-dragging');
-    }
-  });
-  
-  this._d = null;
-  this._n = dom;
-  this._e = dispatcher;
-  
-  if( dom !== arg ) this.removable(true);
-  if( el.attr('ff-toolbar') === 'false' ) this.toolbar().enable(false);
-  
-  dispatcher.fire('init');
-  if( context.editmode() ) self.editmode(true);
-}
-
-Part.prototype = {
-  context: function() {
-    return context;
-  },
-  toolbar: function() {
-    return this._t || (this._t = new Toolbar(this));
-  },
-  removable: function(removable) {
-    var toolbar = this.toolbar();
-    var removebtn = toolbar.get('remove');
-    if( !arguments.length ) return removebtn ? true : false;
-    
-    if( !removable ) toolbar.remove('remove');
-    
-    if( !removebtn ) toolbar.last({
-      id: 'remove',
-      text: '<i class="fa fa-remove"></i>',
-      fn: function(e) {
-        this.owner().remove();
-      }
-    });
-    
-    return this;
-  },
-  dom: function() {
-    return this._n;
-  },
-  create: function(arg) {
-    return $('<div/>').html(arg)[0];
-  },
-  remove: function() {
-    this.blur();
-    this.toolbar().hide();
-    this.fire('remove');
-    $(this.dom()).remove();
-    return this;
-  },
-  editmode: function(b) {
-    if( !arguments.length ) return !!this._md;
-    var prev = this._md;
-    var editmode = this._md = !!b;
-  
-    if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
-    return this;
-  },
-  data: function(data) {
-    if( !arguments.length ) {
-      if( this.getData ) return this.getData();
-      return this._d;
-    }
-    
-    if( this.setData ) this.setData(data);
-    else this._d = data;
-    
-    this.fire('data', {old: this._d, data: data});
-    return this;
-  },
-  fire: function() {
-    this._e.fire.apply(this._e, arguments);
-    return this;
-  },
-  on: function(type, fn) {
-    this._e.on(type, fn);
-    return this;
-  },
-  once: function(type, fn) {
-    this._e.once(type, fn);
-    return this;
-  },
-  off: function(type, fn) {
-    this._e.off(type, fn);
-    return this;
-  },
-  clear: function() {
-    this.data(null);
-    this.fire('clear');
-    return this;
-  },
-  click: function() {
-    this.dom().click();
-    return this;
-  },
-  focus: function() {
-    if( this !== context.focused ) {
-      if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
-      this.fire('focus');
-      context.focused = this;
-    }
-    return this;
-  },
-  blur: function() {
-    if( this === context.focused ) {
-      this.fire('blur');
-      context.focused = null;
-    }
-    return this;
-  },
-  ranges: function() {
-    return context.ranges(this.dom());
-  },
-  range: function() {
-    return context.range(this.dom());
-  }
-};
-
-module.exports = Part;
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
 var each = __webpack_require__(13);
 var Events = __webpack_require__(14);
 var $ = __webpack_require__(0);
 var types = __webpack_require__(10);
-var connector = __webpack_require__(24);
+var connector = __webpack_require__(25);
 
 var parts = [];
 var data = {};
@@ -1027,6 +805,7 @@ $(document).on('mousedown', function(e) {
   }
 });
 
+
 module.exports = context;
 
 
@@ -1066,10 +845,236 @@ getCaretPosition: function(node) {
 },*/
 
 /***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var Events = __webpack_require__(14);
+var Types = __webpack_require__(10);
+var Toolbar = __webpack_require__(5);
+var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
+
+function Part(arg) {
+  var dom = arg;
+  if( dom && dom.__ff__ ) return dom.__ff__;
+  if( !(this instanceof Part) ) return null;
+  
+  if( !dom || !context.isElement(dom) ) dom = this.create.apply(this, arguments);
+  if( !context.isElement(dom) ) throw new TypeError('illegal arguments: dom');
+  
+  var el = $(dom).ac('ff');
+  var self = dom.__ff__ = this;
+  
+  var dispatcher = Events(this)
+  .on('focus', function(e) {
+    if( e.defaultPrevented || !this.editmode() ) return;
+    
+    el.ac('ff-focus-state');
+    this.toolbar().show();
+  })
+  .on('blur', function(e) {
+    if( e.defaultPrevented || !this.editmode() ) return;
+    
+    el.rc('ff-focus-state');
+    this.toolbar().hide();
+  })
+  .on('data', function(e) {
+    if( e.defaultPrevented ) return;
+    
+    dispatcher.fire('render', {
+      type: 'data',
+      originalEvent: e
+    });
+  })
+  .on('modechange', function(e) {
+    if( e.defaultPrevented ) return;
+    
+    var toolbar = this.toolbar();
+    if( this.editmode() ) {
+      if( toolbar.always() ) toolbar.show();
+      el.attr('draggable', true).ac('ff-edit-state');
+      dispatcher.fire('editmode');
+    } else {
+      toolbar.hide(true);
+      el.attr('draggable', null).rc('ff-edit-state');
+      dispatcher.fire('viewmode');
+    }
+    
+    dispatcher.fire('render', {
+      type: 'modechange',
+      originalEvent: e
+    });
+  })
+  .on('*', function(e) {
+    if( e.defaultPrevented ) return;
+    
+    var type = e.type;
+    var name = 'on' + type;
+    
+    if( typeof this.handleEvent == 'function' ) this.handleEvent(e);
+    if( typeof this[name] == 'function' ) this[name](e);
+  });
+  
+  el
+  .on('mouseenter', function(e) {
+    if( !self.editmode() ) return;
+    
+    self.toolbar().update();
+    el.ac('ff-enter-state');
+  })
+  .on('mousedown mouseup', function(e) {
+    if( !self.editmode() ) return;
+    setTimeout(function() {
+      self.toolbar().update();
+    }, 0);
+  })
+  .on('mouseleave', function(e) {
+    if( !self.editmode() ) return;
+    
+    el.removeClass('ff-enter-state');
+  })
+  .on('dragstart', function(e) {
+    if( !self.editmode() ) return;
+    
+    if( e.target === dom ) {
+      self.blur();
+      context.dragging = dom;
+      el.ac('ff-dragging');
+    }
+  })
+  .on('dragend', function(e) {
+    if( e.target === dom ) {
+      context.dragging = null;
+      el.rc('ff-dragging');
+    }
+  });
+  
+  this._d = null;
+  this._n = dom;
+  this._e = dispatcher;
+  
+  if( dom !== arg ) this.removable(true);
+  if( el.attr('ff-toolbar') === 'false' ) this.toolbar().enable(false);
+  
+  dispatcher.fire('init');
+  if( context.editmode() ) self.editmode(true);
+}
+
+Part.prototype = {
+  context: function() {
+    return context;
+  },
+  createToolbar: function() {
+    return new Toolbar(this);
+  },
+  toolbar: function() {
+    return this._t || (this._t = this.createToolbar());
+  },
+  removable: function(removable) {
+    var toolbar = this.toolbar();
+    var removebtn = toolbar.get('remove');
+    if( !arguments.length ) return removebtn ? true : false;
+    
+    if( !removable ) toolbar.remove('remove');
+    
+    if( !removebtn ) toolbar.last({
+      id: 'remove',
+      text: '<i class="fa fa-remove"></i>',
+      fn: function(e) {
+        this.owner().remove();
+      }
+    });
+    
+    return this;
+  },
+  dom: function() {
+    return this._n;
+  },
+  create: function(arg) {
+    return $('<div/>').html(arg)[0];
+  },
+  remove: function() {
+    this.blur();
+    this.toolbar().hide();
+    this.fire('remove');
+    $(this.dom()).remove();
+    return this;
+  },
+  editmode: function(b) {
+    if( !arguments.length ) return !!this._md;
+    var prev = this._md;
+    var editmode = this._md = !!b;
+  
+    if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
+    return this;
+  },
+  data: function(data) {
+    if( !arguments.length ) {
+      if( this.getData ) return this.getData();
+      return this._d;
+    }
+    
+    if( this.setData ) this.setData(data);
+    else this._d = data;
+    
+    this.fire('data', {old: this._d, data: data});
+    return this;
+  },
+  fire: function() {
+    this._e.fire.apply(this._e, arguments);
+    return this;
+  },
+  on: function(type, fn) {
+    this._e.on(type, fn);
+    return this;
+  },
+  once: function(type, fn) {
+    this._e.once(type, fn);
+    return this;
+  },
+  off: function(type, fn) {
+    this._e.off(type, fn);
+    return this;
+  },
+  clear: function() {
+    this.data(null);
+    this.fire('clear');
+    return this;
+  },
+  click: function() {
+    this.dom().click();
+    return this;
+  },
+  focus: function() {
+    if( this !== context.focused ) {
+      if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
+      this.fire('focus');
+      context.focused = this;
+    }
+    return this;
+  },
+  blur: function() {
+    if( this === context.focused ) {
+      this.fire('blur');
+      context.focused = null;
+    }
+    return this;
+  },
+  ranges: function() {
+    return context.ranges(this.dom());
+  },
+  range: function() {
+    return context.range(this.dom());
+  }
+};
+
+module.exports = Part;
+
+/***/ }),
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(28);
+var Toolbar = __webpack_require__(29);
 
 Toolbar.Button = __webpack_require__(6);
 Toolbar.Separator = __webpack_require__(9);
@@ -1177,7 +1182,7 @@ module.exports = Button;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 var buildtoolbar = __webpack_require__(34);
 
 __webpack_require__(55);
@@ -1431,13 +1436,25 @@ module.exports = {
 
 /***/ }),
 /* 11 */
+/***/ (function(module, exports) {
+
+module.exports = function(el) {
+  var top = 0;
+  do {
+    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
+  } while( el = el.offsetParent );
+  return top;
+};
+
+/***/ }),
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Items = __webpack_require__(31);
-var context = __webpack_require__(4);
+var context = __webpack_require__(3);
+var Items = context.Items;
 
-module.exports = Items()
+module.exports = new Items()
 .add({
   text: '<i class="fa fa-font"></i>',
   tooltip: '문단',
@@ -1539,18 +1556,6 @@ module.exports = Items()
   }
 });
 
-
-/***/ }),
-/* 12 */
-/***/ (function(module, exports) {
-
-module.exports = function(el) {
-  var top = 0;
-  do {
-    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
-  } while( el = el.offsetParent );
-  return top;
-};
 
 /***/ }),
 /* 13 */
@@ -1890,13 +1895,34 @@ module.exports = {
 
 /***/ }),
 /* 16 */
+/***/ (function(module, exports) {
+
+function Items() {}
+
+var proto = Items.prototype = [];
+
+proto.add = function(item) {
+  this.push(item);
+  return this;
+};
+
+proto.remove = function(item) {
+  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
+  return this;
+};
+
+module.exports = Items;
+
+/***/ }),
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
-var components = __webpack_require__(11);
+var context = __webpack_require__(3);
+var Part = context.Part;
+var Toolbar = context.Toolbar;
 var Marker = __webpack_require__(32);
-var DnD = __webpack_require__(30);
+var DnD = __webpack_require__(31);
 
 __webpack_require__(50);
 
@@ -1904,7 +1930,21 @@ function ArticlePart() {
   Part.apply(this, arguments);
 }
 
+var items = ArticlePart.toolbar = __webpack_require__(12);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(items.position || 'vertical top right outside')
+  .add({
+    text: '<i class="fa fa-eraser"></i>',
+    tooltip: '내용 삭제',
+    fn: function(e) {
+      this.owner().clear();
+    }
+  }, 0)
+  .add(items)
+  .always(true);
+};
 
 proto.oninit = function(e) {
   $(this.dom()).ac('ff-article')
@@ -1920,24 +1960,65 @@ proto.oninit = function(e) {
     }
   }.bind(this));
   
-  this.toolbar()
-  .position('vertical top right outside')
-  .add({
-    text: '<i class="fa fa-eraser"></i>',
-    tooltip: '내용 삭제',
-    fn: function(e) {
-      this.owner().clear();
+  this.scan();
+};
+
+proto.scan = function() {
+  var viewport = $(this.viewport());
+  var editmode = this.editmode();
+  
+  viewport.find('.ff-video').each(function() {
+    if( !this.__ff__) new context.Video(this);
+  });
+  
+  viewport.find('.ff-image').each(function() {
+    if( !this.__ff__) new context.Image(this);
+  });
+  
+  viewport.find('.ff-paragraph').each(function() {
+    if( !this.__ff__) new context.Paragraph(this);
+  });
+  
+  viewport.find('.ff-separator').each(function() {
+    if( !this.__ff__) new context.Separator(this);
+  });
+  
+  viewport.find('.ff-text').each(function() {
+    if( !this.__ff__) new context.Text(this);
+  });
+  
+  viewport.find('.ff-file').each(function() {
+    if( !this.__ff__) new context.File(this);
+  });
+  
+  viewport.children().each(function() {
+    if( !this.matches || this.matches('.ff-acc') ) return;
+    
+    var tag = this.tagName;
+    var part = this.__ff__;
+    
+    if( !part ) {
+      if( tag == 'IMG' ) part = new context.Image(this);
+      else if( tag == 'HR' ) part = new context.Separator(this);
+      else part = new context.Paragraph(this);
     }
-  }, 0)
-  .add(components)
-  .always(true);
+  });
+  
+  var placeholder = $(this.dom()).attr('placeholder');
+  viewport.find('.ff').each(function() {
+    var part = Part(this);
+    if( part ) {
+      part.removable(true);
+      if( part.editmode() !== editmode ) part.editmode(editmode);
+      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
+    }
+  });
 };
 
 proto.validate = function() {
   var dom = this.dom();
   var el = $(dom);
   var editmode = this.editmode();
-  var context = this.context();
   
   if( this.editmode() ) {
     var marker = this.marker();
@@ -1947,7 +2028,7 @@ proto.validate = function() {
       
       el.nodes().each(function() {
         viewport.append(this);
-      })
+      });
     
       el.append(viewport);
       this._viewport = viewport[0];
@@ -1961,43 +2042,6 @@ proto.validate = function() {
     if( !this.children().length ) {
       this.insert(new context.Paragraph());
     }
-    
-    viewport.find('.ff-video').each(function() {
-      if( !this.__ff__) new context.Video(this);
-    });
-    
-    viewport.find('.ff-image').each(function() {
-      if( !this.__ff__) new context.Image(this);
-    });
-    
-    viewport.find('.ff-paragraph').each(function() {
-      if( !this.__ff__) new context.Paragraph(this);
-    });
-    
-    viewport.find('.ff-separator').each(function() {
-      if( !this.__ff__) new context.Separator(this);
-    });
-    
-    viewport.find('.ff-text').each(function() {
-      if( !this.__ff__) new context.Text(this);
-    });
-    
-    viewport.find('.ff-file').each(function() {
-      if( !this.__ff__) new context.File(this);
-    });
-    
-    viewport.children().each(function() {
-      if( !this.matches || this.matches('.ff-acc') ) return;
-      
-      var tag = this.tagName;
-      var part = this.__ff__;
-      
-      if( !part ) {
-        if( tag == 'IMG' ) part = new context.Image(this);
-        else if( tag == 'HR' ) part = new context.Separator(this);
-        else part = new context.Paragraph(this);
-      }
-    });
   } else {
     var viewport = el.children('.ff-article-viewport');
     if( viewport.length ) {
@@ -2014,15 +2058,9 @@ proto.validate = function() {
     delete this._viewport;
   }
   
-  var placeholder = el.attr('placeholder');
-  el.find('.ff').each(function() {
-    var part = Part(this);
-    if( part ) {
-      part.removable(true);
-      if( part.editmode() !== editmode ) part.editmode(editmode);
-      if( part instanceof context.Paragraph ) part.placeholder(placeholder);
-    }
-  });
+  this.scan();
+  
+  return this;
 };
 
 proto.onmodechange = function(e) {
@@ -2137,18 +2175,17 @@ proto.setData = function(data) {
 };
 
 
-ArticlePart.components = components;
 ArticlePart.Marker = Marker;
 ArticlePart.DnD = DnD;
 
 module.exports = ArticlePart;
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(53);
 
@@ -2207,12 +2244,13 @@ FilePart.defaultLabel = 'Download';
 module.exports = FilePart;
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
-var context = __webpack_require__(4);
+var context = __webpack_require__(3);
+var Part = context.Part;
+var Toolbar = context.Toolbar;
 
 __webpack_require__(54);
 
@@ -2220,9 +2258,13 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var toolbar = ImagePart.toolbar = __webpack_require__(33);
+var items = ImagePart.toolbar = __webpack_require__(33);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(items.position || 'inside top center').add(items);
+};
 
 proto.oninit = function() {
   var self = this;
@@ -2237,73 +2279,6 @@ proto.oninit = function() {
       src: dom.src,
       part: self
     });
-  });
-  
-  this.toolbar()
-  .position('inside top center')
-  .add({
-    text: '<i class="fa fa-dedent"></i>',
-    tooltip: '좌측플로팅',
-    fn: function(e) {
-      this.owner().floating('left');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-angle-up"></i>',
-    tooltip: '플로팅제거',
-    onupdate: function() {
-      if( this.owner().floating() ) this.show();
-      else this.hide();
-    },
-    fn: function(e) {
-      this.owner().floating(false);
-    }
-  })
-  .add({
-    text: '<i class="fa fa-dedent ff-flip"></i>',
-    tooltip: '우측플로팅',
-    fn: function(e) {
-      this.owner().floating('right');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-circle-o"></i>',
-    tooltip: '원본크기',
-    onupdate: function() {
-      if( this.owner().floating() ) this.hide();
-      else this.show();
-    },
-    fn: function(e) {
-      el
-      .rc('ff-image-size-full')
-      .rc('ff-image-size-medium');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-square-o"></i>',
-    tooltip: '기본크기',
-    onupdate: function() {
-      if( this.owner().floating() ) this.hide();
-      else this.show();
-    },
-    fn: function(e) {
-      el
-      .rc('ff-image-size-full')
-      .ac('ff-image-size-medium');
-    }
-  })
-  .add({
-    text: '<i class="fa fa-arrows-alt"></i>',
-    tooltip: '풀사이즈',
-    onupdate: function() {
-      if( this.owner().floating() ) this.hide();
-      else this.show();
-    },
-    fn: function(e) {
-      el
-      .rc('ff-image-size-medium')
-      .ac('ff-image-size-full');
-    }
   });
   
   el.on('dragend', function(e) {
@@ -2374,11 +2349,11 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(56);
 
@@ -2429,9 +2404,9 @@ function RowPart(el) {
 
 RowPart.prototype = Object.create(Part.prototype, {
   create: {
-    value: function(items) {
+    value: function(arg) {
       var el = $('<div ff-type="row" />')[0];
-      this.add(items);
+      this.add(arg);
       return el;
     }
   },
@@ -2452,13 +2427,13 @@ RowPart.prototype = Object.create(Part.prototype, {
     }
   },
   add: {
-    value: function(items) {
+    value: function(arg) {
       var el = $(this.dom());
       var row = el.find('.ff-row-row');
       
       if( !row.length ) row = $('<div class="ff-row-row" />').appendTo(el);
       
-      $(items).each(function(i, item) {
+      $(arg).each(function(i, item) {
         $('<div class="ff-row-cell" />')
         .append(function() {
           return (item && item.dom && item.dom()) || item;
@@ -2476,11 +2451,11 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(57);
 
@@ -2536,7 +2511,7 @@ Separator.prototype = Object.create(Part.prototype, {
 module.exports = Separator;
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2575,11 +2550,11 @@ proto.html = ParagraphPart.prototype.text;
 module.exports = TextPart;
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(3);
+var Part = __webpack_require__(4);
 
 __webpack_require__(59);
 
@@ -2633,7 +2608,7 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
@@ -2659,7 +2634,7 @@ if(false) {
 }
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports) {
 
 var endpoint;
@@ -2674,26 +2649,29 @@ module.exports = {
 }
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var ctx = __webpack_require__(4);
+var ctx = __webpack_require__(3);
 var Toolbar = __webpack_require__(5);
+var Part = __webpack_require__(4);
+var Items = __webpack_require__(16);
 
-__webpack_require__(23);
+__webpack_require__(24);
 
-var Part = __webpack_require__(3);
-var ArticlePart = __webpack_require__(16);
-var ParagraphPart = __webpack_require__(7);
-var TextPart = __webpack_require__(21);
-var SeparatorPart = __webpack_require__(20);
-var ImagePart = __webpack_require__(18);
-var VideoPart = __webpack_require__(22);
-var RowPart = __webpack_require__(19);
-var FilePart = __webpack_require__(17);
-
-ctx.Toolbar = Toolbar;
 ctx.Part = Part;
+ctx.Toolbar = Toolbar;
+ctx.Items = Items;
+
+var ArticlePart = __webpack_require__(17);
+var ParagraphPart = __webpack_require__(7);
+var TextPart = __webpack_require__(22);
+var SeparatorPart = __webpack_require__(21);
+var ImagePart = __webpack_require__(19);
+var VideoPart = __webpack_require__(23);
+var RowPart = __webpack_require__(20);
+var FilePart = __webpack_require__(18);
+
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
 ctx.Text = TextPart;
@@ -2731,11 +2709,11 @@ module.exports = ctx;
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(29);
+var Button = __webpack_require__(30);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -2770,17 +2748,16 @@ Buttons.prototype = {
   },
   add: function(btn, index) {
     if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
     
     var owner = this._toolbar.owner();
     var btns = this._buttons;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
+    
+    $(btn).each(function() {
+      var btn = Button.eval(this).owner(owner);
+      if( !btn ) return;
       
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
+      if( index >= 0 ) btns.splice(index++, 0, btn);
+      else btns.push(btn);
     });
     
     this.update();
@@ -2788,17 +2765,16 @@ Buttons.prototype = {
   },
   first: function(btn, index) {
     if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
     
     var owner = this._toolbar.owner();
     var btns = this._first;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
+    
+    $(btn).each(function() {
+      var btn = Button.eval(this).owner(owner);
+      if( !btn ) return;
       
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
+      if( index >= 0 ) btns.splice(index++, 0, btn);
+      else btns.push(btn);
     });
     
     this.update();
@@ -2806,17 +2782,16 @@ Buttons.prototype = {
   },
   last: function(btn, index) {
     if( !btn ) return this;
-    if( !Array.isArray(btn) ) btn = [btn];
     
     var owner = this._toolbar.owner();
     var btns = this._last;
-    btn.forEach(function(btn) {
-      btn = Button.eval(btn).owner(owner);
+    
+    $(btn).each(function() {
+      var btn = Button.eval(this).owner(owner);
+      if( !btn ) return;
       
-      if( btn ) {
-        if( index >= 0 ) btns.splice(index++, 0, btn);
-        else btns.push(btn);
-      }
+      if( index >= 0 ) btns.splice(index++, 0, btn);
+      else btns.push(btn);
     });
     
     this.update();
@@ -2848,7 +2823,7 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -2870,12 +2845,12 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(27);
-var Buttons = __webpack_require__(26);
+var getPosition = __webpack_require__(28);
+var Buttons = __webpack_require__(27);
 __webpack_require__(48);
 
 function clone(o) {
@@ -3064,7 +3039,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(6);
@@ -3087,12 +3062,12 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var each = __webpack_require__(13);
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(12);
+var getOffsetTop = __webpack_require__(11);
 
 __webpack_require__(51);
 
@@ -3178,34 +3153,12 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 31 */
-/***/ (function(module, exports) {
-
-module.exports = function() {
-  return (function() {
-    var items = [];
-  
-    items.add = function(item) {
-      items.push(item);
-      return this;
-    };
-  
-    items.remove = function(item) {
-      for(var pos;~(pos = items.indexOf(item));) items.splice(pos, 1);
-      return this;
-    };
-  
-    return items;
-  })();
-};
-
-/***/ }),
 /* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(12);
-var components = __webpack_require__(11);
+var getOffsetTop = __webpack_require__(11);
+var toolbar = __webpack_require__(12);
 var Button = __webpack_require__(5).Button;
 
 __webpack_require__(52);
@@ -3217,7 +3170,7 @@ function Marker(part, dom) {
   
   function update() {
     var tools = marker.find('.ff-marker-tools').empty();
-    components.forEach(function(item) {
+    toolbar.forEach(function(item) {
       if( !item || !item.text ) return;
       
       new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
@@ -3311,100 +3264,81 @@ module.exports = Marker;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(4);
-var Toolbar = context.Toolbar;
+var context = __webpack_require__(3);
+var Items = context.Items;
 
-function rangeitem(text, tooltip, selector, fn) {
-  return {
-    text: text,
-    tooltip: tooltip,
-    onupdate: function() {
-      var range = this.owner().range();
-      if( !range ) return this.enable(false);
-      
-      this.enable(true);
-      this.active(context.wrapped(range, selector));
-    },
-    fn: fn || function(e) {
-      context.toggleWrap(this.owner().range(), selector);
-    }
-  };
-}
-
-module.exports = function(part) {
-  return part.toolbar()
-  /*.add({
-    type: 'list',
-    text: '<i class="fa fa-font"></i>',
-    onselect: function(selected) {
-      
-    },
-    onupdate: function() {
-      
-    },
-    fn: function(e) {
-      
-    },
-    list: [
-      '기본폰트',
-      '나눔고딕',
-      '나눔명조',
-      'Helvetica',
-      'Times New Roman'
-    ]
-  })*/
-  .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
-  .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'u'))
-  .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
-  .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
-  .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
-    var range = this.owner().range();
-    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
-    
-    context.prompt('Please enter the anchor URL.', function(href) {
-      if( !href ) return;
-      var a = context.wrap(range, 'a');
-      a.href = href;
-      a.target = '_blank';
-    });
-  }))
-  .add({
-    text: '<i class="fa fa-align-justify"></i>',
-    tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
-      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-      else btn.text('<i class="fa fa-align-justify"></i>');
-    },
-    fn: function(e) {
-      var btn = this;
-      var el = $(part.dom());
-      
-      if( btn.align == 'center' ) {
-        el.css('text-align', 'right');
-        btn.align = 'right';
-      } else if( btn.align == 'right' ) {
-        el.css('text-align', 'left');
-        btn.align = 'left';
-      } else if( btn.align == 'left' ) {
-        el.css('text-align', '');
-        btn.align = '';
-      } else {
-        el.css('text-align', 'center');
-        btn.align = 'center';
-      }
-    }
-  });
-};
+module.exports = new Items()
+.add({
+  text: '<i class="fa fa-dedent"></i>',
+  tooltip: '좌측플로팅',
+  fn: function(e) {
+    this.owner().floating('left');
+  }
+})
+.add({
+  text: '<i class="fa fa-angle-up"></i>',
+  tooltip: '플로팅제거',
+  onupdate: function() {
+    if( this.owner().floating() ) this.show();
+    else this.hide();
+  },
+  fn: function(e) {
+    this.owner().floating(false);
+  }
+})
+.add({
+  text: '<i class="fa fa-dedent ff-flip"></i>',
+  tooltip: '우측플로팅',
+  fn: function(e) {
+    this.owner().floating('right');
+  }
+})
+.add({
+  text: '<i class="fa fa-circle-o"></i>',
+  tooltip: '원본크기',
+  onupdate: function() {
+    if( this.owner().floating() ) this.hide();
+    else this.show();
+  },
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('ff-image-size-full')
+    .rc('ff-image-size-medium');
+  }
+})
+.add({
+  text: '<i class="fa fa-square-o"></i>',
+  tooltip: '기본크기',
+  onupdate: function() {
+    if( this.owner().floating() ) this.hide();
+    else this.show();
+  },
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('ff-image-size-full')
+    .ac('ff-image-size-medium');
+  }
+})
+.add({
+  text: '<i class="fa fa-arrows-alt"></i>',
+  tooltip: '풀사이즈',
+  onupdate: function() {
+    if( this.owner().floating() ) this.hide();
+    else this.show();
+  },
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('ff-image-size-medium')
+    .ac('ff-image-size-full');
+  }
+});
 
 /***/ }),
 /* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(4);
+var context = __webpack_require__(3);
 var Toolbar = context.Toolbar;
 
 function rangeitem(text, tooltip, selector, fn) {

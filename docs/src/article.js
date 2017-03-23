@@ -37,16 +37,33 @@ var tpls = require('./tpls/');
   })
   .on('imageshow', function(e) {
     e.preventDefault();
-    var items = [
-      {
-        src: e.detail.src,
-        w: e.detail.image.naturalWidth,
-        h: e.detail.image.naturalHeight
-      }
-    ];
+    
+    var image = e.detail.image;
+    var images = $('#content img');
+    var index = images.indexOf(image);
+    var items = [];
+    
+    if( ~index ) {
+      images.each(function() {
+        var img = this;
+        items.push({
+          src: img.src,
+          w: img.naturalWidth,
+          h: img.naturalHeight
+        });
+      });
+    } else {
+      index = 0;
+      items.push({
+        src: image.src,
+        w: image.naturalWidth,
+        h: image.naturalHeight
+      });
+    }
     
     new PhotoSwipe(pwspel.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
-      index: 0
+      index: index,
+      bgOpacity: 0.95
     }).init();
   });
 })();
