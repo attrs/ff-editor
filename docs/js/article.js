@@ -2592,10 +2592,10 @@ module.exports = {
     return arr;
   },
   offset: function(el, abs) {
-    if( !el || !el.offsetTop ) return null;
+    if( !el || typeof el.offsetTop != 'number' ) return {top:null,left:null};
     
     var top = el.offsetTop, left = el.offsetLeft;
-    if( abs !== false ) {
+    if( abs ) {
       while( el = el.offsetParent ) {
         top += el.offsetTop;
         left += el.offsetLeft;
@@ -2618,6 +2618,22 @@ module.exports = {
       typeof Node === "object" ? o instanceof Node : 
       o && typeof o === "object" && typeof o.nodeType === "number" && typeof o.nodeName==="string"
     );
+  },
+  computed: function(el, name) {
+    return window.getComputedStyle(el, null);
+  },
+  number: function(o) {
+    if( !o || typeof o == 'number' ) return o;
+    
+    o = o + '';
+    (['px', 'em', 'pt', '%', 'in', 'deg'].every(function(c) {
+      if( o.endsWith(c) ) {
+        o = o.split(c).join('');
+        return false;
+      }
+      return true;
+    }));
+    return +o;
   }
 };
 
@@ -10573,8 +10589,6 @@ var extensions = new Extensions();
 
 var util = __webpack_require__(21);
 var isArrayLike = util.isArrayLike;
-var isElement = util.isElement;
-var isNode = util.isNode;
 var create = util.create;
 var isHTML = util.isHTML;
 var each = util.each;
@@ -10655,6 +10669,8 @@ module.exports = function(ctx) {
   var matches = util.matches;
   var each = util.each;
   var offset = util.offset;
+  var computed = util.computed;
+  var number = util.number;
   
   fn.ready = function(fn) {
     this.each(function() {
@@ -10671,6 +10687,10 @@ module.exports = function(ctx) {
   
   fn.each = function(fn) {
     return each(this, fn);
+  };
+  
+  fn.index = function(item) {
+    return this.indexOf(item);
   };
   
   fn.add = function(arr) {
@@ -11174,35 +11194,38 @@ module.exports = function(ctx) {
   };
   
   fn.position = function(fn) {
-    if( typeof fn == 'function' ) {
-      return this.each(function(i) {
-        fn.call(this, i, offset(this, false));
-      })
-    } else if( fn ) {
-      return console.error('unsupported');
-    } else {
-      return offset(this[0]);
-    }
+    return offset(this[0]);
   };
   
   fn.offset = function(fn) {
-    if( typeof fn == 'function' ) {
-      return this.each(function(i) {
-        fn.call(this, i, offset(this));
-      })
-    } else if( fn ) {
-      return console.error('unsupported');
-    } else {
-      return offset(this[0]);
-    }
+    if( !arguments.length ) return offset(this[0], true);
+    
+    if( typeof fn == 'function' ) return this.each(function(i) {
+      fn.call(this, i, offset(this, true));
+    });
+    
+    var top = number(fn.top);
+    var left = number(fn.left);
+    if( !top && !left ) return this;
+    
+    return this.each(function() {
+      var el = this;
+      if( el.style ) {
+        var position = computed(el).position;
+        if( !position || position == 'static' ) el.style.position = 'relative';
+        if( top ) el.style.top = top + 'px';
+        if( left ) el.style.left = left + 'px';
+      }
+    });
   };
   
   fn.show = function() {
     return this.each(function() {
-      if( this.style ) {
-        this.style.display = '';
-        var computed = this.style.display || window.getComputedStyle(this, null).display;
-        if( !computed || computed == 'none' ) this.style.display = 'block';
+      var el = this;
+      if( el.style ) {
+        el.style.display = '';
+        var display = computed(el).display;
+        if( !display || display == 'none' ) el.style.display = 'block';
       }
     });
   };
