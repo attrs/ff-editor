@@ -1951,7 +1951,7 @@ proto.text = function(text) {
     return text;
   }
   
-  el.text(text);
+  el.text($('<div/>').html(text).text());
   return this;
 };
 
@@ -2027,7 +2027,7 @@ proto.getData = function() {
 
 proto.setData = function(data) {
   var html = (!data || typeof data == 'string') ? data : data.html;
-  this.dom().innerHTML = html || '';
+  this.html(html);
   this.placeholder().show();
   return this;
 };
@@ -2613,7 +2613,7 @@ module.exports = {
   },
   patrick: {
     title: {
-      html: 'Patrick Star'
+      html: 'Patrick Star<br><a href="#">test</a>'
     },
     content: {
       html: __webpack_require__(58)
@@ -4429,6 +4429,13 @@ function TextPart() {
     if( e.keyCode === 13 ) {
       e.preventDefault();
     }
+  })
+  .on('paste', function(e) {
+    e.preventDefault();
+    
+    var clipboard = e.clipboardData || window.clipboardData;
+    var text = clipboard.getData('Text');
+    this.innerText = text.split('\n').join(' ');
   });
 }
 

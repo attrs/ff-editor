@@ -9,7 +9,7 @@ module.exports = {
   },
   patrick: {
     title: {
-      html: 'Patrick Star'
+      html: 'Patrick Star<br><a href="#">test</a>'
     },
     content: {
       html: require('./patrick.html')
