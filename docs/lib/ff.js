@@ -88,9 +88,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(59);
+var Context = __webpack_require__(60);
 
-__webpack_require__(60)(Context);
+__webpack_require__(61)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -791,6 +791,9 @@ var context = {
     dispatcher.off(type, fn);
     return this;
   },
+  fire: function() {
+    return dispatcher.fire.apply(dispatcher, arguments);
+  },
   isElement: function(node) {
     return (
       typeof HTMLElement === 'object' ? node instanceof HTMLElement : node && typeof node === 'object' && node !== null && node.nodeType === 1 && typeof node.nodeName === 'string'
@@ -1080,7 +1083,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(48);
+__webpack_require__(49);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1175,9 +1178,9 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
-var buildtoolbar = __webpack_require__(33);
+var buildtoolbar = __webpack_require__(34);
 
-__webpack_require__(54);
+__webpack_require__(55);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -1895,7 +1898,7 @@ var components = __webpack_require__(11);
 var Marker = __webpack_require__(32);
 var DnD = __webpack_require__(30);
 
-__webpack_require__(49);
+__webpack_require__(50);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -2147,7 +2150,7 @@ module.exports = ArticlePart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(52);
+__webpack_require__(53);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -2209,13 +2212,32 @@ module.exports = FilePart;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
+var context = __webpack_require__(4);
 
-__webpack_require__(53);
+__webpack_require__(54);
 
 function ImagePart(el) {
   Part.apply(this, arguments);
-  
-  var el = $(this.dom()).ac('ff-image');
+}
+
+var toolbar = ImagePart.toolbar = __webpack_require__(33);
+var proto = ImagePart.prototype = Object.create(Part.prototype);
+
+
+proto.oninit = function() {
+  var self = this;
+  var dom = this.dom();
+  var el = $(dom).ac('ff-image')
+  .on('click', function(e) {
+    if( self.editmode() ) return;
+    
+    context.fire('imageshow', {
+      originalEvent: e,
+      image: dom,
+      src: dom.src,
+      part: self
+    });
+  });
   
   this.toolbar()
   .position('inside top center')
@@ -2289,68 +2311,63 @@ function ImagePart(el) {
       this.floating(false);
     }
   }.bind(this));
-}
+};
 
-ImagePart.prototype = Object.create(Part.prototype, {
-  create: {
-    value: function(arg) {
-      var src;
-      var title;
-      
-      if( typeof arg === 'object' ) {
-        src = arg.src;
-        title = arg.name || arg.title;
-      } else {
-        src = arg;
-      }
-      
-      return $('<img/>')
-      .attr('title', title)
-      .src(src || 'https://goo.gl/KRjd3U')[0];
-    }
-  },
-  floating: {
-    value: function(direction) {
-      var el = $(this.dom());
-      if( !arguments.length ) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
-      
-      var ctx = this.context();
-      var paragraph = Part(el[0].nextSibling);
-      
-      el.unwrap('.ff-image-float-wrap');
-      
-      if( !(paragraph instanceof ctx.Paragraph) ) {
-        paragraph = new ctx.Paragraph();
-      }
-      
-      if( direction === 'left' ) {
-        el
-        .rc('ff-image-float-right')
-        .ac('ff-image-float-left')
-        .wrap('<div class="ff-image-float-wrap ff-acc" />')
-        .parent()
-        .on('click', function(e) {
-          if( e.target !== el[0] ) paragraph.focus();
-        })
-        .append(paragraph.dom());
-      } else if( direction === 'right' ) {
-        el
-        .rc('ff-image-float-left')
-        .ac('ff-image-float-right')
-        .wrap('<div class="ff-image-float-wrap ff-acc" />')
-        .parent()
-        .on('click', function(e) {
-          if( e.target !== el[0] ) paragraph.focus();
-        })
-        .append(paragraph.dom());
-      } else {
-        el
-        .rc('ff-image-float-right')
-        .rc('ff-image-float-left');
-      }
-    }
+proto.create = function(arg) {
+  var src;
+  var title;
+  
+  if( typeof arg === 'object' ) {
+    src = arg.src;
+    title = arg.name || arg.title;
+  } else {
+    src = arg;
   }
-});
+  
+  return $('<img/>')
+  .attr('title', title)
+  .src(src || 'https://goo.gl/KRjd3U')[0];
+};
+
+proto.floating = function(direction) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
+  
+  var ctx = this.context();
+  var paragraph = Part(el[0].nextSibling);
+  
+  el.unwrap('.ff-image-float-wrap');
+  
+  if( !(paragraph instanceof ctx.Paragraph) ) {
+    paragraph = new ctx.Paragraph();
+  }
+  
+  if( direction === 'left' ) {
+    el
+    .rc('ff-image-float-right')
+    .ac('ff-image-float-left')
+    .wrap('<div class="ff-image-float-wrap ff-acc" />')
+    .parent()
+    .on('click', function(e) {
+      if( e.target !== el[0] ) paragraph.focus();
+    })
+    .append(paragraph.dom());
+  } else if( direction === 'right' ) {
+    el
+    .rc('ff-image-float-left')
+    .ac('ff-image-float-right')
+    .wrap('<div class="ff-image-float-wrap ff-acc" />')
+    .parent()
+    .on('click', function(e) {
+      if( e.target !== el[0] ) paragraph.focus();
+    })
+    .append(paragraph.dom());
+  } else {
+    el
+    .rc('ff-image-float-right')
+    .rc('ff-image-float-left');
+  }
+};
 
 module.exports = ImagePart;
 
@@ -2363,7 +2380,7 @@ module.exports = ImagePart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(55);
+__webpack_require__(56);
 
 function RowPart(el) {
   Part.call(this, el);
@@ -2465,7 +2482,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(56);
+__webpack_require__(57);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2525,7 +2542,7 @@ module.exports = Separator;
 var $ = __webpack_require__(0);
 var ParagraphPart = __webpack_require__(7);
 
-__webpack_require__(57);
+__webpack_require__(58);
 
 function TextPart() {
   ParagraphPart.apply(this, arguments);
@@ -2564,7 +2581,7 @@ module.exports = TextPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(3);
 
-__webpack_require__(58);
+__webpack_require__(59);
 
 function VideoPart() {
   Part.apply(this, arguments);
@@ -2622,7 +2639,7 @@ module.exports = VideoPart;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(34);
+var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2859,7 +2876,7 @@ module.exports = function(el) {
 var $ = __webpack_require__(0);
 var getPosition = __webpack_require__(27);
 var Buttons = __webpack_require__(26);
-__webpack_require__(47);
+__webpack_require__(48);
 
 function clone(o) {
   var result = {};
@@ -3077,7 +3094,7 @@ var each = __webpack_require__(13);
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(12);
 
-__webpack_require__(50);
+__webpack_require__(51);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3191,7 +3208,7 @@ var getOffsetTop = __webpack_require__(12);
 var components = __webpack_require__(11);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(51);
+__webpack_require__(52);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3386,15 +3403,94 @@ module.exports = function(part) {
 /* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(1)();
-// imports
+var $ = __webpack_require__(0);
+var context = __webpack_require__(4);
+var Toolbar = context.Toolbar;
 
+function rangeitem(text, tooltip, selector, fn) {
+  return {
+    text: text,
+    tooltip: tooltip,
+    onupdate: function() {
+      var range = this.owner().range();
+      if( !range ) return this.enable(false);
+      
+      this.enable(true);
+      this.active(context.wrapped(range, selector));
+    },
+    fn: fn || function(e) {
+      context.toggleWrap(this.owner().range(), selector);
+    }
+  };
+}
 
-// module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  -moz-transform: scale(-1, 1);\n  -webkit-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n", ""]);
-
-// exports
-
+module.exports = function(part) {
+  return part.toolbar()
+  /*.add({
+    type: 'list',
+    text: '<i class="fa fa-font"></i>',
+    onselect: function(selected) {
+      
+    },
+    onupdate: function() {
+      
+    },
+    fn: function(e) {
+      
+    },
+    list: [
+      '기본폰트',
+      '나눔고딕',
+      '나눔명조',
+      'Helvetica',
+      'Times New Roman'
+    ]
+  })*/
+  .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
+  .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'u'))
+  .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
+  .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
+  .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
+    var range = this.owner().range();
+    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
+    
+    context.prompt('Please enter the anchor URL.', function(href) {
+      if( !href ) return;
+      var a = context.wrap(range, 'a');
+      a.href = href;
+      a.target = '_blank';
+    });
+  }))
+  .add({
+    text: '<i class="fa fa-align-justify"></i>',
+    tooltip: '정렬',
+    onupdate: function() {
+      var btn = this;
+      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
+      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
+      else btn.text('<i class="fa fa-align-justify"></i>');
+    },
+    fn: function(e) {
+      var btn = this;
+      var el = $(part.dom());
+      
+      if( btn.align == 'center' ) {
+        el.css('text-align', 'right');
+        btn.align = 'right';
+      } else if( btn.align == 'right' ) {
+        el.css('text-align', 'left');
+        btn.align = 'left';
+      } else if( btn.align == 'left' ) {
+        el.css('text-align', '');
+        btn.align = '';
+      } else {
+        el.css('text-align', 'center');
+        btn.align = 'center';
+      }
+    }
+  });
+};
 
 /***/ }),
 /* 35 */
@@ -3405,7 +3501,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  -moz-transform: scale(-1, 1);\n  -webkit-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n", ""]);
 
 // exports
 
@@ -3419,7 +3515,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  min-width: 14px;\n  text-align: center;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
 
 // exports
 
@@ -3433,7 +3529,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.ff-article img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-article hr {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-article hr:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-article hr:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  min-width: 14px;\n  text-align: center;\n}\n", ""]);
 
 // exports
 
@@ -3447,7 +3543,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #2796DD;\n}\n", ""]);
+exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.ff-article img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-article hr {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-article hr:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-article hr:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n", ""]);
 
 // exports
 
@@ -3461,7 +3557,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
+exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #2796DD;\n}\n", ""]);
 
 // exports
 
@@ -3475,7 +3571,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
+exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
 
 // exports
 
@@ -3489,7 +3585,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
+exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
 
 // exports
 
@@ -3503,7 +3599,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
+exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
 
 // exports
 
@@ -3517,7 +3613,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
+exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
 
 // exports
 
@@ -3531,7 +3627,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
 
 // exports
 
@@ -3545,7 +3641,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
+exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 
@@ -3559,7 +3655,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-video-embed-responsive {\n  position: relative;\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n}\n.ff-video .ff-video-embed-responsive-16by9 {\n  padding-bottom: 56.25%;\n}\n.ff-video .ff-video-embed-responsive .ff-video-embed-responsive-item {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video .mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.ff-video-size-narrow {\n  width: 50%;\n}\n.ff-video.ff-video-size-fit {\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
 
 // exports
 
@@ -3568,27 +3664,15 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 /* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
+exports = module.exports = __webpack_require__(1)();
+// imports
 
-// load the styles
-var content = __webpack_require__(35);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+
+// module
+exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-video-embed-responsive {\n  position: relative;\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n}\n.ff-video .ff-video-embed-responsive-16by9 {\n  padding-bottom: 56.25%;\n}\n.ff-video .ff-video-embed-responsive .ff-video-embed-responsive-item {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video .mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.ff-video-size-narrow {\n  width: 50%;\n}\n.ff-video.ff-video-size-fit {\n  width: 100%;\n}\n", ""]);
+
+// exports
+
 
 /***/ }),
 /* 48 */
@@ -3606,8 +3690,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3632,8 +3716,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3658,8 +3742,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3684,8 +3768,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3710,8 +3794,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3736,8 +3820,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3762,8 +3846,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3788,8 +3872,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3814,8 +3898,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3840,8 +3924,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3866,6 +3950,32 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 59 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(47);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
 		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
 			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
@@ -3877,7 +3987,7 @@ if(false) {
 }
 
 /***/ }),
-/* 59 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -3953,7 +4063,7 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 60 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(15);

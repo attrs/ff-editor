@@ -4,11 +4,17 @@ var Part = ff.Part;
 var CustomPart = require('./custom/index.es6.js').default;
 var tpls = require('./tpls/');
 
-// override alert/prompt action
+// override alert/prompt/imageshow action
 (function() {
+  var PhotoSwipe = require('photoswipe');
+  var PhotoSwipeDefaultUI = require('photoswipe/dist/photoswipe-ui-default.js');
   var swal = require('sweetalert');
+  require('photoswipe/dist/photoswipe.css');
+  require('photoswipe/dist/default-skin/default-skin.css');
   require('sweetalert/dist/sweetalert.css');
-
+  
+  var pwspel = $(require('./pwsp.html'));
+  
   ff.on('alert', function(e) {
     e.preventDefault();
     swal(e.detail.message);
@@ -28,6 +34,20 @@ var tpls = require('./tpls/');
       if( value === false ) return;
       e.detail.callback(value);
     });
+  })
+  .on('imageshow', function(e) {
+    e.preventDefault();
+    var items = [
+      {
+        src: e.detail.src,
+        w: e.detail.image.naturalWidth,
+        h: e.detail.image.naturalHeight
+      }
+    ];
+    
+    new PhotoSwipe(pwspel.appendTo(document.body)[0], PhotoSwipeDefaultUI, items, {
+      index: 0
+    }).init();
   });
 })();
 

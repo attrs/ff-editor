@@ -18,7 +18,7 @@ module.exports = {
         test: /\.less$/,
         loader: 'style-loader!css-loader!less-loader'
       }, {
-        test: /\.(jpg|png|woff|woff2|eot|ttf|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
+        test: /\.(jpg|png|woff|woff2|gif|eot|ttf|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/,
         loader: 'url-loader'
       }, {
         test: /\.html$/,
