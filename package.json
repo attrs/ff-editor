@@ -1,6 +1,6 @@
 {
   "name": "ff-editor",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Extensible WYSIWYG HTML Editor",
   "main": "lib/index.js",
   "homepage": "https://github.com/attrs/ff-editor",
