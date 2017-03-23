@@ -2220,7 +2220,7 @@ function ImagePart(el) {
   this.toolbar()
   .position('inside top center')
   .add({
-    text: '<i class="fa fa-angle-left"></i>',
+    text: '<i class="fa fa-dedent"></i>',
     tooltip: '좌측플로팅',
     fn: function(e) {
       this.owner().floating('left');
@@ -2238,7 +2238,7 @@ function ImagePart(el) {
     }
   })
   .add({
-    text: '<i class="fa fa-angle-right"></i>',
+    text: '<i class="fa fa-dedent ff-flip"></i>',
     tooltip: '우측플로팅',
     fn: function(e) {
       this.owner().floating('right');
@@ -2472,17 +2472,36 @@ function Separator() {
   
   var el = $(this.dom()).ac('ff-separator');
   
-  this.toolbar()
-  .add({
-    text: '<i class="fa fa-ellipsis-h"></i>',
-    tooltip: '점선',
+  this.toolbar().add({
+    text: '<i class="fa fa-chevron-up"></i>',
+    tooltip: '모양',
+    onupdate: function() {
+      var btn = this;
+      if( el.hc('ff-separator-dotted') ) btn.text('<i class="fa fa-ellipsis-h"></i>');
+      else if( el.hc('ff-separator-dashed') ) btn.text('<i class="fa fa-chevron-up"></i>');
+      else if( el.hc('ff-separator-zigzag') ) btn.text('<i class="fa fa-minus"></i>');
+      else btn.text('<i class="fa fa-ellipsis-h"></i>');
+    },
     fn: function(e) {
-      el.tc('ff-separator-dashed');
+      if( el.hc('ff-separator-dotted') ) {
+        el.rc('ff-separator-dotted').ac('ff-separator-dashed');
+      } else if( el.hc('ff-separator-dashed') ) {
+        el.rc('ff-separator-dashed').ac('ff-separator-zigzag');
+      } else if( el.hc('ff-separator-zigzag') ) {
+        el.rc('ff-separator-zigzag');
+      } else {
+        el.ac('ff-separator-dotted');
+      }
     }
   })
   .add({
     text: '<i class="fa fa-arrows-h"></i>',
-    tooltip: '좁게',
+    tooltip: '너비',
+    onupdate: function() {
+      var btn = this;
+      if( el.hc('ff-separator-narrow') ) btn.text('<i class="fa fa-arrows-h"></i>');
+      else btn.text('<i class="fa fa-minus"></i>');
+    },
     fn: function(e) {
       el.tc('ff-separator-narrow');
     }
@@ -2492,7 +2511,7 @@ function Separator() {
 Separator.prototype = Object.create(Part.prototype, {
   create: {
     value: function(arg) {
-      return $('<hr />')[0];
+      return $('<hr/>').ac('ff-separator-narrow ff-separator-zigzag')[0];
     }
   }
 });
@@ -3372,7 +3391,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n", ""]);
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  -moz-transform: scale(-1, 1);\n  -webkit-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n", ""]);
 
 // exports
 
@@ -3400,7 +3419,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  min-width: 14px;\n  text-align: center;\n}\n", ""]);
 
 // exports
 
@@ -3512,7 +3531,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 150px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n", ""]);
+exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 

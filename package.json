@@ -55,6 +55,7 @@
   "files": [
     "lib",
     "dist",
+    "lang",
     "LICENSE",
     "README.md"
   ],

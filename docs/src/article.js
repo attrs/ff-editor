@@ -35,11 +35,16 @@ var tpls = require('./tpls/');
 $(document).ready(function($) {
   $('.dropdown').on('click', function() {
     $(this).tc('open');
-  });
+  }).parent('body').on('click', function(e) {
+    var target = $(e.target);
+    if( !target.is('.dropdown') && !target.parent('.dropdown').length )
+      $('.dropdown').rc('open');
+  }, true);
 });
 
 // ready
 ff.ready(function() {
+  // change button label when modechange
   ff.on('modechange', function(e) {
     $('#modebtn').html(e.detail.editmode ? 'View Mode' : 'Edit Mode');
   });
