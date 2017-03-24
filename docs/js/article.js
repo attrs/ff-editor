@@ -9415,7 +9415,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
+exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
 
 // exports
 
