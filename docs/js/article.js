@@ -766,17 +766,19 @@ dispatcher.scope(context);
 
 var ranges = [];
 $(document).on('mousedown', function(e) {
-  var part = context.get(e.target);
+  var target = e.target || e.srcElement;
+  var part = context.get(target);
   var focused = context.focused;
   
-  var isToolbar = $(e.target).parent('.ff-toolbar')[0];
+  var isToolbar = $(target).parent('.ff-toolbar')[0];
   if( isToolbar ) return;
   
   if( part ) part.focus();
   else if( focused && typeof focused.blur == 'function' ) focused.blur();
 })
 .on('mouseup mousedown', function(e) {
-  var isToolbar = $(e.target).parent('.ff-toolbar')[0];
+  var target = e.target || e.srcElement;
+  var isToolbar = $(target).parent('.ff-toolbar')[0];
   if( isToolbar ) return;
   
   var selection = window.getSelection();
@@ -851,13 +853,13 @@ function Part(arg) {
   .on('focus', function(e) {
     if( e.defaultPrevented || !this.editmode() ) return;
     
-    el.ac('ff-focus-state');
+    if( this.editmode() ) el.attr('draggable', true);
     this.toolbar().show();
   })
   .on('blur', function(e) {
     if( e.defaultPrevented || !this.editmode() ) return;
     
-    el.rc('ff-focus-state');
+    el.attr('draggable', null);
     this.toolbar().hide();
   })
   .on('data', function(e) {
@@ -874,11 +876,11 @@ function Part(arg) {
     var toolbar = this.toolbar();
     if( this.editmode() ) {
       if( toolbar.always() ) toolbar.show();
-      el.attr('draggable', true).ac('ff-edit-state');
+      el.ac('ff-edit-state');
       dispatcher.fire('editmode');
     } else {
       toolbar.hide(true);
-      el.attr('draggable', null).rc('ff-edit-state');
+      el.rc('ff-edit-state');
       dispatcher.fire('viewmode');
     }
     
@@ -918,14 +920,18 @@ function Part(arg) {
   .on('dragstart', function(e) {
     if( !self.editmode() ) return;
     
-    if( e.target === dom ) {
-      self.blur();
+    var target = e.target || e.srcElement;
+    if( target === dom ) {
+      self.toolbar().hide();
       context.dragging = dom;
+      e.dataTransfer.setData('text', target.outerHTML);
       el.ac('ff-dragging');
     }
   })
   .on('dragend', function(e) {
-    if( e.target === dom ) {
+    var target = e.target || e.srcElement;
+    if( target === dom ) {
+      self.toolbar().show();
       context.dragging = null;
       el.rc('ff-dragging');
     }
@@ -1028,15 +1034,17 @@ Part.prototype = {
     return this;
   },
   focus: function() {
-    if( this !== context.focused ) {
+    if( this.editmode() && this !== context.focused ) {
       if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
+      $(this.dom()).ac('ff-focus-state');
       this.fire('focus');
       context.focused = this;
     }
     return this;
   },
   blur: function() {
-    if( this === context.focused ) {
+    if( this.editmode() && this === context.focused ) {
+      $(this.dom()).rc('ff-focus-state');
       this.fire('blur');
       context.focused = null;
     }
@@ -1902,10 +1910,11 @@ proto.oninit = function(e) {
   var dom = part.dom();
   var el = $(dom).ac('ff-paragraph')
   .on('dragstart', function(e) {
-    if( part.editmode() ) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
+    if( !part.editmode() ) return;
+    if( el.ha('draggable') ) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
   })
   .on('paste', function(e) {
     e.preventDefault();
@@ -1960,6 +1969,14 @@ proto.oninit = function(e) {
   placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
 };
 
+proto.dragmode = function(b) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.ha('draggable');
+  
+  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
+  return this;
+};
+
 proto.onchildlist = function() {
   if( this.editmode() ) this.placeholder().show();
 };
@@ -1992,10 +2009,14 @@ proto.html = function(html) {
   return this;
 };
 
-proto.onfocus = function() {
+proto.onfocus = function(e) {
   if( !this.editmode() ) return;
   
+  e.stopImmediatePropagation();
+  
+  this.toolbar().show();
   this.placeholder().hide();
+  $(this.dom()).attr('draggable', null);
   
   var el = this.dom();
   var selection = window.getSelection();
@@ -2323,44 +2344,6 @@ module.exports = exports['default'];
 /* 20 */
 /***/ (function(module, exports) {
 
-if( !Array.prototype.every ) {
-  Array.prototype.every = function(callbackfn, thisArg) {
-    var T, k;
-    
-    if (this == null) {
-      throw new TypeError('this is null or not defined');
-    }
-    
-    var O = Object(this);
-    var len = O.length >>> 0;
-    if (typeof callbackfn !== 'function') {
-      throw new TypeError();
-    }
-    if (arguments.length > 1) {
-      T = thisArg;
-    }
-    k = 0;
-    while (k < len) {
-      var kValue;
-      if (k in O) {
-        kValue = O[k];
-        var testResult = callbackfn.call(T, kValue, k, O);
-        if (!testResult) {
-          return false;
-        }
-      }
-      k++;
-    }
-    return true;
-  };
-}
-
-if( !Array.isArray ) {
-  Array.isArray = function(arg) {
-    return Object.prototype.toString.call(arg) === '[object Array]';
-  };
-}
-
 function EventObject(type, detail, target, cancelable) {
   this.type = type;
   this.detail = detail || {};
@@ -2376,9 +2359,9 @@ EventObject.prototype = {
   preventDefault: function() {
     if( this.cancelable ) this.defaultPrevented = true;
   },
-  /*stopPropagation: function() {
+  stopPropagation: function() {
     this.stopped = true;
-  },*/
+  },
   stopImmediatePropagation: function() {
     this.stoppedImmediate = true;
     this.stopped = true;
@@ -8274,7 +8257,8 @@ proto.createToolbar = function() {
 proto.oninit = function(e) {
   $(this.dom()).ac('ff-article')
   .on('click', function(e) {
-    if( this.editmode() && e.target === this.dom() ) {
+    var target = e.target || e.srcElement;
+    if( this.editmode() && target === this.dom() ) {
       this.validate();
       
       var children = this.children();
@@ -8552,11 +8536,12 @@ function DnD(part, dom) {
     e.stopPropagation();
     e.preventDefault();
     
+    var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
-    if( !dragging || e.target === dragging || dragging.contains(e.target) ) return hide();
+    if( !dragging || target === dragging || dragging.contains(target) ) return hide();
     
-    if( !e.target.contains(dragging) ) {
-      move(current(e.target), e.pageY);
+    if( !target.contains(dragging) ) {
+      move(current(target), e.pageY);
     }
   }
   
@@ -8568,11 +8553,12 @@ function DnD(part, dom) {
     e.stopPropagation();
     e.preventDefault();
     
+    var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
     var ref = marker[0].nextSibling;
     
     if( dragging ) {
-      if( e.target === dragging || dragging.contains(e.target) || !dom.contains(marker[0]) ) return;
+      if( target === dragging || dragging.contains(target) || !dom.contains(marker[0]) ) return;
       part.insert(dragging, ref);
     } else if( e.dataTransfer && e.dataTransfer.files ) {
       part.insert(e.dataTransfer.files, ref);
@@ -8656,11 +8642,12 @@ function Marker(part, dom) {
   }
   
   function onclick(e) {
-    if( !marker[0].contains(e.target) ) marker.rc('ff-marker-open');
+    var target = e.target || e.srcElement;
+    if( !marker[0].contains(target) ) marker.rc('ff-marker-open');
   }
   
   function onmousemove(e) {
-    var target = e.target;
+    var target = e.target || e.srcElement;
     var y = e.pageY;
     
     if( target === el || target === marker ) return;
@@ -8851,7 +8838,8 @@ proto.floating = function(direction) {
     .wrap('<div class="ff-image-float-wrap ff-acc" />')
     .parent()
     .on('click', function(e) {
-      if( e.target !== el[0] ) paragraph.focus();
+      var target = e.target || e.srcElement;
+      if( target !== el[0] ) paragraph.focus();
     })
     .append(paragraph.dom());
   } else if( direction === 'right' ) {
@@ -8861,7 +8849,8 @@ proto.floating = function(direction) {
     .wrap('<div class="ff-image-float-wrap ff-acc" />')
     .parent()
     .on('click', function(e) {
-      if( e.target !== el[0] ) paragraph.focus();
+      var target = e.target || e.srcElement;
+      if( target !== el[0] ) paragraph.focus();
     })
     .append(paragraph.dom());
   } else {
@@ -8975,6 +8964,9 @@ function rangeitem(text, tooltip, selector, fn) {
 }
 
 module.exports = function(part) {
+  var dom = part.dom()
+  var el = $(dom);
+  
   return part.toolbar()
   /*.add({
     type: 'list',
@@ -9023,8 +9015,6 @@ module.exports = function(part) {
     },
     fn: function(e) {
       var btn = this;
-      var el = $(part.dom());
-      
       if( btn.align == 'center' ) {
         el.css('text-align', 'right');
         btn.align = 'right';
@@ -9038,6 +9028,18 @@ module.exports = function(part) {
         el.css('text-align', 'center');
         btn.align = 'center';
       }
+    }
+  })
+  .add({
+    text: '<i class="fa fa-hand-pointer-o"></i>',
+    tooltip: '요소이동',
+    onupdate: function() {
+      var btn = this;
+      if( el.ha('draggable') ) btn.active(true);
+      else btn.active(false);
+    },
+    fn: function() {
+      part.dragmode(!part.dragmode());
     }
   });
 };
@@ -9164,9 +9166,9 @@ function Separator() {
     onupdate: function() {
       var btn = this;
       if( el.hc('ff-separator-dotted') ) btn.text('<i class="fa fa-ellipsis-h"></i>');
-      else if( el.hc('ff-separator-dashed') ) btn.text('<i class="fa fa-chevron-up"></i>');
-      else if( el.hc('ff-separator-zigzag') ) btn.text('<i class="fa fa-minus"></i>');
-      else btn.text('<i class="fa fa-ellipsis-h"></i>');
+      else if( el.hc('ff-separator-dashed') ) btn.text('<i class="fa fa-ellipsis-h"></i>');
+      else if( el.hc('ff-separator-zigzag') ) btn.text('<i class="fa fa-chevron-up"></i>');
+      else btn.text('<i class="fa fa-minus"></i>');
     },
     fn: function(e) {
       if( el.hc('ff-separator-dotted') ) {
@@ -9185,8 +9187,8 @@ function Separator() {
     tooltip: '너비',
     onupdate: function() {
       var btn = this;
-      if( el.hc('ff-separator-narrow') ) btn.text('<i class="fa fa-arrows-h"></i>');
-      else btn.text('<i class="fa fa-minus"></i>');
+      if( el.hc('ff-separator-narrow') ) btn.text('<i class="fa fa-minus"></i>');
+      else btn.text('<i class="fa fa-arrows-h"></i>');
     },
     fn: function(e) {
       el.tc('ff-separator-narrow');
@@ -9303,7 +9305,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff-edit-state[contenteditable] {\n  outline: none;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  -moz-transform: scale(-1, 1);\n  -webkit-transform: scale(-1, 1);\n  -o-transform: scale(-1, 1);\n  -ms-transform: scale(-1, 1);\n  transform: scale(-1, 1);\n}\n", ""]);
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n", ""]);
 
 // exports
 
@@ -9345,7 +9347,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.ff-article img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-article hr {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-article hr:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-article hr:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n", ""]);
+exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n", ""]);
 
 // exports
 
@@ -9415,7 +9417,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-paragraph {\n  display: block;\n  padding: 0;\n  margin: 0;\n  padding-bottom: 8px;\n}\n.ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n", ""]);
+exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.ff-paragraph.ff-focus-state {\n  background-color: initial;\n  outline: #ccc dotted 1px;\n}\n.ff-paragraph[draggable] {\n  background-color: #eee;\n}\n", ""]);
 
 // exports
 
@@ -9457,7 +9459,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-text {\n  user-select: text;\n  -webkit-user-select: text;\n  -moz-user-select: text;\n  -ms-user-select: text;\n}\n.ff-text.ff-edit-state {\n  display: inline-block;\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
+exports.push([module.i, ".ff-text.ff-edit-state {\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
 
 // exports
 
@@ -10745,7 +10747,7 @@ module.exports = function(ctx) {
   
   fn.empty = function() {
     return this.each(function() {
-      this.innerHTML = null;
+      this.innerHTML = '';
     });
   };
   
@@ -10899,12 +10901,14 @@ module.exports = function(ctx) {
       if( ref && ref.nextSibling && el.insertBefore ) {
         [].forEach.call(node, function(node) {
           if( typeof node == 'string' ) node = document.createTextNode(node);
+          if( !isNode(node) ) return;
           el.insertBefore(node, ref.nextSibling);
           ref = node;
         });
       } else if( el.appendChild ) {
         [].forEach.call(node, function(node) {
           if( typeof node == 'string' ) node = document.createTextNode(node);
+          if( !isNode(node) ) return;
           el.appendChild(node);
         });
       }
@@ -10912,7 +10916,8 @@ module.exports = function(ctx) {
   };
   
   fn.appendTo = function(target, index) {
-    if( !target ) return this;
+    if( target && typeof target === 'string' ) target = this.$(target);
+    if( !isElement(target) ) return this;
     
     var $ = this.$;
     return this.each(function() {
@@ -10921,9 +10926,8 @@ module.exports = function(ctx) {
   };
   
   fn.insertBefore = function(ref) {
-    if( typeof ref == 'string' ) ref = this.document.querySelector(ref);
-    if( isArrayLike(ref) ) ref = ref[0];
-    if( !ref ) return this;
+    if( typeof ref == 'string' ) ref = this.$(ref);
+    if( !isNode(ref) ) return this;
     
     var parent = ref.parentNode;
     if( !parent ) return this;
@@ -10936,9 +10940,8 @@ module.exports = function(ctx) {
   };
   
   fn.insertAfter = function(ref) {
-    if( typeof ref == 'string' ) ref = this.document.querySelector(ref);
-    if( isArrayLike(ref) ) ref = ref[0];
-    if( !ref ) return this;
+    if( typeof ref == 'string' ) ref = this.$(ref);
+    if( !isNode(ref) ) return this;
     
     var parent = ref.parentNode;
     var sib = ref.nextSibling;
@@ -10994,47 +10997,31 @@ module.exports = function(ctx) {
     if( typeof type !== 'string' ) return this;
     type = type.split(' ');
     
-    var self = this;
-    type.forEach(function(type) {
-      self.each(function() {
-        this.addEventListener(type, fn, bubble || false);
+    return this.each(function() {
+      var el = this;
+      el.addEventListener && type.forEach(function(type) {
+        el.addEventListener(type, fn, bubble || false);
       });
     });
-    
-    return this;
   };
   
   fn.once = function(type, fn, bubble) {
-    if( typeof type !== 'string' ) return this;
-    type = type.split(' ');
-    
-    var self = this;
-    type.forEach(function(type) {
-      self.each(function() {
-        var el = this;
-        var listener = function() {
-          el.removeEventListener(type, listener, bubble || false);
-          fn.apply(this, arguments);
-        };
-        el.addEventListener(type, listener, bubble || false);
-      });
-    });
-    
-    return this;
+    return this.on(type, function(e) {
+      this.removeEventListener(e.type, fn, bubble || false);
+      fn.call(this, e);
+    }, bubble);
   };
   
   fn.off = function(type, fn, bubble) {
     if( typeof type !== 'string' ) return this;
     type = type.split(' ');
     
-    var self = this;
-    type.forEach(function(type) {
-      self.each(function() {
-       this.removeEventListener(type, fn, bubble || false);
-     });
+    return this.each(function() {
+      var el = this;
+      el.removeEventListener && type.forEach(function(type) {
+        el.removeEventListener(type, fn, bubble || false);
+      });
     });
-    
-    return this;
   };
   
   fn.click = function(fn) {
