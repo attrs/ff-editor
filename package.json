@@ -14,7 +14,7 @@
   "dependencies": {
     "async-each-series": "^1.1.0",
     "tinyevent": "^0.2.1",
-    "tinyselector": "^0.1.11",
+    "tinyselector": "^0.1.12",
     "webpack": "^2.3.2"
   },
   "devDependencies": {

@@ -4148,6 +4148,10 @@ module.exports = function(ctx) {
     });
   };
   
+  fn.hasAttr = fn.ha = function(name) {
+    return this[0] && this[0].hasAttribute(name);
+  };
+  
   fn.css = function(key, value) {
     if( !arguments.length ) return this;
     if( arguments.length === 1 ) {
@@ -4358,6 +4362,16 @@ module.exports = function(ctx) {
         });
       }
     });
+  };
+  
+  fn.clone = function(deep) {
+    deep = deep === false ? false : true;
+    var arr = this.$();
+    this.each(function() {
+      if( !isNode(this) ) return;
+      arr.push(this.cloneNode(deep));
+    });
+    return arr;
   };
   
   fn.on = function(type, fn, bubble) {
