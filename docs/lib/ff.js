@@ -1775,6 +1775,19 @@ module.exports = function(scope) {
 /* 15 */
 /***/ (function(module, exports) {
 
+var matches = Element.prototype.matches || 
+  Element.prototype.matchesSelector || 
+  Element.prototype.mozMatchesSelector ||
+  Element.prototype.msMatchesSelector || 
+  Element.prototype.oMatchesSelector || 
+  Element.prototype.webkitMatchesSelector ||
+  function(s) {
+      var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+          i = matches.length;
+      while (--i >= 0 && matches.item(i) !== this) {}
+      return i > -1;
+  };
+
 module.exports = {
   isNull: function(value) {
     return value === null || value === undefined;
@@ -1844,7 +1857,7 @@ module.exports = {
       if( typeof selector == 'function' )
         return !!selector.call(el);
       
-      return !!(el && el.matches && el.matches(selector));
+      return !!(el && matches.call(el, selector));
     } catch(e) {
       return false;
     }
@@ -2008,7 +2021,7 @@ proto.scan = function() {
   });
   
   viewport.children().each(function() {
-    if( !this.matches || this.matches('.ff-acc') || this.matches('.ff') ) return;
+    if( $(this).hc('ff-acc') ) return;
     
     var tag = this.tagName;
     var part = this.__ff__;
