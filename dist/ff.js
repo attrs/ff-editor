@@ -81,16 +81,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 26);
+/******/ 	return __webpack_require__(__webpack_require__.s = 25);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(60);
+var Context = __webpack_require__(57);
 
-__webpack_require__(61)(Context);
+__webpack_require__(58)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -417,11 +417,11 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(13);
-var Events = __webpack_require__(14);
+var each = __webpack_require__(12);
+var Events = __webpack_require__(13);
 var $ = __webpack_require__(0);
-var types = __webpack_require__(10);
-var connector = __webpack_require__(25);
+var types = __webpack_require__(9);
+var connector = __webpack_require__(24);
 
 var parts = [];
 var data = {};
@@ -850,8 +850,8 @@ getCaretPosition: function(node) {
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Events = __webpack_require__(14);
-var Types = __webpack_require__(10);
+var Events = __webpack_require__(13);
+var Types = __webpack_require__(9);
 var Toolbar = __webpack_require__(5);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
@@ -1082,11 +1082,11 @@ module.exports = Part;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(29);
+var Toolbar = __webpack_require__(28);
 
 Toolbar.Button = __webpack_require__(6);
-Toolbar.Separator = __webpack_require__(9);
-Toolbar.ListButton = __webpack_require__(8);
+Toolbar.Separator = __webpack_require__(8);
+Toolbar.ListButton = __webpack_require__(7);
 
 module.exports = Toolbar;
 
@@ -1096,7 +1096,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(49);
+__webpack_require__(47);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1190,198 +1190,6 @@ module.exports = Button;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(34);
-
-__webpack_require__(55);
-
-function ParagraphPart() {
-  Part.apply(this, arguments);
-}
-
-var proto = ParagraphPart.prototype = Object.create(Part.prototype);
-
-proto.oninit = function(e) {
-  var part = this;
-  var dom = part.dom();
-  var el = $(dom).ac('ff-paragraph')
-  .on('dragstart', function(e) {
-    if( !part.editmode() ) return;
-    if( el.ha('draggable') ) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-  })
-  .on('paste', function(e) {
-    e.preventDefault();
-    
-    var clipboard = e.clipboardData || window.clipboardData;
-    var text = clipboard.getData('Text');
-    this.innerText = text.split('\n').join(' ');
-  });
-  
-  buildtoolbar(this);
-  
-  var placeholder = part._placeholder = (function() {
-    var node = $('<div class="ff-placeholder"/>'), text, minWidthWrited = false;
-    
-    return {
-      text: function(o) {
-        if( !arguments.length ) return text;
-        text = o;
-        node.html(text);
-        return this;
-      },
-      show: function() {
-        if( !part.editmode() ) {
-          this.hide();
-          return this;
-        }
-        
-        el.attr('contenteditable', null);
-        node.html(text).remove();
-        var t = el.text().split('\n').join().trim();
-        
-        if( !t ) el.empty().append(node);
-        
-        var display = window.getComputedStyle(dom, null).display;
-        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
-          dom.style.minWidth = node[0].clientWidth + 'px';
-          minWidthWrited = true;
-        }
-        
-        return this;
-      },
-      hide: function() {
-        if( part.editmode() ) el.attr('contenteditable', true);
-        else if( minWidthWrited ) dom.style.minWidth = '';
-        
-        node.remove();
-        return this;
-      }
-    };
-  })();
-  
-  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
-};
-
-proto.dragmode = function(b) {
-  var el = $(this.dom());
-  if( !arguments.length ) return el.ha('draggable');
-  
-  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
-  return this;
-};
-
-proto.onchildlist = function() {
-  if( this.editmode() ) this.placeholder().show();
-};
-
-proto.text = function(text) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var text = el.text().split('\n').join().trim();
-    this.editmode(editmode);
-    return text;
-  }
-  
-  el.text($('<div/>').html(text).text());
-  return this;
-};
-
-proto.html = function(html) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var html = el.html();
-    this.editmode(editmode);
-    return html;
-  }
-  
-  el.html(html);
-  return this;
-};
-
-proto.onfocus = function(e) {
-  if( !this.editmode() ) return;
-  
-  e.stopImmediatePropagation();
-  
-  this.toolbar().show();
-  this.placeholder().hide();
-  $(this.dom()).attr('draggable', null);
-  
-  var el = this.dom();
-  var selection = window.getSelection();
-  var range = selection.rangeCount && selection.getRangeAt(0);
-  
-  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
-   || el === range.startContainer
-   || el === range.endContainer ) {
-    selection.removeAllRanges();
-    setTimeout(function() {
-      el.focus();
-      el.click();
-    }, 10);
-  }
-};
-
-proto.onblur = function() {
-  if( this.editmode() )
-    this.placeholder().show();
-};
-
-proto.oneditmode = function(e) {
-  $(this.dom()).attr('contenteditable', true);
-  this.placeholder().show();
-};
-
-proto.onviewmode = function(e) {
-  $(this.dom()).attr('contenteditable', null);
-  this.placeholder().hide();
-};
-
-proto.create = function(arg) {
-  var html = typeof arg == 'string' ? arg : '';
-  return $('<div/>').html(html)[0];
-};
-
-proto.placeholder = function(placeholder) {
-  if( !arguments.length ) return this._placeholder;
-  this._placeholder.text(placeholder);
-  return this;
-};
-
-proto.getData = function() {
-  this.placeholder().hide();
-  var html = this.dom().innerHTML;
-  if( this.editmode() ) this.placeholder().show();
-  
-  return {
-    html: html
-  };
-};
-
-proto.setData = function(data) {
-  var html = (!data || typeof data == 'string') ? data : data.html;
-  this.html(html);
-  this.placeholder().show();
-  return this;
-};
-
-module.exports = ParagraphPart;
-
-
-
-
-/***/ }),
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
 var Button = __webpack_require__(6);
 
 function ListButton() {
@@ -1417,7 +1225,7 @@ ListButton.prototype = Object.create(Button.prototype, {
 module.exports = ListButton;
 
 /***/ }),
-/* 9 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1445,7 +1253,7 @@ Separator.prototype = {
 module.exports = Separator;
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports) {
 
 var types = {};
@@ -1468,19 +1276,19 @@ module.exports = {
 };
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
   var top = 0;
   do {
-    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
+    if( !isNaN( el.offsetTop ) ) top += el.offsetTop;
   } while( el = el.offsetParent );
   return top;
 };
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1591,7 +1399,7 @@ module.exports = new Items()
 
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports) {
 
 module.exports = function (arr, iterator, callback) {
@@ -1625,7 +1433,7 @@ function nextTick (cb) {
 }
 
 /***/ }),
-/* 14 */
+/* 13 */
 /***/ (function(module, exports) {
 
 function EventObject(type, detail, target, cancelable) {
@@ -1772,7 +1580,7 @@ module.exports = function(scope) {
 };
 
 /***/ }),
-/* 15 */
+/* 14 */
 /***/ (function(module, exports) {
 
 var matches = Element.prototype.matches || 
@@ -1918,7 +1726,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports) {
 
 function Items() {}
@@ -1938,23 +1746,23 @@ proto.remove = function(item) {
 module.exports = Items;
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(32);
-var DnD = __webpack_require__(31);
+var Marker = __webpack_require__(31);
+var DnD = __webpack_require__(30);
 
-__webpack_require__(50);
+__webpack_require__(48);
 
 function ArticlePart() {
   Part.apply(this, arguments);
 }
 
-var items = ArticlePart.toolbar = __webpack_require__(12);
+var items = ArticlePart.toolbar = __webpack_require__(11);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2210,13 +2018,13 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(53);
+__webpack_require__(51);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -2273,7 +2081,7 @@ FilePart.defaultLabel = 'Download';
 module.exports = FilePart;
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2281,15 +2089,15 @@ var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
 
-__webpack_require__(54);
+__webpack_require__(52);
 
 function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(33);
+var items = ImagePart.toolbar = __webpack_require__(32);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
-
+ImagePart.matches = ['img'];
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position || 'inside top center').add(items);
@@ -2380,13 +2188,225 @@ module.exports = ImagePart;
 
 
 /***/ }),
+/* 19 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var Part = __webpack_require__(4);
+var buildtoolbar = __webpack_require__(33);
+
+__webpack_require__(53);
+
+function ParagraphPart() {
+  Part.apply(this, arguments);
+}
+
+var proto = ParagraphPart.prototype = Object.create(Part.prototype);
+ParagraphPart.matches = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p', 'blockquote'];
+
+proto.oninit = function(e) {
+  var part = this;
+  var dom = part.dom();
+  var el = $(dom).ac('ff-paragraph')
+  .on('dragstart', function(e) {
+    if( !part.editmode() || el.ha('draggable') ) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+  })
+  .on('paste', function(e) {
+    e.preventDefault();
+    
+    var clipboard = e.clipboardData || window.clipboardData;
+    var text = clipboard.getData('Text');
+    this.innerText = text.split('\n').join(' ');
+  })
+  .on('keydown', function(e) {
+    if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
+  })
+  .on('dragend', function(e) {
+    part.dragmode(false);
+    part.toolbar().update();
+  });
+  
+  buildtoolbar(this);
+  
+  var placeholder = part._placeholder = (function() {
+    var node = $('<div class="ff-placeholder ff-acc"/>'), text, minWidthWrited = false;
+    
+    return {
+      text: function(o) {
+        if( !arguments.length ) return text;
+        text = o;
+        node.html(text);
+        return this;
+      },
+      show: function() {
+        if( !part.editmode() ) {
+          this.hide();
+          return this;
+        }
+        
+        el.attr('contenteditable', null);
+        node.html(text).remove();
+        var t = el.text().split('\n').join().trim();
+        
+        if( !t ) el.empty().append(node);
+        
+        var display = window.getComputedStyle(dom, null).display;
+        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
+          dom.style.minWidth = node[0].clientWidth + 'px';
+          minWidthWrited = true;
+        }
+        
+        return this;
+      },
+      hide: function() {
+        if( part.editmode() ) el.attr('contenteditable', true);
+        else if( minWidthWrited ) dom.style.minWidth = '';
+        
+        node.remove();
+        return this;
+      }
+    };
+  })();
+  
+  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
+};
+
+proto.multiline = function(b) {
+  if( !('_multiline' in this) ) {
+    this._multiline = $(this.dom()).attr('ff-multiline') == 'false' ? false : true;
+  }
+  
+  if( !arguments.length ) return this._multiline;
+  
+  el.attr('ff-multiline', b === false ? false : null);
+  this._multiline = !!b;
+  return this;
+};
+
+proto.dragmode = function(b) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.ha('draggable');
+  
+  if( !this.editmode() ) return this;
+  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
+  return this;
+};
+
+proto.onchildlist = function() {
+  if( this.editmode() ) this.placeholder().show();
+};
+
+proto.text = function(text) {
+  var el = $(this.dom());
+  if( !arguments.length ) {
+    var editmode = this.editmode();
+    this.editmode(false);
+    var text = el.text().split('\n').join().trim();
+    this.editmode(editmode);
+    return text;
+  }
+  
+  el.text($('<div/>').html(text).text());
+  return this;
+};
+
+proto.html = function(html) {
+  var el = $(this.dom());
+  if( !arguments.length ) {
+    var editmode = this.editmode();
+    this.editmode(false);
+    var html = el.html();
+    this.editmode(editmode);
+    return html;
+  }
+  
+  el.html(html);
+  return this;
+};
+
+proto.onfocus = function(e) {
+  if( !this.editmode() ) return;
+  
+  e.stopImmediatePropagation();
+  
+  this.toolbar().show();
+  this.placeholder().hide();
+  $(this.dom()).attr('draggable', null);
+  
+  var el = this.dom();
+  var selection = window.getSelection();
+  var range = selection.rangeCount && selection.getRangeAt(0);
+  
+  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
+   || el === range.startContainer
+   || el === range.endContainer ) {
+    selection.removeAllRanges();
+    setTimeout(function() {
+      el.focus();
+      el.click();
+    }, 10);
+  }
+};
+
+proto.onblur = function() {
+  if( this.editmode() )
+    this.placeholder().show();
+};
+
+proto.oneditmode = function(e) {
+  $(this.dom()).attr('contenteditable', true).attr('draggable', null);
+  this.placeholder().show();
+};
+
+proto.onviewmode = function(e) {
+  $(this.dom()).attr('contenteditable', null).attr('draggable', null);
+  this.placeholder().hide();
+};
+
+proto.create = function(arg) {
+  var html = typeof arg == 'string' ? arg : '';
+  return $('<div/>').html(html)[0];
+};
+
+proto.placeholder = function(placeholder) {
+  if( !arguments.length ) return this._placeholder;
+  this._placeholder.text(placeholder);
+  return this;
+};
+
+proto.getData = function() {
+  this.placeholder().hide();
+  var html = this.dom().innerHTML;
+  if( this.editmode() ) this.placeholder().show();
+  
+  return {
+    html: html
+  };
+};
+
+proto.setData = function(data) {
+  var html = (!data || typeof data == 'string') ? data : data.html;
+  this.html(html);
+  this.placeholder().show();
+  return this;
+};
+
+module.exports = ParagraphPart;
+
+
+
+
+/***/ }),
 /* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(56);
+__webpack_require__(54);
 
 function RowPart(el) {
   Part.call(this, el);
@@ -2488,7 +2508,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(57);
+__webpack_require__(55);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2546,41 +2566,9 @@ module.exports = Separator;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var ParagraphPart = __webpack_require__(7);
-
-__webpack_require__(58);
-
-function TextPart() {
-  ParagraphPart.apply(this, arguments);
-  
-  this.toolbar().enable(false);
-  $(this.dom()).rc('ff-paragraph').ac('ff-text')
-  .on('keydown', function(e) {
-    if( e.keyCode === 13 ) {
-      e.preventDefault();
-    }
-  });
-}
-
-var proto = TextPart.prototype = Object.create(ParagraphPart.prototype);
-
-proto.create = function(arg) {
-  var html = typeof arg == 'string' ? arg : '';
-  return $('<span/>').html(html)[0];
-};
-
-proto.html = ParagraphPart.prototype.text;
-
-module.exports = TextPart;
-
-/***/ }),
-/* 23 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(59);
+__webpack_require__(56);
 
 function VideoPart() {
   Part.apply(this, arguments);
@@ -2632,13 +2620,13 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(35);
+var content = __webpack_require__(34);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2658,7 +2646,7 @@ if(false) {
 }
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports) {
 
 var endpoint;
@@ -2673,32 +2661,30 @@ module.exports = {
 }
 
 /***/ }),
-/* 26 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ctx = __webpack_require__(3);
 var Toolbar = __webpack_require__(5);
 var Part = __webpack_require__(4);
-var Items = __webpack_require__(16);
+var Items = __webpack_require__(15);
 
-__webpack_require__(24);
+__webpack_require__(23);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(17);
-var ParagraphPart = __webpack_require__(7);
-var TextPart = __webpack_require__(22);
+var ArticlePart = __webpack_require__(16);
+var ParagraphPart = __webpack_require__(19);
 var SeparatorPart = __webpack_require__(21);
-var ImagePart = __webpack_require__(19);
-var VideoPart = __webpack_require__(23);
+var ImagePart = __webpack_require__(18);
+var VideoPart = __webpack_require__(22);
 var RowPart = __webpack_require__(20);
-var FilePart = __webpack_require__(18);
+var FilePart = __webpack_require__(17);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
-ctx.Text = TextPart;
 ctx.Separator = SeparatorPart;
 ctx.Image = ImagePart;
 ctx.Video = VideoPart;
@@ -2708,7 +2694,6 @@ ctx.File = FilePart;
 ctx.type('default', ParagraphPart);
 ctx.type('article', ArticlePart);
 ctx.type('paragraph', ParagraphPart);
-ctx.type('text', TextPart);
 ctx.type('separator', SeparatorPart);
 ctx.type('image', ImagePart);
 ctx.type('video', VideoPart);
@@ -2733,11 +2718,11 @@ module.exports = ctx;
 
 
 /***/ }),
-/* 27 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(30);
+var Button = __webpack_require__(29);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -2847,7 +2832,7 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -2869,13 +2854,13 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(28);
-var Buttons = __webpack_require__(27);
-__webpack_require__(48);
+var getPosition = __webpack_require__(27);
+var Buttons = __webpack_require__(26);
+__webpack_require__(46);
 
 function clone(o) {
   var result = {};
@@ -3063,12 +3048,12 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(6);
-var Separator = __webpack_require__(9);
-var ListButton = __webpack_require__(8);
+var Separator = __webpack_require__(8);
+var ListButton = __webpack_require__(7);
 
 Button.eval = function(o) {
   if( !o ) return null;
@@ -3086,14 +3071,14 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 31 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(13);
+var each = __webpack_require__(12);
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(11);
+var getOffsetTop = __webpack_require__(10);
 
-__webpack_require__(51);
+__webpack_require__(49);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3179,15 +3164,15 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 32 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(11);
-var toolbar = __webpack_require__(12);
+var getOffsetTop = __webpack_require__(10);
+var toolbar = __webpack_require__(11);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(52);
+__webpack_require__(50);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3287,7 +3272,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 33 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3361,7 +3346,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3467,7 +3452,7 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3481,7 +3466,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3495,7 +3480,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3509,7 +3494,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: 
 
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3523,7 +3508,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3537,7 +3522,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3551,7 +3536,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3565,7 +3550,7 @@ exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  displ
 
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3573,13 +3558,13 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
+exports.push([module.i, ".ff-image-size-medium {\n  display: block;\n  width: 50%;\n}\n.ff-image-size-full {\n  display: block;\n  width: 100%;\n}\n.ff-image-float-left {\n  display: block;\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  display: block;\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3593,7 +3578,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3607,7 +3592,7 @@ exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}
 
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3621,21 +3606,7 @@ exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  pad
 
 
 /***/ }),
-/* 46 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-text.ff-edit-state {\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 47 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3649,13 +3620,13 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 
 /***/ }),
-/* 48 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3675,13 +3646,13 @@ if(false) {
 }
 
 /***/ }),
-/* 49 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(37);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3701,13 +3672,13 @@ if(false) {
 }
 
 /***/ }),
-/* 50 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(38);
+var content = __webpack_require__(37);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3727,13 +3698,13 @@ if(false) {
 }
 
 /***/ }),
-/* 51 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(39);
+var content = __webpack_require__(38);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3753,13 +3724,13 @@ if(false) {
 }
 
 /***/ }),
-/* 52 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(40);
+var content = __webpack_require__(39);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3779,13 +3750,13 @@ if(false) {
 }
 
 /***/ }),
-/* 53 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(41);
+var content = __webpack_require__(40);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3805,13 +3776,13 @@ if(false) {
 }
 
 /***/ }),
-/* 54 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(42);
+var content = __webpack_require__(41);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3831,13 +3802,13 @@ if(false) {
 }
 
 /***/ }),
-/* 55 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(43);
+var content = __webpack_require__(42);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3857,13 +3828,13 @@ if(false) {
 }
 
 /***/ }),
-/* 56 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(44);
+var content = __webpack_require__(43);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3883,13 +3854,13 @@ if(false) {
 }
 
 /***/ }),
-/* 57 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(45);
+var content = __webpack_require__(44);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3909,39 +3880,13 @@ if(false) {
 }
 
 /***/ }),
-/* 58 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(46);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 59 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(47);
+var content = __webpack_require__(45);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3961,7 +3906,7 @@ if(false) {
 }
 
 /***/ }),
-/* 60 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -3969,7 +3914,7 @@ var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(15);
+var util = __webpack_require__(14);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -4035,10 +3980,10 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 61 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(15);
+var util = __webpack_require__(14);
 
 module.exports = function(ctx) {
   var fn = ctx.fn;

@@ -63,16 +63,16 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 31);
+/******/ 	return __webpack_require__(__webpack_require__.s = 30);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(87);
+var Context = __webpack_require__(84);
 
-__webpack_require__(88)(Context);
+__webpack_require__(85)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -399,11 +399,11 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(17);
-var Events = __webpack_require__(20);
+var each = __webpack_require__(16);
+var Events = __webpack_require__(19);
 var $ = __webpack_require__(0);
 var types = __webpack_require__(13);
-var connector = __webpack_require__(32);
+var connector = __webpack_require__(31);
 
 var parts = [];
 var data = {};
@@ -832,7 +832,7 @@ getCaretPosition: function(node) {
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Events = __webpack_require__(20);
+var Events = __webpack_require__(19);
 var Types = __webpack_require__(13);
 var Toolbar = __webpack_require__(8);
 var $ = __webpack_require__(0);
@@ -1274,7 +1274,7 @@ var _hexToRgb = __webpack_require__(7);
 
 var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(5);
 
-var _defaultParams = __webpack_require__(19);
+var _defaultParams = __webpack_require__(18);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
@@ -1282,7 +1282,7 @@ var _defaultParams2 = _interopRequireWildcard(_defaultParams);
  * Add modal + overlay to DOM
  */
 
-var _injectedHTML = __webpack_require__(85);
+var _injectedHTML = __webpack_require__(82);
 
 var _injectedHTML2 = _interopRequireWildcard(_injectedHTML);
 
@@ -1513,7 +1513,7 @@ exports.colorLuminance = colorLuminance;
 /* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(36);
+var Toolbar = __webpack_require__(35);
 
 Toolbar.Button = __webpack_require__(9);
 Toolbar.Separator = __webpack_require__(12);
@@ -1527,7 +1527,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(72);
+__webpack_require__(70);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1623,26 +1623,24 @@ module.exports = Button;
 var ctx = __webpack_require__(3);
 var Toolbar = __webpack_require__(8);
 var Part = __webpack_require__(4);
-var Items = __webpack_require__(33);
+var Items = __webpack_require__(32);
 
-__webpack_require__(70);
+__webpack_require__(68);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(38);
-var ParagraphPart = __webpack_require__(16);
-var TextPart = __webpack_require__(47);
+var ArticlePart = __webpack_require__(37);
+var ParagraphPart = __webpack_require__(43);
 var SeparatorPart = __webpack_require__(46);
-var ImagePart = __webpack_require__(42);
-var VideoPart = __webpack_require__(48);
+var ImagePart = __webpack_require__(41);
+var VideoPart = __webpack_require__(47);
 var RowPart = __webpack_require__(45);
-var FilePart = __webpack_require__(41);
+var FilePart = __webpack_require__(40);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
-ctx.Text = TextPart;
 ctx.Separator = SeparatorPart;
 ctx.Image = ImagePart;
 ctx.Video = VideoPart;
@@ -1652,7 +1650,6 @@ ctx.File = FilePart;
 ctx.type('default', ParagraphPart);
 ctx.type('article', ArticlePart);
 ctx.type('paragraph', ParagraphPart);
-ctx.type('text', TextPart);
 ctx.type('separator', SeparatorPart);
 ctx.type('image', ImagePart);
 ctx.type('video', VideoPart);
@@ -1773,7 +1770,7 @@ module.exports = {
 module.exports = function(el) {
   var top = 0;
   do {
-    if( !isNaN( el.offsetLeft ) ) top += el.offsetTop;
+    if( !isNaN( el.offsetTop ) ) top += el.offsetTop;
   } while( el = el.offsetParent );
   return top;
 };
@@ -1893,198 +1890,6 @@ module.exports = new Items()
 /* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(44);
-
-__webpack_require__(78);
-
-function ParagraphPart() {
-  Part.apply(this, arguments);
-}
-
-var proto = ParagraphPart.prototype = Object.create(Part.prototype);
-
-proto.oninit = function(e) {
-  var part = this;
-  var dom = part.dom();
-  var el = $(dom).ac('ff-paragraph')
-  .on('dragstart', function(e) {
-    if( !part.editmode() ) return;
-    if( el.ha('draggable') ) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-  })
-  .on('paste', function(e) {
-    e.preventDefault();
-    
-    var clipboard = e.clipboardData || window.clipboardData;
-    var text = clipboard.getData('Text');
-    this.innerText = text.split('\n').join(' ');
-  });
-  
-  buildtoolbar(this);
-  
-  var placeholder = part._placeholder = (function() {
-    var node = $('<div class="ff-placeholder"/>'), text, minWidthWrited = false;
-    
-    return {
-      text: function(o) {
-        if( !arguments.length ) return text;
-        text = o;
-        node.html(text);
-        return this;
-      },
-      show: function() {
-        if( !part.editmode() ) {
-          this.hide();
-          return this;
-        }
-        
-        el.attr('contenteditable', null);
-        node.html(text).remove();
-        var t = el.text().split('\n').join().trim();
-        
-        if( !t ) el.empty().append(node);
-        
-        var display = window.getComputedStyle(dom, null).display;
-        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
-          dom.style.minWidth = node[0].clientWidth + 'px';
-          minWidthWrited = true;
-        }
-        
-        return this;
-      },
-      hide: function() {
-        if( part.editmode() ) el.attr('contenteditable', true);
-        else if( minWidthWrited ) dom.style.minWidth = '';
-        
-        node.remove();
-        return this;
-      }
-    };
-  })();
-  
-  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
-};
-
-proto.dragmode = function(b) {
-  var el = $(this.dom());
-  if( !arguments.length ) return el.ha('draggable');
-  
-  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
-  return this;
-};
-
-proto.onchildlist = function() {
-  if( this.editmode() ) this.placeholder().show();
-};
-
-proto.text = function(text) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var text = el.text().split('\n').join().trim();
-    this.editmode(editmode);
-    return text;
-  }
-  
-  el.text($('<div/>').html(text).text());
-  return this;
-};
-
-proto.html = function(html) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var html = el.html();
-    this.editmode(editmode);
-    return html;
-  }
-  
-  el.html(html);
-  return this;
-};
-
-proto.onfocus = function(e) {
-  if( !this.editmode() ) return;
-  
-  e.stopImmediatePropagation();
-  
-  this.toolbar().show();
-  this.placeholder().hide();
-  $(this.dom()).attr('draggable', null);
-  
-  var el = this.dom();
-  var selection = window.getSelection();
-  var range = selection.rangeCount && selection.getRangeAt(0);
-  
-  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
-   || el === range.startContainer
-   || el === range.endContainer ) {
-    selection.removeAllRanges();
-    setTimeout(function() {
-      el.focus();
-      el.click();
-    }, 10);
-  }
-};
-
-proto.onblur = function() {
-  if( this.editmode() )
-    this.placeholder().show();
-};
-
-proto.oneditmode = function(e) {
-  $(this.dom()).attr('contenteditable', true);
-  this.placeholder().show();
-};
-
-proto.onviewmode = function(e) {
-  $(this.dom()).attr('contenteditable', null);
-  this.placeholder().hide();
-};
-
-proto.create = function(arg) {
-  var html = typeof arg == 'string' ? arg : '';
-  return $('<div/>').html(html)[0];
-};
-
-proto.placeholder = function(placeholder) {
-  if( !arguments.length ) return this._placeholder;
-  this._placeholder.text(placeholder);
-  return this;
-};
-
-proto.getData = function() {
-  this.placeholder().hide();
-  var html = this.dom().innerHTML;
-  if( this.editmode() ) this.placeholder().show();
-  
-  return {
-    html: html
-  };
-};
-
-proto.setData = function(data) {
-  var html = (!data || typeof data == 'string') ? data : data.html;
-  this.html(html);
-  this.placeholder().show();
-  return this;
-};
-
-module.exports = ParagraphPart;
-
-
-
-
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __webpack_require__) {
-
 /* WEBPACK VAR INJECTION */(function(setImmediate, process) {module.exports = function (arr, iterator, callback) {
   callback = callback || function () {};
   if (!Array.isArray(arr) || !arr.length) {
@@ -2114,10 +1919,10 @@ function nextTick (cb) {
     process.nextTick(cb);
   }
 }
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(93).setImmediate, __webpack_require__(18)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(90).setImmediate, __webpack_require__(17)))
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -2303,7 +2108,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2341,7 +2146,7 @@ exports['default'] = defaultParams;
 module.exports = exports['default'];
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports) {
 
 function EventObject(type, detail, target, cancelable) {
@@ -2488,7 +2293,7 @@ module.exports = function(scope) {
 };
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports) {
 
 module.exports = {
@@ -2621,7 +2426,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = {
@@ -2630,7 +2435,7 @@ module.exports = {
       html: 'SpongeBob SquarePants'
     },
     content: {
-      html: __webpack_require__(67)
+      html: __webpack_require__(65)
     }
   },
   patrick: {
@@ -2638,7 +2443,7 @@ module.exports = {
       html: '<a href="#">Patrick<br>Star</a>'
     },
     content: {
-      html: __webpack_require__(66)
+      html: __webpack_require__(64)
     }
   },
   squidward: {
@@ -2646,7 +2451,7 @@ module.exports = {
       html: 'Squidward Tentacles'
     },
     content: {
-      html: __webpack_require__(68)
+      html: __webpack_require__(66)
     }
   },
   mrkrabs: {
@@ -2654,13 +2459,13 @@ module.exports = {
       html: 'Eugene H. Krabs'
     },
     content: {
-      html: __webpack_require__(65)
+      html: __webpack_require__(63)
     }
   }
 };
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2726,13 +2531,13 @@ var CustomPart = function (_Part) {
 exports.default = CustomPart;
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports) {
 
 module.exports = "<div id=\"pwsp\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">\n\n  <!-- Background of PhotoSwipe. \n     It's a separate element as animating opacity is faster than rgba(). -->\n  <div class=\"pswp__bg\"></div>\n\n  <!-- Slides wrapper with overflow:hidden. -->\n  <div class=\"pswp__scroll-wrap\">\n\n    <!-- Container that holds slides. \n      PhotoSwipe keeps only 3 of them in the DOM to save memory.\n      Don't modify these 3 pswp__item elements, data is added later on. -->\n    <div class=\"pswp__container\">\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n    </div>\n\n    <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->\n    <div class=\"pswp__ui pswp__ui--hidden\">\n\n      <div class=\"pswp__top-bar\">\n\n        <!-- Controls are self-explanatory. Order can be changed. -->\n\n        <div class=\"pswp__counter\"></div>\n\n        <button class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"></button>\n\n        <button class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"></button>\n\n        <button class=\"pswp__button pswp__button--zoom\" title=\"Zoom in/out\"></button>\n\n        <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->\n        <!-- element will get class pswp__preloader--active when preloader is running -->\n        <div class=\"pswp__preloader\">\n          <div class=\"pswp__preloader__icn\">\n           <div class=\"pswp__preloader__cut\">\n            <div class=\"pswp__preloader__donut\"></div>\n           </div>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">\n        <div class=\"pswp__share-tooltip\"></div> \n      </div>\n\n      <button class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\">\n      </button>\n\n      <button class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\">\n      </button>\n\n      <div class=\"pswp__caption\">\n        <div class=\"pswp__caption__center\"></div>\n      </div>\n\n    </div>\n\n  </div>\n\n</div>";
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*! PhotoSwipe Default UI - 4.1.1 - 2015-12-24
@@ -3603,7 +3408,7 @@ return PhotoSwipeUI_Default;
 
 
 /***/ }),
-/* 26 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*! PhotoSwipe - v4.1.1 - 2015-12-24
@@ -7330,13 +7135,13 @@ _registerModule('History', {
 });
 
 /***/ }),
-/* 27 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(62);
+var content = __webpack_require__(60);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -7356,13 +7161,13 @@ if(false) {
 }
 
 /***/ }),
-/* 28 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(63);
+var content = __webpack_require__(61);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -7382,13 +7187,13 @@ if(false) {
 }
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(64);
+var content = __webpack_require__(62);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -7408,7 +7213,7 @@ if(false) {
 }
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7443,19 +7248,19 @@ var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$r
 
 // Handle button events and keyboard events
 
-var _handleButton$handleConfirm$handleCancel = __webpack_require__(83);
+var _handleButton$handleConfirm$handleCancel = __webpack_require__(80);
 
-var _handleKeyDown = __webpack_require__(84);
+var _handleKeyDown = __webpack_require__(81);
 
 var _handleKeyDown2 = _interopRequireWildcard(_handleKeyDown);
 
 // Default values
 
-var _defaultParams = __webpack_require__(19);
+var _defaultParams = __webpack_require__(18);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
-var _setParameters = __webpack_require__(86);
+var _setParameters = __webpack_require__(83);
 
 var _setParameters2 = _interopRequireWildcard(_setParameters);
 
@@ -7717,25 +7522,25 @@ if (typeof window !== 'undefined') {
 module.exports = exports['default'];
 
 /***/ }),
-/* 31 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ff = __webpack_require__(10);
 var $ = __webpack_require__(0);
 var Part = ff.Part;
-var CustomPart = __webpack_require__(23).default;
-var tpls = __webpack_require__(22);
+var CustomPart = __webpack_require__(22).default;
+var tpls = __webpack_require__(21);
 
 // override alert/prompt/imageshow action
 (function() {
-  var PhotoSwipe = __webpack_require__(26);
-  var PhotoSwipeDefaultUI = __webpack_require__(25);
-  var slidetpl = $(__webpack_require__(24));
-  __webpack_require__(28);
+  var PhotoSwipe = __webpack_require__(25);
+  var PhotoSwipeDefaultUI = __webpack_require__(24);
+  var slidetpl = $(__webpack_require__(23));
   __webpack_require__(27);
+  __webpack_require__(26);
   
-  var swal = __webpack_require__(30);
-  __webpack_require__(29);
+  var swal = __webpack_require__(29);
+  __webpack_require__(28);
   
   ff.on('alert', function(e) {
     e.preventDefault();
@@ -7834,7 +7639,7 @@ ff.ready(function() {
 
 
 /***/ }),
-/* 32 */
+/* 31 */
 /***/ (function(module, exports) {
 
 var endpoint;
@@ -7849,7 +7654,7 @@ module.exports = {
 }
 
 /***/ }),
-/* 33 */
+/* 32 */
 /***/ (function(module, exports) {
 
 function Items() {}
@@ -7869,11 +7674,11 @@ proto.remove = function(item) {
 module.exports = Items;
 
 /***/ }),
-/* 34 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(37);
+var Button = __webpack_require__(36);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -7983,7 +7788,7 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -8005,13 +7810,13 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(35);
-var Buttons = __webpack_require__(34);
-__webpack_require__(71);
+var getPosition = __webpack_require__(34);
+var Buttons = __webpack_require__(33);
+__webpack_require__(69);
 
 function clone(o) {
   var result = {};
@@ -8199,7 +8004,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(9);
@@ -8222,17 +8027,17 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(40);
-var DnD = __webpack_require__(39);
+var Marker = __webpack_require__(39);
+var DnD = __webpack_require__(38);
 
-__webpack_require__(73);
+__webpack_require__(71);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -8494,14 +8299,14 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(17);
+var each = __webpack_require__(16);
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(14);
 
-__webpack_require__(74);
+__webpack_require__(72);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -8587,7 +8392,7 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8595,7 +8400,7 @@ var getOffsetTop = __webpack_require__(14);
 var toolbar = __webpack_require__(15);
 var Button = __webpack_require__(8).Button;
 
-__webpack_require__(75);
+__webpack_require__(73);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -8695,13 +8500,13 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(76);
+__webpack_require__(74);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -8758,7 +8563,7 @@ FilePart.defaultLabel = 'Download';
 module.exports = FilePart;
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8766,15 +8571,15 @@ var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
 
-__webpack_require__(77);
+__webpack_require__(75);
 
 function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(43);
+var items = ImagePart.toolbar = __webpack_require__(42);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
-
+ImagePart.matches = ['img'];
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position || 'inside top center').add(items);
@@ -8865,7 +8670,7 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8937,6 +8742,218 @@ module.exports = new Items()
     .ac('ff-image-size-full');
   }
 });
+
+/***/ }),
+/* 43 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var Part = __webpack_require__(4);
+var buildtoolbar = __webpack_require__(44);
+
+__webpack_require__(76);
+
+function ParagraphPart() {
+  Part.apply(this, arguments);
+}
+
+var proto = ParagraphPart.prototype = Object.create(Part.prototype);
+ParagraphPart.matches = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p', 'blockquote'];
+
+proto.oninit = function(e) {
+  var part = this;
+  var dom = part.dom();
+  var el = $(dom).ac('ff-paragraph')
+  .on('dragstart', function(e) {
+    if( !part.editmode() || el.ha('draggable') ) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+  })
+  .on('paste', function(e) {
+    e.preventDefault();
+    
+    var clipboard = e.clipboardData || window.clipboardData;
+    var text = clipboard.getData('Text');
+    this.innerText = text.split('\n').join(' ');
+  })
+  .on('keydown', function(e) {
+    if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
+  })
+  .on('dragend', function(e) {
+    part.dragmode(false);
+    part.toolbar().update();
+  });
+  
+  buildtoolbar(this);
+  
+  var placeholder = part._placeholder = (function() {
+    var node = $('<div class="ff-placeholder ff-acc"/>'), text, minWidthWrited = false;
+    
+    return {
+      text: function(o) {
+        if( !arguments.length ) return text;
+        text = o;
+        node.html(text);
+        return this;
+      },
+      show: function() {
+        if( !part.editmode() ) {
+          this.hide();
+          return this;
+        }
+        
+        el.attr('contenteditable', null);
+        node.html(text).remove();
+        var t = el.text().split('\n').join().trim();
+        
+        if( !t ) el.empty().append(node);
+        
+        var display = window.getComputedStyle(dom, null).display;
+        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
+          dom.style.minWidth = node[0].clientWidth + 'px';
+          minWidthWrited = true;
+        }
+        
+        return this;
+      },
+      hide: function() {
+        if( part.editmode() ) el.attr('contenteditable', true);
+        else if( minWidthWrited ) dom.style.minWidth = '';
+        
+        node.remove();
+        return this;
+      }
+    };
+  })();
+  
+  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
+};
+
+proto.multiline = function(b) {
+  if( !('_multiline' in this) ) {
+    this._multiline = $(this.dom()).attr('ff-multiline') == 'false' ? false : true;
+  }
+  
+  if( !arguments.length ) return this._multiline;
+  
+  el.attr('ff-multiline', b === false ? false : null);
+  this._multiline = !!b;
+  return this;
+};
+
+proto.dragmode = function(b) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.ha('draggable');
+  
+  if( !this.editmode() ) return this;
+  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
+  return this;
+};
+
+proto.onchildlist = function() {
+  if( this.editmode() ) this.placeholder().show();
+};
+
+proto.text = function(text) {
+  var el = $(this.dom());
+  if( !arguments.length ) {
+    var editmode = this.editmode();
+    this.editmode(false);
+    var text = el.text().split('\n').join().trim();
+    this.editmode(editmode);
+    return text;
+  }
+  
+  el.text($('<div/>').html(text).text());
+  return this;
+};
+
+proto.html = function(html) {
+  var el = $(this.dom());
+  if( !arguments.length ) {
+    var editmode = this.editmode();
+    this.editmode(false);
+    var html = el.html();
+    this.editmode(editmode);
+    return html;
+  }
+  
+  el.html(html);
+  return this;
+};
+
+proto.onfocus = function(e) {
+  if( !this.editmode() ) return;
+  
+  e.stopImmediatePropagation();
+  
+  this.toolbar().show();
+  this.placeholder().hide();
+  $(this.dom()).attr('draggable', null);
+  
+  var el = this.dom();
+  var selection = window.getSelection();
+  var range = selection.rangeCount && selection.getRangeAt(0);
+  
+  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
+   || el === range.startContainer
+   || el === range.endContainer ) {
+    selection.removeAllRanges();
+    setTimeout(function() {
+      el.focus();
+      el.click();
+    }, 10);
+  }
+};
+
+proto.onblur = function() {
+  if( this.editmode() )
+    this.placeholder().show();
+};
+
+proto.oneditmode = function(e) {
+  $(this.dom()).attr('contenteditable', true).attr('draggable', null);
+  this.placeholder().show();
+};
+
+proto.onviewmode = function(e) {
+  $(this.dom()).attr('contenteditable', null).attr('draggable', null);
+  this.placeholder().hide();
+};
+
+proto.create = function(arg) {
+  var html = typeof arg == 'string' ? arg : '';
+  return $('<div/>').html(html)[0];
+};
+
+proto.placeholder = function(placeholder) {
+  if( !arguments.length ) return this._placeholder;
+  this._placeholder.text(placeholder);
+  return this;
+};
+
+proto.getData = function() {
+  this.placeholder().hide();
+  var html = this.dom().innerHTML;
+  if( this.editmode() ) this.placeholder().show();
+  
+  return {
+    html: html
+  };
+};
+
+proto.setData = function(data) {
+  var html = (!data || typeof data == 'string') ? data : data.html;
+  this.html(html);
+  this.placeholder().show();
+  return this;
+};
+
+module.exports = ParagraphPart;
+
+
+
 
 /***/ }),
 /* 44 */
@@ -9051,7 +9068,7 @@ module.exports = function(part) {
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(79);
+__webpack_require__(77);
 
 function RowPart(el) {
   Part.call(this, el);
@@ -9153,7 +9170,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(80);
+__webpack_require__(78);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -9211,41 +9228,9 @@ module.exports = Separator;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var ParagraphPart = __webpack_require__(16);
-
-__webpack_require__(81);
-
-function TextPart() {
-  ParagraphPart.apply(this, arguments);
-  
-  this.toolbar().enable(false);
-  $(this.dom()).rc('ff-paragraph').ac('ff-text')
-  .on('keydown', function(e) {
-    if( e.keyCode === 13 ) {
-      e.preventDefault();
-    }
-  });
-}
-
-var proto = TextPart.prototype = Object.create(ParagraphPart.prototype);
-
-proto.create = function(arg) {
-  var html = typeof arg == 'string' ? arg : '';
-  return $('<span/>').html(html)[0];
-};
-
-proto.html = ParagraphPart.prototype.text;
-
-module.exports = TextPart;
-
-/***/ }),
-/* 48 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(82);
+__webpack_require__(79);
 
 function VideoPart() {
   Part.apply(this, arguments);
@@ -9297,7 +9282,7 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9311,7 +9296,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9325,7 +9310,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9339,7 +9324,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: 
 
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9353,7 +9338,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9367,7 +9352,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9381,7 +9366,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9395,7 +9380,7 @@ exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  displ
 
 
 /***/ }),
-/* 56 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9403,13 +9388,13 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-image {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.ff-image-size-medium {\n  width: 50%;\n}\n.ff-image-size-full {\n  width: 100%;\n}\n.ff-image-float-left {\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  overflow: auto;\n  clear: both;\n}\n", ""]);
+exports.push([module.i, ".ff-image-size-medium {\n  display: block;\n  width: 50%;\n}\n.ff-image-size-full {\n  display: block;\n  width: 100%;\n}\n.ff-image-float-left {\n  display: block;\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  display: block;\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 57 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9423,7 +9408,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 58 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9437,7 +9422,7 @@ exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}
 
 
 /***/ }),
-/* 59 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9451,21 +9436,7 @@ exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  pad
 
 
 /***/ }),
-/* 60 */
-/***/ (function(module, exports, __webpack_require__) {
-
-exports = module.exports = __webpack_require__(1)();
-// imports
-
-
-// module
-exports.push([module.i, ".ff-text.ff-edit-state {\n  min-height: 1em;\n}\n.ff-text.ff-focus-state {\n  background-color: initial;\n}\n.ff-text.ff-placeholder {\n  position: absolute;\n}\n", ""]);
-
-// exports
-
-
-/***/ }),
-/* 61 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9479,7 +9450,7 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 
 /***/ }),
-/* 62 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9487,13 +9458,13 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, "/*! PhotoSwipe Default UI CSS by Dmitry Semenov | photoswipe.com | MIT license */\n/*\n\n\tContents:\n\n\t1. Buttons\n\t2. Share modal and links\n\t3. Index indicator (\"1 of X\" counter)\n\t4. Caption\n\t5. Loading indicator\n\t6. Additional styles (root element, top bar, idle state, hidden state, etc.)\n\n*/\n/*\n\t\n\t1. Buttons\n\n */\n/* <button> css reset */\n.pswp__button {\n  width: 44px;\n  height: 44px;\n  position: relative;\n  background: none;\n  cursor: pointer;\n  overflow: visible;\n  -webkit-appearance: none;\n  display: block;\n  border: 0;\n  padding: 0;\n  margin: 0;\n  float: right;\n  opacity: 0.75;\n  -webkit-transition: opacity 0.2s;\n          transition: opacity 0.2s;\n  -webkit-box-shadow: none;\n          box-shadow: none; }\n  .pswp__button:focus,\n  .pswp__button:hover {\n    opacity: 1; }\n  .pswp__button:active {\n    outline: none;\n    opacity: 0.9; }\n  .pswp__button::-moz-focus-inner {\n    padding: 0;\n    border: 0; }\n\n/* pswp__ui--over-close class it added when mouse is over element that should close gallery */\n.pswp__ui--over-close .pswp__button--close {\n  opacity: 1; }\n\n.pswp__button,\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  background: url(" + __webpack_require__(89) + ") 0 0 no-repeat;\n  background-size: 264px 88px;\n  width: 44px;\n  height: 44px; }\n\n@media (-webkit-min-device-pixel-ratio: 1.1), (-webkit-min-device-pixel-ratio: 1.09375), (min-resolution: 105dpi), (min-resolution: 1.1dppx) {\n  /* Serve SVG sprite if browser supports SVG and resolution is more than 105dpi */\n  .pswp--svg .pswp__button,\n  .pswp--svg .pswp__button--arrow--left:before,\n  .pswp--svg .pswp__button--arrow--right:before {\n    background-image: url(" + __webpack_require__(90) + "); }\n  .pswp--svg .pswp__button--arrow--left,\n  .pswp--svg .pswp__button--arrow--right {\n    background: none; } }\n\n.pswp__button--close {\n  background-position: 0 -44px; }\n\n.pswp__button--share {\n  background-position: -44px -44px; }\n\n.pswp__button--fs {\n  display: none; }\n\n.pswp--supports-fs .pswp__button--fs {\n  display: block; }\n\n.pswp--fs .pswp__button--fs {\n  background-position: -44px 0; }\n\n.pswp__button--zoom {\n  display: none;\n  background-position: -88px 0; }\n\n.pswp--zoom-allowed .pswp__button--zoom {\n  display: block; }\n\n.pswp--zoomed-in .pswp__button--zoom {\n  background-position: -132px 0; }\n\n/* no arrows on touch screens */\n.pswp--touch .pswp__button--arrow--left,\n.pswp--touch .pswp__button--arrow--right {\n  visibility: hidden; }\n\n/*\n\tArrow buttons hit area\n\t(icon is added to :before pseudo-element)\n*/\n.pswp__button--arrow--left,\n.pswp__button--arrow--right {\n  background: none;\n  top: 50%;\n  margin-top: -50px;\n  width: 70px;\n  height: 100px;\n  position: absolute; }\n\n.pswp__button--arrow--left {\n  left: 0; }\n\n.pswp__button--arrow--right {\n  right: 0; }\n\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  content: '';\n  top: 35px;\n  background-color: rgba(0, 0, 0, 0.3);\n  height: 30px;\n  width: 32px;\n  position: absolute; }\n\n.pswp__button--arrow--left:before {\n  left: 6px;\n  background-position: -138px -44px; }\n\n.pswp__button--arrow--right:before {\n  right: 6px;\n  background-position: -94px -44px; }\n\n/*\n\n\t2. Share modal/popup and links\n\n */\n.pswp__counter,\n.pswp__share-modal {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n      user-select: none; }\n\n.pswp__share-modal {\n  display: block;\n  background: rgba(0, 0, 0, 0.5);\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  padding: 10px;\n  position: absolute;\n  z-index: 1600;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  -webkit-backface-visibility: hidden;\n  will-change: opacity; }\n\n.pswp__share-modal--hidden {\n  display: none; }\n\n.pswp__share-tooltip {\n  z-index: 1620;\n  position: absolute;\n  background: #FFF;\n  top: 56px;\n  border-radius: 2px;\n  display: block;\n  width: auto;\n  right: 44px;\n  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n  -webkit-transform: translateY(6px);\n      -ms-transform: translateY(6px);\n          transform: translateY(6px);\n  -webkit-transition: -webkit-transform 0.25s;\n          transition: transform 0.25s;\n  -webkit-backface-visibility: hidden;\n  will-change: transform; }\n  .pswp__share-tooltip a {\n    display: block;\n    padding: 8px 12px;\n    color: #000;\n    text-decoration: none;\n    font-size: 14px;\n    line-height: 18px; }\n    .pswp__share-tooltip a:hover {\n      text-decoration: none;\n      color: #000; }\n    .pswp__share-tooltip a:first-child {\n      /* round corners on the first/last list item */\n      border-radius: 2px 2px 0 0; }\n    .pswp__share-tooltip a:last-child {\n      border-radius: 0 0 2px 2px; }\n\n.pswp__share-modal--fade-in {\n  opacity: 1; }\n  .pswp__share-modal--fade-in .pswp__share-tooltip {\n    -webkit-transform: translateY(0);\n        -ms-transform: translateY(0);\n            transform: translateY(0); }\n\n/* increase size of share links on touch devices */\n.pswp--touch .pswp__share-tooltip a {\n  padding: 16px 12px; }\n\na.pswp__share--facebook:before {\n  content: '';\n  display: block;\n  width: 0;\n  height: 0;\n  position: absolute;\n  top: -12px;\n  right: 15px;\n  border: 6px solid transparent;\n  border-bottom-color: #FFF;\n  -webkit-pointer-events: none;\n  -moz-pointer-events: none;\n  pointer-events: none; }\n\na.pswp__share--facebook:hover {\n  background: #3E5C9A;\n  color: #FFF; }\n  a.pswp__share--facebook:hover:before {\n    border-bottom-color: #3E5C9A; }\n\na.pswp__share--twitter:hover {\n  background: #55ACEE;\n  color: #FFF; }\n\na.pswp__share--pinterest:hover {\n  background: #CCC;\n  color: #CE272D; }\n\na.pswp__share--download:hover {\n  background: #DDD; }\n\n/*\n\n\t3. Index indicator (\"1 of X\" counter)\n\n */\n.pswp__counter {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  font-size: 13px;\n  line-height: 44px;\n  color: #FFF;\n  opacity: 0.75;\n  padding: 0 10px; }\n\n/*\n\t\n\t4. Caption\n\n */\n.pswp__caption {\n  position: absolute;\n  left: 0;\n  bottom: 0;\n  width: 100%;\n  min-height: 44px; }\n  .pswp__caption small {\n    font-size: 11px;\n    color: #BBB; }\n\n.pswp__caption__center {\n  text-align: left;\n  max-width: 420px;\n  margin: 0 auto;\n  font-size: 13px;\n  padding: 10px;\n  line-height: 20px;\n  color: #CCC; }\n\n.pswp__caption--empty {\n  display: none; }\n\n/* Fake caption element, used to calculate height of next/prev image */\n.pswp__caption--fake {\n  visibility: hidden; }\n\n/*\n\n\t5. Loading indicator (preloader)\n\n\tYou can play with it here - http://codepen.io/dimsemenov/pen/yyBWoR\n\n */\n.pswp__preloader {\n  width: 44px;\n  height: 44px;\n  position: absolute;\n  top: 0;\n  left: 50%;\n  margin-left: -22px;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  will-change: opacity;\n  direction: ltr; }\n\n.pswp__preloader__icn {\n  width: 20px;\n  height: 20px;\n  margin: 12px; }\n\n.pswp__preloader--active {\n  opacity: 1; }\n  .pswp__preloader--active .pswp__preloader__icn {\n    /* We use .gif in browsers that don't support CSS animation */\n    background: url(" + __webpack_require__(91) + ") 0 0 no-repeat; }\n\n.pswp--css_animation .pswp__preloader--active {\n  opacity: 1; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__icn {\n    -webkit-animation: clockwise 500ms linear infinite;\n            animation: clockwise 500ms linear infinite; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__donut {\n    -webkit-animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite;\n            animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite; }\n\n.pswp--css_animation .pswp__preloader__icn {\n  background: none;\n  opacity: 0.75;\n  width: 14px;\n  height: 14px;\n  position: absolute;\n  left: 15px;\n  top: 15px;\n  margin: 0; }\n\n.pswp--css_animation .pswp__preloader__cut {\n  /* \n\t\t\tThe idea of animating inner circle is based on Polymer (\"material\") loading indicator \n\t\t\t by Keanu Lee https://blog.keanulee.com/2014/10/20/the-tale-of-three-spinners.html\n\t\t*/\n  position: relative;\n  width: 7px;\n  height: 14px;\n  overflow: hidden; }\n\n.pswp--css_animation .pswp__preloader__donut {\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  width: 14px;\n  height: 14px;\n  border: 2px solid #FFF;\n  border-radius: 50%;\n  border-left-color: transparent;\n  border-bottom-color: transparent;\n  position: absolute;\n  top: 0;\n  left: 0;\n  background: none;\n  margin: 0; }\n\n@media screen and (max-width: 1024px) {\n  .pswp__preloader {\n    position: relative;\n    left: auto;\n    top: auto;\n    margin: 0;\n    float: right; } }\n\n@-webkit-keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@-webkit-keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n@keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n/*\n\t\n\t6. Additional styles\n\n */\n/* root element of UI */\n.pswp__ui {\n  -webkit-font-smoothing: auto;\n  visibility: visible;\n  opacity: 1;\n  z-index: 1550; }\n\n/* top black bar with buttons and \"1 of X\" indicator */\n.pswp__top-bar {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  width: 100%; }\n\n.pswp__caption,\n.pswp__top-bar,\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  -webkit-backface-visibility: hidden;\n  will-change: opacity;\n  -webkit-transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1);\n          transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1); }\n\n/* pswp--has_mouse class is added only when two subsequent mousemove events occur */\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  visibility: visible; }\n\n.pswp__top-bar,\n.pswp__caption {\n  background-color: rgba(0, 0, 0, 0.5); }\n\n/* pswp__ui--fit class is added when main image \"fits\" between top bar and bottom bar (caption) */\n.pswp__ui--fit .pswp__top-bar,\n.pswp__ui--fit .pswp__caption {\n  background-color: rgba(0, 0, 0, 0.3); }\n\n/* pswp__ui--idle class is added when mouse isn't moving for several seconds (JS option timeToIdle) */\n.pswp__ui--idle .pswp__top-bar {\n  opacity: 0; }\n\n.pswp__ui--idle .pswp__button--arrow--left,\n.pswp__ui--idle .pswp__button--arrow--right {\n  opacity: 0; }\n\n/*\n\tpswp__ui--hidden class is added when controls are hidden\n\te.g. when user taps to toggle visibility of controls\n*/\n.pswp__ui--hidden .pswp__top-bar,\n.pswp__ui--hidden .pswp__caption,\n.pswp__ui--hidden .pswp__button--arrow--left,\n.pswp__ui--hidden .pswp__button--arrow--right {\n  /* Force paint & create composition layer for controls. */\n  opacity: 0.001; }\n\n/* pswp__ui--one-slide class is added when there is just one item in gallery */\n.pswp__ui--one-slide .pswp__button--arrow--left,\n.pswp__ui--one-slide .pswp__button--arrow--right,\n.pswp__ui--one-slide .pswp__counter {\n  display: none; }\n\n.pswp__element--disabled {\n  display: none !important; }\n\n.pswp--minimal--dark .pswp__top-bar {\n  background: none; }\n", ""]);
+exports.push([module.i, "/*! PhotoSwipe Default UI CSS by Dmitry Semenov | photoswipe.com | MIT license */\n/*\n\n\tContents:\n\n\t1. Buttons\n\t2. Share modal and links\n\t3. Index indicator (\"1 of X\" counter)\n\t4. Caption\n\t5. Loading indicator\n\t6. Additional styles (root element, top bar, idle state, hidden state, etc.)\n\n*/\n/*\n\t\n\t1. Buttons\n\n */\n/* <button> css reset */\n.pswp__button {\n  width: 44px;\n  height: 44px;\n  position: relative;\n  background: none;\n  cursor: pointer;\n  overflow: visible;\n  -webkit-appearance: none;\n  display: block;\n  border: 0;\n  padding: 0;\n  margin: 0;\n  float: right;\n  opacity: 0.75;\n  -webkit-transition: opacity 0.2s;\n          transition: opacity 0.2s;\n  -webkit-box-shadow: none;\n          box-shadow: none; }\n  .pswp__button:focus,\n  .pswp__button:hover {\n    opacity: 1; }\n  .pswp__button:active {\n    outline: none;\n    opacity: 0.9; }\n  .pswp__button::-moz-focus-inner {\n    padding: 0;\n    border: 0; }\n\n/* pswp__ui--over-close class it added when mouse is over element that should close gallery */\n.pswp__ui--over-close .pswp__button--close {\n  opacity: 1; }\n\n.pswp__button,\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  background: url(" + __webpack_require__(86) + ") 0 0 no-repeat;\n  background-size: 264px 88px;\n  width: 44px;\n  height: 44px; }\n\n@media (-webkit-min-device-pixel-ratio: 1.1), (-webkit-min-device-pixel-ratio: 1.09375), (min-resolution: 105dpi), (min-resolution: 1.1dppx) {\n  /* Serve SVG sprite if browser supports SVG and resolution is more than 105dpi */\n  .pswp--svg .pswp__button,\n  .pswp--svg .pswp__button--arrow--left:before,\n  .pswp--svg .pswp__button--arrow--right:before {\n    background-image: url(" + __webpack_require__(87) + "); }\n  .pswp--svg .pswp__button--arrow--left,\n  .pswp--svg .pswp__button--arrow--right {\n    background: none; } }\n\n.pswp__button--close {\n  background-position: 0 -44px; }\n\n.pswp__button--share {\n  background-position: -44px -44px; }\n\n.pswp__button--fs {\n  display: none; }\n\n.pswp--supports-fs .pswp__button--fs {\n  display: block; }\n\n.pswp--fs .pswp__button--fs {\n  background-position: -44px 0; }\n\n.pswp__button--zoom {\n  display: none;\n  background-position: -88px 0; }\n\n.pswp--zoom-allowed .pswp__button--zoom {\n  display: block; }\n\n.pswp--zoomed-in .pswp__button--zoom {\n  background-position: -132px 0; }\n\n/* no arrows on touch screens */\n.pswp--touch .pswp__button--arrow--left,\n.pswp--touch .pswp__button--arrow--right {\n  visibility: hidden; }\n\n/*\n\tArrow buttons hit area\n\t(icon is added to :before pseudo-element)\n*/\n.pswp__button--arrow--left,\n.pswp__button--arrow--right {\n  background: none;\n  top: 50%;\n  margin-top: -50px;\n  width: 70px;\n  height: 100px;\n  position: absolute; }\n\n.pswp__button--arrow--left {\n  left: 0; }\n\n.pswp__button--arrow--right {\n  right: 0; }\n\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  content: '';\n  top: 35px;\n  background-color: rgba(0, 0, 0, 0.3);\n  height: 30px;\n  width: 32px;\n  position: absolute; }\n\n.pswp__button--arrow--left:before {\n  left: 6px;\n  background-position: -138px -44px; }\n\n.pswp__button--arrow--right:before {\n  right: 6px;\n  background-position: -94px -44px; }\n\n/*\n\n\t2. Share modal/popup and links\n\n */\n.pswp__counter,\n.pswp__share-modal {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n      user-select: none; }\n\n.pswp__share-modal {\n  display: block;\n  background: rgba(0, 0, 0, 0.5);\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  padding: 10px;\n  position: absolute;\n  z-index: 1600;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  -webkit-backface-visibility: hidden;\n  will-change: opacity; }\n\n.pswp__share-modal--hidden {\n  display: none; }\n\n.pswp__share-tooltip {\n  z-index: 1620;\n  position: absolute;\n  background: #FFF;\n  top: 56px;\n  border-radius: 2px;\n  display: block;\n  width: auto;\n  right: 44px;\n  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n  -webkit-transform: translateY(6px);\n      -ms-transform: translateY(6px);\n          transform: translateY(6px);\n  -webkit-transition: -webkit-transform 0.25s;\n          transition: transform 0.25s;\n  -webkit-backface-visibility: hidden;\n  will-change: transform; }\n  .pswp__share-tooltip a {\n    display: block;\n    padding: 8px 12px;\n    color: #000;\n    text-decoration: none;\n    font-size: 14px;\n    line-height: 18px; }\n    .pswp__share-tooltip a:hover {\n      text-decoration: none;\n      color: #000; }\n    .pswp__share-tooltip a:first-child {\n      /* round corners on the first/last list item */\n      border-radius: 2px 2px 0 0; }\n    .pswp__share-tooltip a:last-child {\n      border-radius: 0 0 2px 2px; }\n\n.pswp__share-modal--fade-in {\n  opacity: 1; }\n  .pswp__share-modal--fade-in .pswp__share-tooltip {\n    -webkit-transform: translateY(0);\n        -ms-transform: translateY(0);\n            transform: translateY(0); }\n\n/* increase size of share links on touch devices */\n.pswp--touch .pswp__share-tooltip a {\n  padding: 16px 12px; }\n\na.pswp__share--facebook:before {\n  content: '';\n  display: block;\n  width: 0;\n  height: 0;\n  position: absolute;\n  top: -12px;\n  right: 15px;\n  border: 6px solid transparent;\n  border-bottom-color: #FFF;\n  -webkit-pointer-events: none;\n  -moz-pointer-events: none;\n  pointer-events: none; }\n\na.pswp__share--facebook:hover {\n  background: #3E5C9A;\n  color: #FFF; }\n  a.pswp__share--facebook:hover:before {\n    border-bottom-color: #3E5C9A; }\n\na.pswp__share--twitter:hover {\n  background: #55ACEE;\n  color: #FFF; }\n\na.pswp__share--pinterest:hover {\n  background: #CCC;\n  color: #CE272D; }\n\na.pswp__share--download:hover {\n  background: #DDD; }\n\n/*\n\n\t3. Index indicator (\"1 of X\" counter)\n\n */\n.pswp__counter {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  font-size: 13px;\n  line-height: 44px;\n  color: #FFF;\n  opacity: 0.75;\n  padding: 0 10px; }\n\n/*\n\t\n\t4. Caption\n\n */\n.pswp__caption {\n  position: absolute;\n  left: 0;\n  bottom: 0;\n  width: 100%;\n  min-height: 44px; }\n  .pswp__caption small {\n    font-size: 11px;\n    color: #BBB; }\n\n.pswp__caption__center {\n  text-align: left;\n  max-width: 420px;\n  margin: 0 auto;\n  font-size: 13px;\n  padding: 10px;\n  line-height: 20px;\n  color: #CCC; }\n\n.pswp__caption--empty {\n  display: none; }\n\n/* Fake caption element, used to calculate height of next/prev image */\n.pswp__caption--fake {\n  visibility: hidden; }\n\n/*\n\n\t5. Loading indicator (preloader)\n\n\tYou can play with it here - http://codepen.io/dimsemenov/pen/yyBWoR\n\n */\n.pswp__preloader {\n  width: 44px;\n  height: 44px;\n  position: absolute;\n  top: 0;\n  left: 50%;\n  margin-left: -22px;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  will-change: opacity;\n  direction: ltr; }\n\n.pswp__preloader__icn {\n  width: 20px;\n  height: 20px;\n  margin: 12px; }\n\n.pswp__preloader--active {\n  opacity: 1; }\n  .pswp__preloader--active .pswp__preloader__icn {\n    /* We use .gif in browsers that don't support CSS animation */\n    background: url(" + __webpack_require__(88) + ") 0 0 no-repeat; }\n\n.pswp--css_animation .pswp__preloader--active {\n  opacity: 1; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__icn {\n    -webkit-animation: clockwise 500ms linear infinite;\n            animation: clockwise 500ms linear infinite; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__donut {\n    -webkit-animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite;\n            animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite; }\n\n.pswp--css_animation .pswp__preloader__icn {\n  background: none;\n  opacity: 0.75;\n  width: 14px;\n  height: 14px;\n  position: absolute;\n  left: 15px;\n  top: 15px;\n  margin: 0; }\n\n.pswp--css_animation .pswp__preloader__cut {\n  /* \n\t\t\tThe idea of animating inner circle is based on Polymer (\"material\") loading indicator \n\t\t\t by Keanu Lee https://blog.keanulee.com/2014/10/20/the-tale-of-three-spinners.html\n\t\t*/\n  position: relative;\n  width: 7px;\n  height: 14px;\n  overflow: hidden; }\n\n.pswp--css_animation .pswp__preloader__donut {\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  width: 14px;\n  height: 14px;\n  border: 2px solid #FFF;\n  border-radius: 50%;\n  border-left-color: transparent;\n  border-bottom-color: transparent;\n  position: absolute;\n  top: 0;\n  left: 0;\n  background: none;\n  margin: 0; }\n\n@media screen and (max-width: 1024px) {\n  .pswp__preloader {\n    position: relative;\n    left: auto;\n    top: auto;\n    margin: 0;\n    float: right; } }\n\n@-webkit-keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@-webkit-keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n@keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n/*\n\t\n\t6. Additional styles\n\n */\n/* root element of UI */\n.pswp__ui {\n  -webkit-font-smoothing: auto;\n  visibility: visible;\n  opacity: 1;\n  z-index: 1550; }\n\n/* top black bar with buttons and \"1 of X\" indicator */\n.pswp__top-bar {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  width: 100%; }\n\n.pswp__caption,\n.pswp__top-bar,\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  -webkit-backface-visibility: hidden;\n  will-change: opacity;\n  -webkit-transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1);\n          transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1); }\n\n/* pswp--has_mouse class is added only when two subsequent mousemove events occur */\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  visibility: visible; }\n\n.pswp__top-bar,\n.pswp__caption {\n  background-color: rgba(0, 0, 0, 0.5); }\n\n/* pswp__ui--fit class is added when main image \"fits\" between top bar and bottom bar (caption) */\n.pswp__ui--fit .pswp__top-bar,\n.pswp__ui--fit .pswp__caption {\n  background-color: rgba(0, 0, 0, 0.3); }\n\n/* pswp__ui--idle class is added when mouse isn't moving for several seconds (JS option timeToIdle) */\n.pswp__ui--idle .pswp__top-bar {\n  opacity: 0; }\n\n.pswp__ui--idle .pswp__button--arrow--left,\n.pswp__ui--idle .pswp__button--arrow--right {\n  opacity: 0; }\n\n/*\n\tpswp__ui--hidden class is added when controls are hidden\n\te.g. when user taps to toggle visibility of controls\n*/\n.pswp__ui--hidden .pswp__top-bar,\n.pswp__ui--hidden .pswp__caption,\n.pswp__ui--hidden .pswp__button--arrow--left,\n.pswp__ui--hidden .pswp__button--arrow--right {\n  /* Force paint & create composition layer for controls. */\n  opacity: 0.001; }\n\n/* pswp__ui--one-slide class is added when there is just one item in gallery */\n.pswp__ui--one-slide .pswp__button--arrow--left,\n.pswp__ui--one-slide .pswp__button--arrow--right,\n.pswp__ui--one-slide .pswp__counter {\n  display: none; }\n\n.pswp__element--disabled {\n  display: none !important; }\n\n.pswp--minimal--dark .pswp__top-bar {\n  background: none; }\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 63 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9507,7 +9478,7 @@ exports.push([module.i, "/*! PhotoSwipe main CSS by Dmitry Semenov | photoswipe.
 
 
 /***/ }),
-/* 64 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9521,31 +9492,31 @@ exports.push([module.i, "body.stop-scrolling {\n  height: 100%;\n  overflow: hid
 
 
 /***/ }),
-/* 65 */
+/* 63 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/YcfIqI\">\n\n<h2>Mr. Krabs</h2>\n<div>Eugene H. Krabs, nicknamed \"Armor Abs\", \"Krabs\" and commonly known as Mr. Krabs, is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Clancy Brown, and first appeared in the series' first episode \"Help Wanted\" on May 1, 1999. Mr. Krabs was created and designed by marine biologist, animator, and creator of the show Stephen Hillenburg.</div>\n\n<hr>\n\n<h2>Role in Spongebob Squarepants</h2>\n<div>Mr. Krabs is the greedy founder and owner of the Krusty Krab restaurant, where Spongebob works as a frycook, and Squidward works as a cashier. The success of the restaurant is built in part on a lack of competition and in part on the success of the Krusty Krab's signature sandwich, the Krabby Patty, the formula to which is a closely guarded trade secret.\n\nHis rival and former best friend, Plankton, has a struggling restaurant called the Chum Bucket located across the street from the Krusty Krab. A recurring gag throughout the series is Plankton's futile attempts to steal the Krabby Patty formula, under the assumption that it would eventually put the Krusty Krab out of business. To avoid this, Krabs goes to extreme lengths to prevent Plankton from obtaining the formula (going so far as to refuse to allow him to even buy a Krabby Patty legitimately, out of fear that Plankton might reverse-engineer the formula) or to prevent the Chum Bucket from having any business whatsoever, not even just one single customer (as seen in the episode \"Plankton's Regular\").\n\nKrabs values money above all, and he views the other characters in regard to how they affect his money. He tolerates his two employees because of their low cost and positive impact on his finances, but he is quick to rebuke them, especially Spongebob, if they engage in behavior that drives away customers or costs him money. Krabs and Spongebob have a tentative father-son relationship - Krabs often scolds Spongebob if he gets in trouble, but at times gives him fatherly advice. However, Squidward strongly abhors Krabs for often taking money out of his paycheck for little reason at all.\n\nMr. Krabs has served in the navy, and in the episode \"Krusty Krab Training Video\" it is revealed that Mr. Krabs served during a time of war, and fell into a depression after finishing his service. His depression was alleviated after founding the Krusty Krab.</div>\n\n<hr>\n\n<h2>Daughter</h2>\n<div>Mr. Krabs has a daughter, a sperm whale named Pearl. Pearl is a stereotypical teenage girl, extremely socially conscious and embarrassed by her father's miserliness. She made her first appearance in the season one episode, \"Squeaky Boots,\" which aired on September 4, 1999. Due to her frequent appearances, Pearl has been featured in many types of merchandise, such as plush toys and action figures. Although she is officially Mr. Krabs' daughter, her mother is neither seen nor named, and in fact in the season two episode \"Krusty Love\" it is implied that Mr. Krabs is not (currently) married.\n\nPearl is voiced by Lori Alan.</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 66 */
+/* 64 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>\n<div>Patrick Star is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Bill Fagerbakke, who also voices numerous other characters on the show. Created and designed by marine biologist and cartoonist Stephen Hillenburg, the series creator, Patrick first appeared on television in the show's pilot episode \"Help Wanted\" on May 1, 1999.\n\nSeen as an overweight, dimwitted pink starfish, Patrick lives under a rock in the underwater city of Bikini Bottom next door to Squidward Tentacles' moai. His most significant character trait is his lack of common sense, which sometimes leads him and his best friend, main character SpongeBob SquarePants, into trouble. Patrick is unemployed and a self-proclaimed expert in the \"art of doing nothing\".\n\nThe character has received positive reactions from critics and fans alike. Patrick has been included in various SpongeBob SquarePants-related merchandise, including trading cards, video games, plush toys, and comic books. He has been seen in the 2004 full-length feature film The SpongeBob SquarePants Movie and its 2015 sequel The SpongeBob Movie: Sponge Out of Water.\n\nDespite not appearing as frequently in episodes as Squidward, he is generally considered to be the show's most prominent character besides SpongeBob.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Patrick is the ignorant but humorous best friend of main character SpongeBob SquarePants. He is portrayed as being an overweight, dimwitted, pink starfish residing in the underwater city of Bikini Bottom. Patrick has been shown to make many ludicrous mistakes; despite this, he has occasionally been portrayed as a savant, with articulate observance to certain subjects in specific detail. However, he always reverts quickly back to his usual, unintelligent self after displaying a moment of wisdom. He holds no form of occupation except for several very brief stints working at the Krusty Krab and at the Chum Bucket in a variety of positions, and mostly spends his time either clowning around with SpongeBob, catching jellyfish with him, or lounging beneath the rock under which he resides.\n\nAt home, Patrick is typically depicted either sleeping, watching TV, or engaged in the \"art of doing nothing\", at which he is an expert. All the furnishings in the space under his rock are made of sand, and Patrick can simply opt to quickly build up furniture as needed; even so, his living space is sparse and contains only the barest essentials. Aside from his best friend SpongeBob, who is often impressed by Patrick's capacity to come up with naïve yet genius plans or solutions, Patrick frequently irritates those around him and is confounded by the simplest of questions or subjects. The characters of Mr. Krabs and Squidward have no patience for Patrick's stupidity, and the former does not pay him much regard; Clancy Brown, who provides Mr. Krabs' voice, said, \"The only person that he [Mr. Krabs] doesn't hire is Patrick because Patrick is just too stupid to work for nothing.\" Sandy often gets annoyed by Patrick, but still sees him as a friend.</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. In 1987, Hillenburg left the institute to pursue a career in animation.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of the Nickelodeon series Rocko's Modern Life, at an animation festival, and was offered a job as a director of the show. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not even considered creating his own series. However, he realized that if he ever did, this would be the best approach. Production on Rocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants.\n\n\nEarly drawings of Patrick from Stephen Hillenburg's bible.\nFor the show's characters, Hillenburg started to draw and used character designs from his comic book—including starfish, crab, and sponge. He described Patrick as \"probably the dumbest guy in town\". The character was conceived as a starfish to embody the animal's nature; according to Hillenburg, starfish look \"dumb and slow\", but they are \"very active and aggressive\" in reality, like Patrick. Hillenburg incorporated character comedy rather than topical humor on the show to emphasize \"things that are more about humorous situations and about characters and their flaws.\" He designed Patrick and SpongeBob as such because \"they're whipping themselves up into situations—that's always where the humor comes from. The rule is: Follow the innocence and avoid topical [humor].\"\n\nIn spite of being depicted as having a good temperament or state of mind, Patrick has been shown in some episodes to have a tantrum. Patrick's emotional outbreak was originally written only for the first season episode \"Valentine's Day\", where SpongeBob and Sandy try to give Patrick a Valentine's Day gift, and \"was supposed to be a one-time thing\". However, according to episode writer Jay Lender, \"when that show came back it felt so right that his dark side started popping up everywhere. You can plan ahead all you want, but the characters eventually tell you who they are.\"\n\nEvery main character in the show has its own unique footstep sound. The sound of Patrick's footsteps is recorded by the show's Foley crew, with a Foley talent wearing a slip-on shoe. Jeff Hutchins, show's sound designer said, \"[Going] barefoot makes it tough to have much presence, so we decided that Patrick would be performed with shoes on.\"</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 67 */
+/* 65 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 68 */
+/* 66 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacles</h2>\n<div>Squidward Tentacles is a fictional character voiced by actor Rodger Bumpass in the American animated television series SpongeBob SquarePants. Squidward was created and designed by marine biologist and animator Stephen Hillenburg. He first appeared on television in the series' pilot episode \"Help Wanted\" on May 1, 1999.\n\nAlthough his name has the word \"squid\" in it and he has six arms, Squidward is an anthropomorphic octopus.[a] He lives in a moai between SpongeBob SquarePants' and Patrick Star's houses. The character is portrayed as ill-tempered, manipulative, pretentious, and cynical, and he strongly despises his neighbors for their constant boisterous, noisy behavior. However, the pair are unaware of Squidward's antipathy towards them and see him as a friend. Squidward works as a cashier at the Krusty Krab restaurant, a job that he is apathetic towards.\n\nThe character's critical reception from professionals and fans has been positive. Squidward has appeared in many SpongeBob SquarePants publications, toys, and other merchandise. He appears in the 2004 full-length feature film The SpongeBob SquarePants Movie and in its sequel which was released in 2015.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Squidward is depicted as a bitter, very unfortunate, desperate, somewhat depressed, curt, arrogant, turquoise octopus. He lives in the underwater city of Bikini Bottom in a moai situated between SpongeBob SquarePants' pineapple house and Patrick Star's rock. Squidward detests his neighbors for their perpetual laughter and boisterous behavior, though SpongeBob and Patrick are oblivious to Squidward's animosity towards them and regard him as a friend.\n\nSquidward lives in a constant state of self-pity and misery; he is unhappy with his humdrum lifestyle and yearns for celebrity status, wealth, hair, and a glamorous and distinguished career as a musician or painter with a passion for art and playing the clarinet. However, he is left to endure the lowly status as a fast-food cashier at the Krusty Krab restaurant. Squidward resents his job and is irritated by his greedy employer Mr. Krabs and by having SpongeBob as a colleague.\n\nSquidward longs for peace but his wishes remain unsatisfied. He believes he is talented and deserves a higher social status. The populace of Bikini Bottom do not consider him talented, and frequently boo him and walk out on his performances.</div>\n\n<hr>\n\n<h2>Development</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. After graduating in 1984, he joined the Ocean Institute, an ocean education organization, where he had the idea to create a comic book titled The Intertidal Zone, which led to the creation of SpongeBob SquarePants. In 1987, Hillenburg left the Institute to pursue a career in animation.\n\n\nEarly rough sketches of Squidward from creator Stephen Hillenburg's series bible.\nSeveral years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of Rocko's Modern Life, at an animation festival. Murray offered Hillenburg a job as a director of the series. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not considered creating his own series, but soon realized that this was his chance. Shortly after production on Rocko's Modern Life ended in 1996, Hillenburg began working on SpongeBob SquarePants.\n\nHillenburg used some character designs from his comic book. He designed \"SpongeBob's grumpy next door neighbor\" as an octopus because the species' large head; octopi, he said, \"have such a large bulbous head and Squidward thinks he's an intellectual so of course, he's gonna have a large bulbous head.\" Hillenburg drew Squidward with six tentacles because \"it was really just simpler for animation to draw him with six legs instead of eight\". Show writer and storyboard artist Vincent Waller said:\n\nSquidward is hard to draw—he has a very odd-shaped head. Fortunately, his emotions are pretty even, but to get a whole lot of big emoting out of him is a challenge. His nose splits everything in half, so it's always like, 'OK, how am I going to work this and still make it read?'\n\nHillenburg thought of making jokes with Squidward ejecting ink but retired it because, according to him, \"it always looks like he's pooping his pants\". However, it occurs in The SpongeBob Movie: Sponge Out of Water and the sixth season episode, \"Giant Squidward\".\n\nConflicting statements from Hillenburg and Nickelodeon's official website have led to some doubt over whether the character is an octopus or a squid. Hillenburg named him Squidward because the name Octoward—in the words of Squidward's voice actor Rodger Bumpass—\"just didn't work\". The sound of Squidward's footsteps is produced by rubbing hot water bottles. The footsteps, and those of the rest of the main characters, are recorded by the show's foley crew. Sound designer Jeff Hutchins said that footstep sounds \"[help] tell which character it is and what surface they're stepping on\". Bumpass inspired the idea of having Squidward ride a recumbent bicycle; Bumpass owns one of these bicycles, which he rides around Burbank, California. Bumpass described it as his \"little inside joke\".</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 69 */
+/* 67 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -9735,16 +9706,16 @@ module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacl
     attachTo.clearImmediate = clearImmediate;
 }(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(92), __webpack_require__(18)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(89), __webpack_require__(17)))
 
 /***/ }),
-/* 70 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(49);
+var content = __webpack_require__(48);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9764,13 +9735,13 @@ if(false) {
 }
 
 /***/ }),
-/* 71 */
+/* 69 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(50);
+var content = __webpack_require__(49);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9790,13 +9761,13 @@ if(false) {
 }
 
 /***/ }),
-/* 72 */
+/* 70 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(51);
+var content = __webpack_require__(50);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9816,13 +9787,13 @@ if(false) {
 }
 
 /***/ }),
-/* 73 */
+/* 71 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(52);
+var content = __webpack_require__(51);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9842,13 +9813,13 @@ if(false) {
 }
 
 /***/ }),
-/* 74 */
+/* 72 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(53);
+var content = __webpack_require__(52);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9868,13 +9839,13 @@ if(false) {
 }
 
 /***/ }),
-/* 75 */
+/* 73 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(54);
+var content = __webpack_require__(53);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9894,13 +9865,13 @@ if(false) {
 }
 
 /***/ }),
-/* 76 */
+/* 74 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(55);
+var content = __webpack_require__(54);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9920,13 +9891,13 @@ if(false) {
 }
 
 /***/ }),
-/* 77 */
+/* 75 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(56);
+var content = __webpack_require__(55);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9946,13 +9917,13 @@ if(false) {
 }
 
 /***/ }),
-/* 78 */
+/* 76 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(57);
+var content = __webpack_require__(56);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9972,13 +9943,13 @@ if(false) {
 }
 
 /***/ }),
-/* 79 */
+/* 77 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(58);
+var content = __webpack_require__(57);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -9998,13 +9969,13 @@ if(false) {
 }
 
 /***/ }),
-/* 80 */
+/* 78 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(59);
+var content = __webpack_require__(58);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -10024,39 +9995,13 @@ if(false) {
 }
 
 /***/ }),
-/* 81 */
+/* 79 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(60);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./text.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 82 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(61);
+var content = __webpack_require__(59);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -10076,7 +10021,7 @@ if(false) {
 }
 
 /***/ }),
-/* 83 */
+/* 80 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10217,7 +10162,7 @@ exports['default'] = {
 module.exports = exports['default'];
 
 /***/ }),
-/* 84 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10302,7 +10247,7 @@ exports['default'] = handleKeyDown;
 module.exports = exports['default'];
 
 /***/ }),
-/* 85 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10350,7 +10295,7 @@ exports["default"] = injectedHTML;
 module.exports = exports["default"];
 
 /***/ }),
-/* 86 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10581,7 +10526,7 @@ exports['default'] = setParameters;
 module.exports = exports['default'];
 
 /***/ }),
-/* 87 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -10589,7 +10534,7 @@ var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(21);
+var util = __webpack_require__(20);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -10655,10 +10600,10 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 88 */
+/* 85 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(21);
+var util = __webpack_require__(20);
 
 module.exports = function(ctx) {
   var fn = ctx.fn;
@@ -11241,25 +11186,25 @@ module.exports = function(ctx) {
 };
 
 /***/ }),
-/* 89 */
+/* 86 */
 /***/ (function(module, exports) {
 
 module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAABYCAQAAACjBqE3AAAB6klEQVR4Ae3bsWpUQRTG8YkkanwCa7GzVotsI/gEgk9h4Vu4ySLYmMYgbJrc3lrwZbJwC0FMt4j7F6Y4oIZrsXtgxvx/1c0ufEX4cnbmLCmSJEmSJEmSJEmSJP3XCBPvbJU+8doWmDFwyZpLBmYlNJebz0KwzykwsuSYJSNwykEJreV2BaBMaLIQZ2xYcFgqDlmw4ayE/FwL0dDk4Qh4W37DAjgqIT+3HRbigjH+iikVdxgZStgyN0Su2sXIeTwTT+esdpcbIlfNAuZ/TxresG4zV8kYWSZNiKUTokMMSWeIwTNEn4fK2TW3gRNgVkJLuVksROA9G+bEvoATNlBCa7nZXEwdxEZxzpKRKFh+bsv8LmPFmhX1OwfIz81jIRJQ5eeqG9B+riRJkiRJkiRJkiRJkiRJkiRJUkvA/8RQoEpKlJWINFkJ62AlrEP/mNBibnv2yz/A3t7Uq3LcpoxP8COjC1T5vxoAD5VdoEqdDrd5QuW1swtUSaueh3zkiuBiqgtA2OlkeMcP/uDqugsJdbjHF65VdPMKwS0+WQc/MgKvrIOHysB9vgPwk8+85hmPbnQdvHZyDMAFD7L3EOpgMcVdvnHFS0/vlatrXvCVx0U9gt3fxvnA0/hB4nmRJEmSJEmSJEmSJGmHfgFLaDPoMu5xWwAAAABJRU5ErkJggg=="
 
 /***/ }),
-/* 90 */
+/* 87 */
 /***/ (function(module, exports) {
 
 module.exports = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjY0IiBoZWlnaHQ9Ijg4IiB2aWV3Qm94PSIwIDAgMjY0IDg4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0aXRsZT5kZWZhdWx0LXNraW4gMjwvdGl0bGU+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48Zz48cGF0aCBkPSJNNjcuMDAyIDU5LjV2My43NjhjLTYuMzA3Ljg0LTkuMTg0IDUuNzUtMTAuMDAyIDkuNzMyIDIuMjItMi44MyA1LjU2NC01LjA5OCAxMC4wMDItNS4wOThWNzEuNUw3MyA2NS41ODUgNjcuMDAyIDU5LjV6IiBpZD0iU2hhcGUiIGZpbGw9IiNmZmYiLz48ZyBmaWxsPSIjZmZmIj48cGF0aCBkPSJNMTMgMjl2LTVoMnYzaDN2MmgtNXpNMTMgMTVoNXYyaC0zdjNoLTJ2LTV6TTMxIDE1djVoLTJ2LTNoLTN2LTJoNXpNMzEgMjloLTV2LTJoM3YtM2gydjV6IiBpZD0iU2hhcGUiLz48L2c+PGcgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTYyIDI0djVoLTJ2LTNoLTN2LTJoNXpNNjIgMjBoLTV2LTJoM3YtM2gydjV6TTcwIDIwdi01aDJ2M2gzdjJoLTV6TTcwIDI0aDV2MmgtM3YzaC0ydi01eiIvPjwvZz48cGF0aCBkPSJNMjAuNTg2IDY2bC01LjY1Ni01LjY1NiAxLjQxNC0xLjQxNEwyMiA2NC41ODZsNS42NTYtNS42NTYgMS40MTQgMS40MTRMMjMuNDE0IDY2bDUuNjU2IDUuNjU2LTEuNDE0IDEuNDE0TDIyIDY3LjQxNGwtNS42NTYgNS42NTYtMS40MTQtMS40MTRMMjAuNTg2IDY2eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xMTEuNzg1IDY1LjAzTDExMCA2My41bDMtMy41aC0xMHYtMmgxMGwtMy0zLjUgMS43ODUtMS40NjhMMTE3IDU5bC01LjIxNSA2LjAzeiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xNTIuMjE1IDY1LjAzTDE1NCA2My41bC0zLTMuNWgxMHYtMmgtMTBsMy0zLjUtMS43ODUtMS40NjhMMTQ3IDU5bDUuMjE1IDYuMDN6IiBmaWxsPSIjZmZmIi8+PGc+PHBhdGggaWQ9IlJlY3RhbmdsZS0xMSIgZmlsbD0iI2ZmZiIgZD0iTTE2MC45NTcgMjguNTQzbC0zLjI1LTMuMjUtMS40MTMgMS40MTQgMy4yNSAzLjI1eiIvPjxwYXRoIGQ9Ik0xNTIuNSAyN2MzLjAzOCAwIDUuNS0yLjQ2MiA1LjUtNS41cy0yLjQ2Mi01LjUtNS41LTUuNS01LjUgMi40NjItNS41IDUuNSAyLjQ2MiA1LjUgNS41IDUuNXoiIGlkPSJPdmFsLTEiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTUwIDIxaDV2MWgtNXoiLz48L2c+PGc+PHBhdGggZD0iTTExNi45NTcgMjguNTQzbC0xLjQxNCAxLjQxNC0zLjI1LTMuMjUgMS40MTQtMS40MTQgMy4yNSAzLjI1eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xMDguNSAyN2MzLjAzOCAwIDUuNS0yLjQ2MiA1LjUtNS41cy0yLjQ2Mi01LjUtNS41LTUuNS01LjUgMi40NjItNS41IDUuNSAyLjQ2MiA1LjUgNS41IDUuNXoiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA2IDIxaDV2MWgtNXoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA5LjA0MyAxOS4wMDhsLS4wODUgNS0xLS4wMTcuMDg1LTV6Ii8+PC9nPjwvZz48L2c+PC9zdmc+"
 
 /***/ }),
-/* 91 */
+/* 88 */
 /***/ (function(module, exports) {
 
 module.exports = "data:image/gif;base64,R0lGODlhFAAUAPMIAIeHhz8/P1dXVycnJ8/Pz7e3t5+fn29vb////wAAAAAAAAAAAAAAAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQFBwAIACwAAAAAFAAUAEAEUxDJSatFxtwaggWAdIyHJAhXoRYSQUhDPGx0TbmujahbXGWZWqdDAYEsp5NupLPkdDwE7oXwWVasimzWrAE1tKFHErQRK8eL8mMUlRBJVI307uoiACH5BAUHAAgALAEAAQASABIAAAROEMkpS6E4W5upMdUmEQT2feFIltMJYivbvhnZ3R0A4NMwIDodz+cL7nDEn5CH8DGZh8MtEMBEoxkqlXKVIgQCibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpjaE4W5spANUmFQX2feFIltMJYivbvhnZ3d1x4BNBIDodz+cL7nDEn5CH8DGZAsFtMMBEoxkqlXKVIgIBibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpAaA4W5vpOdUmGQb2feFIltMJYivbvhnZ3Z0g4FNRIDodz+cL7nDEn5CH8DGZgcCNQMBEoxkqlXKVIgYDibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpz6E4W5upENUmAQD2feFIltMJYivbvhnZ3V0Q4JNhIDodz+cL7nDEn5CH8DGZg8GtUMBEoxkqlXKVIggEibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkphaA4W5tpCNUmHQf2feFIltMJYivbvhnZ3d0w4BMAIDodz+cL7nDEn5CH8DGZBMLNYMBEoxkqlXKVIgoFibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpQ6A4W5vpGNUmCQL2feFIltMJYivbvhnZ3R1B4NNxIDodz+cL7nDEn5CH8DGZhcINAMBEoxkqlXKVIgwGibbK9YLBYvLtHH5K0J0IACH5BAUHAAcALAEAAQASABIAAANCeLo6wzA6FxkhbaoQ4L3ZxnXLh0EjWZ4RV71VUcCLIByyTNt2PsO8m452sBGJBsNxkUwuD03lAQBASqnUJ7aq5UYSADs="
 
 /***/ }),
-/* 92 */
+/* 89 */
 /***/ (function(module, exports) {
 
 var g;
@@ -11286,7 +11231,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 93 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var apply = Function.prototype.apply;
@@ -11339,7 +11284,7 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(69);
+__webpack_require__(67);
 exports.setImmediate = setImmediate;
 exports.clearImmediate = clearImmediate;
 
