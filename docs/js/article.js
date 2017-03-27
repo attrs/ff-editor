@@ -8207,6 +8207,11 @@ proto.insert = function(node, ref) {
     ref = children[ref];
   }
   
+  var insert = function(node, ref) {
+    if( ref ) ref.parentNode && ref.parentNode.insertBefore(node, ref);
+    else target.append(node);
+  }
+  
   var images = [];
   $(node).reverse().async(function(item, done) {
     var el = (item.dom && item.dom()) || item;
@@ -8218,37 +8223,31 @@ proto.insert = function(node, ref) {
         return context.upload(item, function(err, result) {
           if( err ) return done(err);
           
-          if( type.indexOf('image/') === 0 ) {
+          if( type.indexOf('image/') === 0 )
             images.push(new context.Image(result));
-          } else {
-            var filepart = new context.File(result);
-            ref.parentNode && ref.parentNode.insertBefore(filepart.dom(), ref);
-          }
+          else
+            insert(new context.File(result).dom(), ref);
           
           done();
         });
       }
-    } else if( ref ) {
-      ref.parentNode && ref.parentNode.insertBefore(el, ref);
     } else {
-      target.append(el);
+      insert(el, ref);
     }
     
     done();
   }, function(err) {
     if( err ) return context.error(err);
     
-    if( images.length ) {
+    if( images.length === 1 ) {
+      insert(images[0].dom(), ref);
+    } else if( images.length ) {
       var row = new context.Row();
-      images.forEach(function(image) {
+      images.reverse().forEach(function(image) {
         row.add(image);
       });
       
-      if( ref ) {
-        ref.parentNode && ref.parentNode.insertBefore(row.dom(), ref);
-      } else {
-        target.append(row.dom());
-      }
+      insert(row.dom(), ref);
     }
     
     part.fire('insert', {
