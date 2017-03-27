@@ -1,5 +1,21 @@
+var fs = require('fs');
 var path = require('path');
 var webpack = require('webpack');
+
+var alias = {};
+(function() {
+  var links = {};
+  var webmodulesrcfile = path.join(__dirname, '.webmodulesrc');
+  if( fs.existsSync(webmodulesrcfile) ) {
+    links = JSON.parse(fs.readFileSync(webmodulesrcfile)).links || {};
+  }
+  
+  Object.keys(links).forEach(function(key) {
+    alias[key] = links[key];
+  });
+  
+  alias['ff-editor'] = __dirname;
+})();
 
 module.exports = {
   entry: {
@@ -33,9 +49,7 @@ module.exports = {
     ]
   },
   resolve: {
-    alias: {
-      'ff-editor': __dirname
-    }
+    alias: alias
   },
   devtool: 'source-map'
 };
