@@ -81,16 +81,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 25);
+/******/ 	return __webpack_require__(__webpack_require__.s = 26);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(59);
+var Context = __webpack_require__(60);
 
-__webpack_require__(60)(Context);
+__webpack_require__(61)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -417,11 +417,11 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(13);
-var Events = __webpack_require__(14);
+var each = __webpack_require__(14);
+var Events = __webpack_require__(15);
 var $ = __webpack_require__(0);
-var types = __webpack_require__(10);
-var connector = __webpack_require__(24);
+var types = __webpack_require__(11);
+var connector = __webpack_require__(25);
 
 var parts = [];
 var data = {};
@@ -850,8 +850,8 @@ getCaretPosition: function(node) {
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Events = __webpack_require__(14);
-var Types = __webpack_require__(10);
+var Events = __webpack_require__(15);
+var Types = __webpack_require__(11);
 var Toolbar = __webpack_require__(5);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
@@ -1082,11 +1082,11 @@ module.exports = Part;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(28);
+var Toolbar = __webpack_require__(29);
 
 Toolbar.Button = __webpack_require__(7);
-Toolbar.Separator = __webpack_require__(9);
-Toolbar.ListButton = __webpack_require__(8);
+Toolbar.Separator = __webpack_require__(10);
+Toolbar.ListButton = __webpack_require__(9);
 
 module.exports = Toolbar;
 
@@ -1116,7 +1116,7 @@ module.exports = Items;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(49);
+__webpack_require__(50);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1210,6 +1210,218 @@ module.exports = Button;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
+var Part = __webpack_require__(4);
+var buildtoolbar = __webpack_require__(34);
+
+__webpack_require__(56);
+
+function ParagraphPart() {
+  Part.apply(this, arguments);
+}
+
+var proto = ParagraphPart.prototype = Object.create(Part.prototype);
+ParagraphPart.matches = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p', 'blockquote'];
+
+proto.oninit = function(e) {
+  var part = this;
+  var dom = part.dom();
+  var el = $(dom).ac('ff-paragraph')
+  .on('dragstart', function(e) {
+    if( !part.editmode() || el.ha('draggable') ) return;
+    
+    e.stopPropagation();
+    e.preventDefault();
+  })
+  .on('paste', function(e) {
+    e.preventDefault();
+    
+    var clipboard = e.clipboardData || window.clipboardData;
+    var text = clipboard.getData('Text');
+    this.innerText = text.split('\n').join(' ');
+  })
+  .on('keydown', function(e) {
+    if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
+  })
+  .on('dragend', function(e) {
+    part.dragmode(false);
+    part.toolbar().update();
+  });
+  
+  buildtoolbar(this);
+  
+  var placeholder = part._placeholder = (function() {
+    var node = $('<div class="ff-placeholder ff-acc"/>'), text, minWidthWrited = false;
+    
+    return {
+      text: function(o) {
+        if( !arguments.length ) return text;
+        text = o;
+        node.html(text);
+        return this;
+      },
+      show: function() {
+        if( !part.editmode() ) {
+          this.hide();
+          return this;
+        }
+        
+        el.attr('contenteditable', null);
+        node.html(text).remove();
+        var t = el.text().split('\n').join().trim();
+        
+        if( !t ) el.empty().append(node);
+        
+        var display = window.getComputedStyle(dom, null).display;
+        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
+          dom.style.minWidth = node[0].clientWidth + 'px';
+          minWidthWrited = true;
+        }
+        
+        return this;
+      },
+      hide: function() {
+        if( part.editmode() ) el.attr('contenteditable', true);
+        else if( minWidthWrited ) dom.style.minWidth = '';
+        
+        node.remove();
+        return this;
+      }
+    };
+  })();
+  
+  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
+};
+
+proto.multiline = function(b) {
+  if( !('_multiline' in this) ) {
+    this._multiline = $(this.dom()).attr('ff-multiline') == 'false' ? false : true;
+  }
+  
+  if( !arguments.length ) return this._multiline;
+  
+  el.attr('ff-multiline', b === false ? false : null);
+  this._multiline = !!b;
+  return this;
+};
+
+proto.dragmode = function(b) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.ha('draggable');
+  
+  if( !this.editmode() ) return this;
+  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
+  return this;
+};
+
+proto.onchildlist = function() {
+  if( this.editmode() ) this.placeholder().show();
+};
+
+proto.text = function(text) {
+  var el = $(this.dom());
+  if( !arguments.length ) {
+    var editmode = this.editmode();
+    this.editmode(false);
+    var text = el.text().split('\n').join().trim();
+    this.editmode(editmode);
+    return text;
+  }
+  
+  el.text($('<div/>').html(text).text());
+  return this;
+};
+
+proto.html = function(html) {
+  var el = $(this.dom());
+  if( !arguments.length ) {
+    var editmode = this.editmode();
+    this.editmode(false);
+    var html = el.html();
+    this.editmode(editmode);
+    return html;
+  }
+  
+  el.html(html);
+  return this;
+};
+
+proto.onfocus = function(e) {
+  if( !this.editmode() ) return;
+  
+  e.stopImmediatePropagation();
+  
+  this.toolbar().show();
+  this.placeholder().hide();
+  $(this.dom()).attr('draggable', null);
+  
+  var el = this.dom();
+  var selection = window.getSelection();
+  var range = selection.rangeCount && selection.getRangeAt(0);
+  
+  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
+   || el === range.startContainer
+   || el === range.endContainer ) {
+    selection.removeAllRanges();
+    setTimeout(function() {
+      el.focus();
+      el.click();
+    }, 10);
+  }
+};
+
+proto.onblur = function() {
+  if( this.editmode() )
+    this.placeholder().show();
+};
+
+proto.oneditmode = function(e) {
+  $(this.dom()).attr('contenteditable', true).attr('draggable', null);
+  this.placeholder().show();
+};
+
+proto.onviewmode = function(e) {
+  $(this.dom()).attr('contenteditable', null).attr('draggable', null);
+  this.placeholder().hide();
+};
+
+proto.create = function(arg) {
+  var html = typeof arg == 'string' ? arg : '';
+  return $('<div/>').html(html)[0];
+};
+
+proto.placeholder = function(placeholder) {
+  if( !arguments.length ) return this._placeholder;
+  this._placeholder.text(placeholder);
+  return this;
+};
+
+proto.getData = function() {
+  this.placeholder().hide();
+  var html = this.dom().innerHTML;
+  if( this.editmode() ) this.placeholder().show();
+  
+  return {
+    html: html
+  };
+};
+
+proto.setData = function(data) {
+  var html = (!data || typeof data == 'string') ? data : data.html;
+  this.html(html);
+  this.placeholder().show();
+  return this;
+};
+
+module.exports = ParagraphPart;
+
+
+
+
+/***/ }),
+/* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
 function ListButton() {
@@ -1245,7 +1457,7 @@ ListButton.prototype = Object.create(Button.prototype, {
 module.exports = ListButton;
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1273,7 +1485,7 @@ Separator.prototype = {
 module.exports = Separator;
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports) {
 
 var types = {};
@@ -1296,7 +1508,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -1308,7 +1520,7 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1389,7 +1601,7 @@ module.exports = new Items()
 
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports) {
 
 module.exports = function (arr, iterator, callback) {
@@ -1423,7 +1635,7 @@ function nextTick (cb) {
 }
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports) {
 
 function EventObject(type, detail, target, cancelable) {
@@ -1570,7 +1782,7 @@ module.exports = function(scope) {
 };
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports) {
 
 var matches = Element.prototype.matches || 
@@ -1716,23 +1928,23 @@ module.exports = {
 };
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(31);
-var DnD = __webpack_require__(30);
+var Marker = __webpack_require__(32);
+var DnD = __webpack_require__(31);
 
-__webpack_require__(50);
+__webpack_require__(51);
 
 function ArticlePart() {
   Part.apply(this, arguments);
 }
 
-var items = ArticlePart.toolbar = __webpack_require__(12);
+var items = ArticlePart.toolbar = __webpack_require__(13);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -1988,13 +2200,13 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(53);
+__webpack_require__(54);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -2051,7 +2263,7 @@ FilePart.defaultLabel = 'Download';
 module.exports = FilePart;
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2059,7 +2271,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(54);
+__webpack_require__(55);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2077,7 +2289,7 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(32);
+var items = ImagePart.toolbar = __webpack_require__(33);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 ImagePart.matches = ['img'];
 
@@ -2200,218 +2412,6 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 19 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(33);
-
-__webpack_require__(55);
-
-function ParagraphPart() {
-  Part.apply(this, arguments);
-}
-
-var proto = ParagraphPart.prototype = Object.create(Part.prototype);
-ParagraphPart.matches = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p', 'blockquote'];
-
-proto.oninit = function(e) {
-  var part = this;
-  var dom = part.dom();
-  var el = $(dom).ac('ff-paragraph')
-  .on('dragstart', function(e) {
-    if( !part.editmode() || el.ha('draggable') ) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-  })
-  .on('paste', function(e) {
-    e.preventDefault();
-    
-    var clipboard = e.clipboardData || window.clipboardData;
-    var text = clipboard.getData('Text');
-    this.innerText = text.split('\n').join(' ');
-  })
-  .on('keydown', function(e) {
-    if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
-  })
-  .on('dragend', function(e) {
-    part.dragmode(false);
-    part.toolbar().update();
-  });
-  
-  buildtoolbar(this);
-  
-  var placeholder = part._placeholder = (function() {
-    var node = $('<div class="ff-placeholder ff-acc"/>'), text, minWidthWrited = false;
-    
-    return {
-      text: function(o) {
-        if( !arguments.length ) return text;
-        text = o;
-        node.html(text);
-        return this;
-      },
-      show: function() {
-        if( !part.editmode() ) {
-          this.hide();
-          return this;
-        }
-        
-        el.attr('contenteditable', null);
-        node.html(text).remove();
-        var t = el.text().split('\n').join().trim();
-        
-        if( !t ) el.empty().append(node);
-        
-        var display = window.getComputedStyle(dom, null).display;
-        if( ~['inline', 'inline-block'].indexOf(display) && node[0].clientWidth ) {
-          dom.style.minWidth = node[0].clientWidth + 'px';
-          minWidthWrited = true;
-        }
-        
-        return this;
-      },
-      hide: function() {
-        if( part.editmode() ) el.attr('contenteditable', true);
-        else if( minWidthWrited ) dom.style.minWidth = '';
-        
-        node.remove();
-        return this;
-      }
-    };
-  })();
-  
-  placeholder.text(el.attr('placeholder') || ParagraphPart.placeholder || this.context().placeholder);
-};
-
-proto.multiline = function(b) {
-  if( !('_multiline' in this) ) {
-    this._multiline = $(this.dom()).attr('ff-multiline') == 'false' ? false : true;
-  }
-  
-  if( !arguments.length ) return this._multiline;
-  
-  el.attr('ff-multiline', b === false ? false : null);
-  this._multiline = !!b;
-  return this;
-};
-
-proto.dragmode = function(b) {
-  var el = $(this.dom());
-  if( !arguments.length ) return el.ha('draggable');
-  
-  if( !this.editmode() ) return this;
-  el.attr('draggable', b ? true : null).attr('contenteditable', b ? null : true);
-  return this;
-};
-
-proto.onchildlist = function() {
-  if( this.editmode() ) this.placeholder().show();
-};
-
-proto.text = function(text) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var text = el.text().split('\n').join().trim();
-    this.editmode(editmode);
-    return text;
-  }
-  
-  el.text($('<div/>').html(text).text());
-  return this;
-};
-
-proto.html = function(html) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var html = el.html();
-    this.editmode(editmode);
-    return html;
-  }
-  
-  el.html(html);
-  return this;
-};
-
-proto.onfocus = function(e) {
-  if( !this.editmode() ) return;
-  
-  e.stopImmediatePropagation();
-  
-  this.toolbar().show();
-  this.placeholder().hide();
-  $(this.dom()).attr('draggable', null);
-  
-  var el = this.dom();
-  var selection = window.getSelection();
-  var range = selection.rangeCount && selection.getRangeAt(0);
-  
-  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
-   || el === range.startContainer
-   || el === range.endContainer ) {
-    selection.removeAllRanges();
-    setTimeout(function() {
-      el.focus();
-      el.click();
-    }, 10);
-  }
-};
-
-proto.onblur = function() {
-  if( this.editmode() )
-    this.placeholder().show();
-};
-
-proto.oneditmode = function(e) {
-  $(this.dom()).attr('contenteditable', true).attr('draggable', null);
-  this.placeholder().show();
-};
-
-proto.onviewmode = function(e) {
-  $(this.dom()).attr('contenteditable', null).attr('draggable', null);
-  this.placeholder().hide();
-};
-
-proto.create = function(arg) {
-  var html = typeof arg == 'string' ? arg : '';
-  return $('<div/>').html(html)[0];
-};
-
-proto.placeholder = function(placeholder) {
-  if( !arguments.length ) return this._placeholder;
-  this._placeholder.text(placeholder);
-  return this;
-};
-
-proto.getData = function() {
-  this.placeholder().hide();
-  var html = this.dom().innerHTML;
-  if( this.editmode() ) this.placeholder().show();
-  
-  return {
-    html: html
-  };
-};
-
-proto.setData = function(data) {
-  var html = (!data || typeof data == 'string') ? data : data.html;
-  this.html(html);
-  this.placeholder().show();
-  return this;
-};
-
-module.exports = ParagraphPart;
-
-
-
-
-/***/ }),
 /* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -2420,13 +2420,13 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(56);
+__webpack_require__(57);
 
 function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(34);
+var items = RowPart.toolbar = __webpack_require__(35);
 var proto = RowPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2509,7 +2509,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(57);
+__webpack_require__(58);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2567,11 +2567,39 @@ module.exports = Separator;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
+var ParagraphPart = __webpack_require__(8);
+
+function TextPart() {
+  ParagraphPart.apply(this, arguments);
+  this.toolbar().enable(false);
+}
+
+var proto = TextPart.prototype = Object.create(ParagraphPart.prototype);
+
+proto.create = function(arg) {
+  var html = typeof arg == 'string' ? arg : '';
+  return $('<span/>').html(html)[0];
+};
+
+proto.html = ParagraphPart.prototype.text;
+
+proto.multiline = function() {
+  if( !arguments.length ) return false;
+  return this;
+};
+
+module.exports = TextPart;
+
+/***/ }),
+/* 23 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(58);
+__webpack_require__(59);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -2597,7 +2625,7 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(35);
+var items = VideoPart.toolbar = __webpack_require__(36);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2639,13 +2667,13 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(37);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2665,7 +2693,7 @@ if(false) {
 }
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports) {
 
 var endpoint;
@@ -2680,7 +2708,7 @@ module.exports = {
 }
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ctx = __webpack_require__(3);
@@ -2688,19 +2716,20 @@ var Toolbar = __webpack_require__(5);
 var Part = __webpack_require__(4);
 var Items = __webpack_require__(6);
 
-__webpack_require__(23);
+__webpack_require__(24);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(16);
-var ParagraphPart = __webpack_require__(19);
+var ArticlePart = __webpack_require__(17);
+var ParagraphPart = __webpack_require__(8);
 var SeparatorPart = __webpack_require__(21);
-var ImagePart = __webpack_require__(18);
-var VideoPart = __webpack_require__(22);
+var ImagePart = __webpack_require__(19);
+var VideoPart = __webpack_require__(23);
 var RowPart = __webpack_require__(20);
-var FilePart = __webpack_require__(17);
+var FilePart = __webpack_require__(18);
+var TextPart = __webpack_require__(22);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
@@ -2709,10 +2738,12 @@ ctx.Image = ImagePart;
 ctx.Video = VideoPart;
 ctx.Row = RowPart;
 ctx.File = FilePart;
+ctx.Text = TextPart;
 
 ctx.type('default', ParagraphPart);
 ctx.type('article', ArticlePart);
 ctx.type('paragraph', ParagraphPart);
+ctx.type('text', TextPart);
 ctx.type('separator', SeparatorPart);
 ctx.type('image', ImagePart);
 ctx.type('video', VideoPart);
@@ -2737,11 +2768,11 @@ module.exports = ctx;
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(29);
+var Button = __webpack_require__(30);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -2851,7 +2882,7 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -2873,13 +2904,13 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(27);
-var Buttons = __webpack_require__(26);
-__webpack_require__(48);
+var getPosition = __webpack_require__(28);
+var Buttons = __webpack_require__(27);
+__webpack_require__(49);
 
 function clone(o) {
   var result = {};
@@ -3067,12 +3098,12 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(7);
-var Separator = __webpack_require__(9);
-var ListButton = __webpack_require__(8);
+var Separator = __webpack_require__(10);
+var ListButton = __webpack_require__(9);
 
 Button.eval = function(o) {
   if( !o ) return null;
@@ -3090,14 +3121,14 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(13);
+var each = __webpack_require__(14);
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(11);
+var getOffsetTop = __webpack_require__(12);
 
-__webpack_require__(51);
+__webpack_require__(52);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3183,15 +3214,15 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(11);
-var toolbar = __webpack_require__(12);
+var getOffsetTop = __webpack_require__(12);
+var toolbar = __webpack_require__(13);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(52);
+__webpack_require__(53);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3291,7 +3322,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3363,7 +3394,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3469,7 +3500,7 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3501,7 +3532,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3529,7 +3560,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3543,7 +3574,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3557,7 +3588,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3571,7 +3602,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: 
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3585,7 +3616,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3599,7 +3630,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3613,7 +3644,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3627,7 +3658,7 @@ exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  displ
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3641,7 +3672,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3655,7 +3686,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3669,7 +3700,7 @@ exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-l
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3677,13 +3708,13 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3695,32 +3726,6 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 // exports
 
-
-/***/ }),
-/* 48 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(37);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
 
 /***/ }),
 /* 49 */
@@ -3738,8 +3743,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3764,8 +3769,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3790,8 +3795,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3816,8 +3821,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3842,8 +3847,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3868,8 +3873,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3894,8 +3899,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3920,8 +3925,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3946,8 +3951,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3972,8 +3977,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3986,12 +3991,38 @@ if(false) {
 /* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(48);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
 var win = window;
 var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(15);
+var util = __webpack_require__(16);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -4057,10 +4088,10 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 60 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(15);
+var util = __webpack_require__(16);
 
 module.exports = function(ctx) {
   var fn = ctx.fn;
