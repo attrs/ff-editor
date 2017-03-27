@@ -22,25 +22,40 @@
     padding-bottom: 20px;
   }
   
-  &.ff-separator-narrow {
+  &.f_sep_clearfix {
+    clear: both;
+  }
+  
+  &.f_sep_empty {
+    &:before {
+      border: 0;
+      padding-top: 5px;
+    }
+    
+    &:after {
+      padding-bottom: 5px;
+    }
+  }
+  
+  &.f_sep_narrow {
     &:before {
       max-width: 180px;
     }
   }
   
-  &.ff-separator-dashed {
+  &.f_sep_dashed {
     &:before {
       border-bottom: 1px dashed @border-color;
     }
   }
   
-  &.ff-separator-dotted {
+  &.f_sep_dotted {
     &:before {
       border-bottom: 1px dotted @border-color;
     }
   }
   
-  &.ff-separator-zigzag {
+  &.f_sep_zigzag {
     &:before {
       position: relative;
       top: 5px;
