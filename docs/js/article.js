@@ -2369,9 +2369,8 @@ module.exports = {
   each: function(arr, fn) {
     var i = 0;
     [].every.call(arr, function(el) {
-      i = i + 1;
       if( !el ) return true;
-      return ( fn && fn.apply(el, [i, el]) === false ) ? false : true;
+      return ( fn && fn.apply(el, [i++, el]) === false ) ? false : true;
     });
     return arr;
   },
@@ -8961,6 +8960,13 @@ proto.onviewmode = function() {
   }
 };
 
+proto.cols = function(cols) {
+  var el = $(this.dom());
+  if( !arguments.length ) return +el.attr('cols') || 0;
+  el.attr('cols', +cols || null);
+  return this;
+};
+
 proto.validate = function() {
   var el = $(this.dom())
   
@@ -8969,10 +8975,35 @@ proto.validate = function() {
   });
   
   var cells = el.children('.f_row_cell');
-  var cellwidth = 100 / cells.length;
-  cells.each(function() {
-    $(this).css('width', cellwidth + '%');
-  });
+  var cols = this.cols() || cells.length;
+  var cellwidth = 100 / cols;
+  
+  if( el.hc('f_row_justify') ) {
+    var totalwidth = 0;
+    var warr = [];
+    cells
+    .children(':first-child')
+    .each(function(i) {
+      this.style.width = 'auto';
+      this.style.height = '100px';
+      var width = this.clientWidth;
+      totalwidth += width;
+      warr.push(width);
+      this.style.width = null;
+      this.style.height = null;
+    });
+    
+    cells.each(function(i) {
+      $(this).css('width', ((warr[i] / totalwidth) * 100) + '%');
+    });
+  } else {
+    cells.each(function() {
+      $(this).css('width', cellwidth + '%').children().each(function() {
+        this.style.width = null;
+        this.style.height = null;
+      });
+    });
+  }
   
   return this;
 };
@@ -8998,12 +9029,15 @@ proto.add = function(arg, ref) {
 proto.valign = function(align) {
   var el = $(this.dom());
   if( !arguments.length ) return el.hc('f_row_middle') ? 'middle' : 
-    el.hc('f_row_bottom') ? 'bottom' : 'top';
+    el.hc('f_row_bottom') ? 'bottom' : el.hc('f_row_justify') ? 'justify' : false;
   
-  el.rc('f_row_middle f_row_bottom');
+  el.rc('f_row_middle f_row_bottom f_row_justify');
   
   if( align == 'middle') el.ac('f_row_middle');
   else if( align == 'bottom' ) el.ac('f_row_bottom');
+  else if( align == 'justify' ) el.ac('f_row_justify');
+  
+  this.validate();
   
   return this;
 };
@@ -9029,9 +9063,10 @@ module.exports = new Items()
     var part = this.owner();
     var valign = part.valign();
     
-    if( valign == 'middle' ) btn.text('<i class="fa fa-align-right ff-vert"></i>');
+    if( valign == 'middle' ) btn.text('<i class="fa fa-align-center ff-vert"></i>');
     else if( valign == 'bottom' ) btn.text('<i class="fa fa-align-left ff-vert"></i>');
-    else btn.text('<i class="fa fa-align-center ff-vert"></i>');
+    else if( valign == 'justify' ) btn.text('<i class="fa fa-align-justify ff-vert"></i>');
+    else btn.text('<i class="fa fa-align-right ff-vert"></i>');
   },
   fn: function(e) {
     var btn = this;
@@ -9039,7 +9074,8 @@ module.exports = new Items()
     var valign = part.valign();
     
     if( valign == 'middle' ) part.valign('bottom');
-    else if( valign == 'bottom' ) part.valign(false);
+    else if( valign == 'bottom' ) part.valign('justify');
+    else if( valign == 'justify' ) part.valign(false);
     else part.valign('middle');
   }
 });
