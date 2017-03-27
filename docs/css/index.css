@@ -2663,7 +2663,7 @@ body {
   margin: 0 auto;
   padding-bottom: 60px;
 }
-.content {
+.content .f_article_view {
   min-height: 600px;
 }
 header.topbar {

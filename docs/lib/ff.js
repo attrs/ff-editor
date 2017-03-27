@@ -2041,9 +2041,9 @@ proto.validate = function() {
   
   if( this.editmode() ) {
     var marker = this.marker();
-    var viewport = el.children('.ff-article-viewport');
+    var viewport = el.children('.f_article_view');
     if( !viewport.length ) {
-      viewport = $('<div class="ff-article-viewport"/>');
+      viewport = $('<div class="f_article_view"/>');
       
       el.nodes().each(function() {
         viewport.append(this);
@@ -2062,7 +2062,7 @@ proto.validate = function() {
       this.insert(new context.Paragraph());
     }
   } else {
-    var viewport = el.children('.ff-article-viewport');
+    var viewport = el.children('.f_article_view');
     if( viewport.length ) {
       el.empty();
       $(this._viewport).nodes().each(function() {
@@ -2441,15 +2441,42 @@ proto.create = function(arg) {
 
 proto.oninit = function() {
   var part = this;
-  $(part.dom())
+  var dom = part.dom();
+  $(dom)
   .ac('ff-row')
-  .on('dragend', function(e) {
-    console.log('dragend');
-    part.validate();
+  .on('drop', function(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    var target = e.target || e.srcElement;
+    var dragging = part.context().dragging;
+    var ref; // TODO
+    
+    if( dragging ) {
+      if( target === dragging || dragging.contains(target) ) return;
+      part.add(dragging, ref);
+    } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
+      $(e.dataTransfer.files).each(function() {
+        var type = this.type;
+        if( type ) {
+          context.upload(this, function(err, result) {
+            if( type.indexOf('image/') === 0 )
+              part.add(new context.Image(result), ref);
+          });
+        }
+      });
+    }
   });
   
   if( window.MutationObserver ) {
+    var observer = new MutationObserver(function(mutations){
+      part.validate();
+    });
     
+    observer.observe(dom, {
+      childList: true,
+      subtree: true
+    });
   }
 };
 
@@ -2469,15 +2496,17 @@ proto.validate = function() {
   return this;
 };
 
-proto.add = function(arg) {
+proto.add = function(arg, ref) {
   var dom = this.dom();
   
   $(arg).each(function(i, item) {
-    $('<div class="f_row_cell" />')
+    var cell = $('<div class="f_row_cell" />')
     .append(function() {
       return (item && item.dom && item.dom()) || item;
     })
-    .appendTo(dom);
+    
+    if( ref ) cell.insertBefore(ref);
+    else cell.appendTo(dom);
   });
   
   this.validate();
@@ -3183,6 +3212,8 @@ function DnD(part, dom) {
     var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
     var ref = marker[0].nextSibling;
+    
+    //console.log(target, dragging, ref, target === dragging, dragging.contains(target), !dom.contains(marker[0]));
     
     if( dragging ) {
       if( target === dragging || dragging.contains(target) || !dom.contains(marker[0]) ) return;
