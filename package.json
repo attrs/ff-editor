@@ -12,10 +12,8 @@
   },
   "license": "MIT",
   "dependencies": {
-    "async-each-series": "^1.1.0",
     "tinyevent": "^0.2.1",
-    "tinyselector": "^0.1.13",
-    "webpack": "^2.3.2"
+    "tinyselector": "^0.1.13"
   },
   "devDependencies": {
     "babel-core": "^6.24.0",
