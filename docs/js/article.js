@@ -2286,6 +2286,19 @@ module.exports = function(scope) {
 /* 20 */
 /***/ (function(module, exports) {
 
+var matches = Element.prototype.matches || 
+  Element.prototype.matchesSelector || 
+  Element.prototype.mozMatchesSelector ||
+  Element.prototype.msMatchesSelector || 
+  Element.prototype.oMatchesSelector || 
+  Element.prototype.webkitMatchesSelector ||
+  function(s) {
+      var matches = (this.document || this.ownerDocument).querySelectorAll(s),
+          i = matches.length;
+      while (--i >= 0 && matches.item(i) !== this) {}
+      return i > -1;
+  };
+
 module.exports = {
   isNull: function(value) {
     return value === null || value === undefined;
@@ -2355,7 +2368,7 @@ module.exports = {
       if( typeof selector == 'function' )
         return !!selector.call(el);
       
-      return !!(el && el.matches && el.matches(selector));
+      return !!(el && matches.call(el, selector));
     } catch(e) {
       return false;
     }
@@ -10751,7 +10764,7 @@ module.exports = function(ctx) {
     if( arguments.length === 1 ) return this[0] && this[0].getAttribute && this[0].getAttribute(key);
     
     return this.each(function() {
-      if( isNaN(value) || value === null || value === undefined ) this.removeAttribute(key);
+      if( value === null || value === undefined ) this.removeAttribute(key);
       else this.setAttribute(key, value + '');
     });
   };
@@ -11094,7 +11107,7 @@ module.exports = function(ctx) {
   
   fn.unwrap = function(selector) {
     var $ = this.$;
-    return this.each(function() {
+    return this.reverse().each(function() {
       if( !isNode(this) ) return;
       
       var p = selector ? $(this).parent(selector)[0] : this.parentNode;
