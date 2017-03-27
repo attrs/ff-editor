@@ -88,9 +88,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(57);
+var Context = __webpack_require__(59);
 
-__webpack_require__(58)(Context);
+__webpack_require__(60)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -417,10 +417,10 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(12);
-var Events = __webpack_require__(13);
+var each = __webpack_require__(13);
+var Events = __webpack_require__(14);
 var $ = __webpack_require__(0);
-var types = __webpack_require__(9);
+var types = __webpack_require__(10);
 var connector = __webpack_require__(24);
 
 var parts = [];
@@ -850,8 +850,8 @@ getCaretPosition: function(node) {
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Events = __webpack_require__(13);
-var Types = __webpack_require__(9);
+var Events = __webpack_require__(14);
+var Types = __webpack_require__(10);
 var Toolbar = __webpack_require__(5);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
@@ -1084,19 +1084,39 @@ module.exports = Part;
 
 var Toolbar = __webpack_require__(28);
 
-Toolbar.Button = __webpack_require__(6);
-Toolbar.Separator = __webpack_require__(8);
-Toolbar.ListButton = __webpack_require__(7);
+Toolbar.Button = __webpack_require__(7);
+Toolbar.Separator = __webpack_require__(9);
+Toolbar.ListButton = __webpack_require__(8);
 
 module.exports = Toolbar;
 
 /***/ }),
 /* 6 */
+/***/ (function(module, exports) {
+
+function Items() {}
+
+var proto = Items.prototype = [];
+
+proto.add = function(item) {
+  this.push(item);
+  return this;
+};
+
+proto.remove = function(item) {
+  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
+  return this;
+};
+
+module.exports = Items;
+
+/***/ }),
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(47);
+__webpack_require__(49);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1186,11 +1206,11 @@ Button.prototype = {
 module.exports = Button;
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(6);
+var Button = __webpack_require__(7);
 
 function ListButton() {
   Button.apply(this, arguments);
@@ -1225,7 +1245,7 @@ ListButton.prototype = Object.create(Button.prototype, {
 module.exports = ListButton;
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1253,7 +1273,7 @@ Separator.prototype = {
 module.exports = Separator;
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 var types = {};
@@ -1276,7 +1296,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports) {
 
 module.exports = function(el) {
@@ -1288,12 +1308,12 @@ module.exports = function(el) {
 };
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = context.Items;
+var Items = __webpack_require__(6);
 
 module.exports = new Items()
 .add({
@@ -1343,27 +1363,7 @@ module.exports = new Items()
     var part = this.owner();
     
     context.prompt('Please enter the video URL', function(src) {
-      if( !src ) return;
-      
-      if( ~src.indexOf('youtube.com') ) {
-        var vid = src.split('v=')[1];
-        vid = vid && vid.split('&')[0];
-        vid = vid && vid.split('#')[0];
-        
-        if( !vid ) return context.error('URL을 정확히 입력해주세요');
-        src = 'https://www.youtube.com/embed/' + vid;
-      } else if( ~src.indexOf('vimeo.com') ) {
-        var vid = src.split('//')[1];
-        vid = vid && vid.split('/')[1];
-        vid = vid && vid.split('?')[0];
-        vid = vid && vid.split('&')[0];
-        vid = vid && vid.split('#')[0];
-        
-        if( !vid ) return context.error('URL을 정확히 입력해주세요');
-        src = 'https://player.vimeo.com/video/' + vid;
-      }
-      
-      part.insert(new context.Video(src));
+      src && part.insert(new context.Video(src));
     });
   }
 })
@@ -1389,7 +1389,7 @@ module.exports = new Items()
 
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports) {
 
 module.exports = function (arr, iterator, callback) {
@@ -1423,7 +1423,7 @@ function nextTick (cb) {
 }
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports) {
 
 function EventObject(type, detail, target, cancelable) {
@@ -1570,7 +1570,7 @@ module.exports = function(scope) {
 };
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports) {
 
 var matches = Element.prototype.matches || 
@@ -1716,26 +1716,6 @@ module.exports = {
 };
 
 /***/ }),
-/* 15 */
-/***/ (function(module, exports) {
-
-function Items() {}
-
-var proto = Items.prototype = [];
-
-proto.add = function(item) {
-  this.push(item);
-  return this;
-};
-
-proto.remove = function(item) {
-  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
-  return this;
-};
-
-module.exports = Items;
-
-/***/ }),
 /* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1746,13 +1726,13 @@ var Toolbar = context.Toolbar;
 var Marker = __webpack_require__(31);
 var DnD = __webpack_require__(30);
 
-__webpack_require__(48);
+__webpack_require__(50);
 
 function ArticlePart() {
   Part.apply(this, arguments);
 }
 
-var items = ArticlePart.toolbar = __webpack_require__(11);
+var items = ArticlePart.toolbar = __webpack_require__(12);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2014,7 +1994,7 @@ module.exports = ArticlePart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(51);
+__webpack_require__(53);
 
 function FilePart() {
   Part.apply(this, arguments);
@@ -2076,10 +2056,22 @@ module.exports = FilePart;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = context.Part;
-var Toolbar = context.Toolbar;
+var Part = __webpack_require__(4);
+var Toolbar = __webpack_require__(5);
 
-__webpack_require__(52);
+__webpack_require__(54);
+
+function translatesrc(src) {
+  if( src && ~src.indexOf('instagram.com') ) {
+    var vid = src.split('//')[1];
+    vid = vid && vid.split('/p/')[1];
+    vid = vid && vid.split('/')[0];
+    
+    if( vid ) src = 'https://www.instagram.com/p/' + vid + '/media';
+  }
+  
+  return src;
+}
 
 function ImagePart(el) {
   Part.apply(this, arguments);
@@ -2110,21 +2102,9 @@ proto.oninit = function() {
       self.floating(false);
   })
   .on('drop', function(e) {
-    console.log('drop', e);
+    //console.log('drop', e);
   });
 };
-
-function translatesrc(src) {
-  if( src && ~src.indexOf('instagram.com') ) {
-    var vid = src.split('//')[1];
-    vid = vid && vid.split('/p/')[1];
-    vid = vid && vid.split('/')[0];
-    
-    if( vid ) src = 'https://www.instagram.com/p/' + vid + '/media';
-  }
-  
-  return src;
-}
 
 proto.create = function(arg) {
   var src;
@@ -2227,7 +2207,7 @@ var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 var buildtoolbar = __webpack_require__(33);
 
-__webpack_require__(53);
+__webpack_require__(55);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -2436,98 +2416,87 @@ module.exports = ParagraphPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
+var Toolbar = __webpack_require__(5);
 
-__webpack_require__(54);
+__webpack_require__(56);
 
 function RowPart(el) {
   Part.call(this, el);
-  
-  var el = $(this.dom()).ac('ff-row');
-  
-  this.toolbar()
-  .add({
-    text: '<i class="fa fa-angle-double-up"></i>',
-    tooltip: '상단정렬',
-    fn: function(e) {
-      el
-      .rc('ff-row-valign-bottom')
-      .rc('ff-row-valign-middle')
-      .ac('ff-row-valign-top');
-    }
-  }, 0)
-  .add({
-    text: '<i class="fa fa-dot-circle-o"></i>',
-    tooltip: '중앙정렬',
-    fn: function(e) {
-      el
-      .rc('ff-row-valign-bottom')
-      .rc('ff-row-valign-top')
-      .ac('ff-row-valign-middle');
-    }
-  }, 0)
-  .add({
-    text: '<i class="fa fa-angle-double-down"></i>',
-    tooltip: '하단정렬',
-    fn: function(e) {
-      el
-      .rc('ff-row-valign-top')
-      .rc('ff-row-valign-middle')
-      .ac('ff-row-valign-bottom');
-    }
-  }, 0);
-  
-  this.on('click', function() {
-    this.toolbar().show();
-  })
-  .on('dragend', function(e) {
-    this.validate();
-  });
 }
 
-RowPart.prototype = Object.create(Part.prototype, {
-  create: {
-    value: function(arg) {
-      var el = $('<div ff-type="row" />')[0];
-      this.add(arg);
-      return el;
-    }
-  },
-  validate: {
-    value: function() {
-      var el = $(this.dom());
-      el.find('.ff-row-cell').each(function() {
-        if( !this.children.length ) this.parentNode.removeChild(this);
-      });
-      
-      var cells = el.find('.ff-row-row').children('.ff-row-cell');
-      var cellwidth = 100 / cells.length;
-      cells.each(function() {
-        $(this).css('width', cellwidth + '%');
-      });
-      
-      return this;
-    }
-  },
-  add: {
-    value: function(arg) {
-      var el = $(this.dom());
-      var row = el.find('.ff-row-row');
-      
-      if( !row.length ) row = $('<div class="ff-row-row" />').appendTo(el);
-      
-      $(arg).each(function(i, item) {
-        $('<div class="ff-row-cell" />')
-        .append(function() {
-          return (item && item.dom && item.dom()) || item;
-        })
-        .appendTo(row);
-      });
-      
-      return this;
-    }
+var items = RowPart.toolbar = __webpack_require__(34);
+var proto = RowPart.prototype = Object.create(Part.prototype);
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(items.position).add(items);
+};
+
+proto.create = function(arg) {
+  var el = $('<div ff-type="row" />')[0];
+  this.add(arg);
+  return el;
+};
+
+proto.oninit = function() {
+  var part = this;
+  $(part.dom())
+  .ac('ff-row')
+  .on('dragend', function(e) {
+    console.log('dragend');
+    part.validate();
+  });
+  
+  if( window.MutationObserver ) {
+    
   }
-});
+};
+
+proto.validate = function() {
+  var el = $(this.dom())
+  
+  el.find('.f_row_cell').each(function() {
+    if( !this.children.length ) this.parentNode.removeChild(this);
+  });
+  
+  var cells = el.children('.f_row_cell');
+  var cellwidth = 100 / cells.length;
+  cells.each(function() {
+    $(this).css('width', cellwidth + '%');
+  });
+  
+  return this;
+};
+
+proto.add = function(arg) {
+  var dom = this.dom();
+  
+  $(arg).each(function(i, item) {
+    $('<div class="f_row_cell" />')
+    .append(function() {
+      return (item && item.dom && item.dom()) || item;
+    })
+    .appendTo(dom);
+  });
+  
+  this.validate();
+  
+  return this;
+};
+
+proto.valign = function(align) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.hc('f_row_middle') ? 'middle' : 
+    el.hc('f_row_bottom') ? 'bottom' : 'top';
+  
+  el.rc('f_row_middle f_row_bottom');
+  
+  if( align == 'middle') el.ac('f_row_middle');
+  else if( align == 'bottom' ) el.ac('f_row_bottom');
+  
+  return this;
+};
 
 module.exports = RowPart;
 
@@ -2540,7 +2509,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(55);
+__webpack_require__(57);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2598,54 +2567,72 @@ module.exports = Separator;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
+var Toolbar = __webpack_require__(5);
 
-__webpack_require__(56);
+__webpack_require__(58);
+
+function translatesrc(src) {
+  if( ~src.indexOf('youtube.com') ) {
+    var vid = src.split('v=')[1];
+    vid = vid && vid.split('&')[0];
+    vid = vid && vid.split('#')[0];
+    
+    if( vid ) src = 'https://www.youtube.com/embed/' + vid;
+  } else if( ~src.indexOf('vimeo.com') ) {
+    var vid = src.split('//')[1];
+    vid = vid && vid.split('/')[1];
+    vid = vid && vid.split('?')[0];
+    vid = vid && vid.split('&')[0];
+    vid = vid && vid.split('#')[0];
+    
+    if( vid ) src = 'https://player.vimeo.com/video/' + vid;
+  }
+  
+  return src;
+}
 
 function VideoPart() {
   Part.apply(this, arguments);
-  
-  var el = $(this.dom()).ac('ff-video');
-  
-  this.toolbar()
-  .add({
-    text: '<i class="fa fa-circle-o"></i>',
-    tooltip: '작은크기',
-    fn: function(e) {
-      el
-      .rc('ff-video-size-fit')
-      .ac('ff-video-size-narrow');
-    }
-  }, 0)
-  .add({
-    text: '<i class="fa fa-arrows-alt"></i>',
-    tooltip: '화면에 맞춤',
-    fn: function(e) {
-      el
-      .rc('ff-video-size-narrow')
-      .ac('ff-video-size-fit');
-    }
-  }, 0);
 }
 
-VideoPart.prototype = Object.create(Part.prototype, {
-  onmodechange: {
-    value: function() {
-      var el = $(this.dom());
-      if( this.editmode() ) {
-        if( !el.find('.mask').length ) $('<div class="mask"></div>').appendTo(el);
-        el.find('.mask').show();
-      } else {
-        el.find('.mask').hide();
-      }
-    }
-  },
-  create: {
-    value: function(arg) {
-      return $('<div ff-type="video" />').html('<div class="ff-video-embed-responsive ff-video-embed-responsive-16by9"><iframe class="ff-video-embed-responsive-item" src="' + (arg || 'https://www.youtube.com/embed/aoKNQF2a4xY') + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
-    }
+var items = VideoPart.toolbar = __webpack_require__(35);
+var proto = VideoPart.prototype = Object.create(Part.prototype);
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(items.position).add(items);
+};
+
+proto.create = function(arg) {
+  var src = translatesrc((arg && arg.src) || arg) || 'about:blank';
+  
+  return $('<div ff-type="video" />').ac('f_video_16by9').html('<div class="f_video_container"><iframe src="' + src + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
+};
+
+proto.src = function(src) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.find('iframe').src;
+  
+  src = translatesrc(src) || 'about:blank';
+  if( src ) el.find('iframe').src = src;
+  
+  return this;
+};
+
+proto.oninit = function() {
+  $(this.dom()).ac('ff-video');
+};
+
+proto.onmodechange = function() {
+  var el = $(this.dom());
+  if( this.editmode() ) {
+    if( !el.find('.ff-mask').length ) $('<div class="ff-mask"></div>').appendTo(el[0]);
+    el.find('.ff-mask').show();
+  } else {
+    el.find('.ff-mask').hide();
   }
-});
+};
 
 module.exports = VideoPart;
 
@@ -2658,7 +2645,7 @@ module.exports = VideoPart;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(34);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2699,7 +2686,7 @@ module.exports = {
 var ctx = __webpack_require__(3);
 var Toolbar = __webpack_require__(5);
 var Part = __webpack_require__(4);
-var Items = __webpack_require__(15);
+var Items = __webpack_require__(6);
 
 __webpack_require__(23);
 
@@ -2892,7 +2879,7 @@ module.exports = function(el) {
 var $ = __webpack_require__(0);
 var getPosition = __webpack_require__(27);
 var Buttons = __webpack_require__(26);
-__webpack_require__(46);
+__webpack_require__(48);
 
 function clone(o) {
   var result = {};
@@ -3083,9 +3070,9 @@ module.exports = Toolbar;
 /* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Button = __webpack_require__(6);
-var Separator = __webpack_require__(8);
-var ListButton = __webpack_require__(7);
+var Button = __webpack_require__(7);
+var Separator = __webpack_require__(9);
+var ListButton = __webpack_require__(8);
 
 Button.eval = function(o) {
   if( !o ) return null;
@@ -3106,11 +3093,11 @@ module.exports = Button;
 /* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var each = __webpack_require__(12);
+var each = __webpack_require__(13);
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(10);
+var getOffsetTop = __webpack_require__(11);
 
-__webpack_require__(49);
+__webpack_require__(51);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3200,11 +3187,11 @@ module.exports = DnD;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getOffsetTop = __webpack_require__(10);
-var toolbar = __webpack_require__(11);
+var getOffsetTop = __webpack_require__(11);
+var toolbar = __webpack_require__(12);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(50);
+__webpack_require__(52);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3309,7 +3296,7 @@ module.exports = Marker;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = context.Items;
+var Items = __webpack_require__(6);
 
 module.exports = new Items()
 .add({
@@ -3355,7 +3342,7 @@ module.exports = new Items()
   tooltip: '사진변경(업로드)',
   fn: function(e) {
     var part = this.owner();
-    part.context().selectFile(function(err, file) {
+    context.selectFile(function(err, file) {
       if( err ) return context.error(err);
       if( !file ) return;
       
@@ -3485,29 +3472,61 @@ module.exports = function(part) {
 /* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(1)();
-// imports
+var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
+var Items = __webpack_require__(6);
 
-
-// module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n", ""]);
-
-// exports
-
+module.exports = new Items()
+.add({
+  text: '<i class="fa fa-align-justify"></i>',
+  tooltip: '정렬',
+  onupdate: function() {
+    var btn = this;
+    var part = this.owner();
+    var valign = part.valign();
+    
+    if( valign == 'middle' ) btn.text('<i class="fa fa-align-right ff-vert"></i>');
+    else if( valign == 'bottom' ) btn.text('<i class="fa fa-align-left ff-vert"></i>');
+    else btn.text('<i class="fa fa-align-center ff-vert"></i>');
+  },
+  fn: function(e) {
+    var btn = this;
+    var part = this.owner();
+    var valign = part.valign();
+    
+    if( valign == 'middle' ) part.valign('bottom');
+    else if( valign == 'bottom' ) part.valign(false);
+    else part.valign('middle');
+  }
+});
 
 /***/ }),
 /* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(1)();
-// imports
+var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
+var Items = __webpack_require__(6);
 
-
-// module
-exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
-
-// exports
-
+module.exports = new Items()
+.add({
+  text: '<i class="fa fa-circle-o"></i>',
+  tooltip: '작은크기',
+  fn: function(e) {
+    $(this.owner().dom())
+    .rc('f_video_fit')
+    .ac('f_video_narrow');
+  }
+})
+.add({
+  text: '<i class="fa fa-arrows-alt"></i>',
+  tooltip: '화면에 맞춤',
+  fn: function(e) {
+    $(this.owner().dom())
+    .ac('f_video_fit')
+    .rc('f_video_narrow');
+  }
+});
 
 /***/ }),
 /* 36 */
@@ -3518,7 +3537,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  min-width: 14px;\n  text-align: center;\n}\n", ""]);
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n.ff-vert {\n  transform: rotate(90deg);\n}\n", ""]);
 
 // exports
 
@@ -3532,7 +3551,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  border-radius: 4px;\n  background-color: rgba(0, 0, 0, 0.85);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  user-select: none;\n  box-sizing: border-box;\n}\n.ff-toolbar.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
 
 // exports
 
@@ -3546,7 +3565,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #2796DD;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: pointer;\n  font-size: 14px;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  min-width: 14px;\n  text-align: center;\n}\n", ""]);
 
 // exports
 
@@ -3560,7 +3579,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
+exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n", ""]);
 
 // exports
 
@@ -3574,7 +3593,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
+exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #2796DD;\n}\n", ""]);
 
 // exports
 
@@ -3588,7 +3607,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\n  margin: 0;\n  user-select: none;\n}\n.ff-marker * {\n  box-sizing: border-box;\n}\n.ff-marker .ff-marker-head {\n  position: absolute;\n  left: -30px;\n  top: -13px;\n  background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAAAXNSR0IArs4c6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAActpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IlhNUCBDb3JlIDUuNC4wIj4KICAgPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4KICAgICAgPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIKICAgICAgICAgICAgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx4bXA6Q3JlYXRvclRvb2w+QWRvYmUgSW1hZ2VSZWFkeTwveG1wOkNyZWF0b3JUb29sPgogICAgICAgICA8dGlmZjpPcmllbnRhdGlvbj4xPC90aWZmOk9yaWVudGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KKS7NPQAAA6ZJREFUSA2l1s9uVkUYBnDaKqCJbgkS6ILehm1smrBwpbfQEmEBt+AlmLhx0/YSNC5MXJgmpd6CrOiimEq6I7hQlLY8v3POS4f2fP0aeJLnzLx/5nln5syZ75u5dHHMJHUu1B6FxyGwZ0P24dCmeX8Q/jDUTsOFc6eJWaGVWCFY2Xx4I/wkhL/D/XAvbPNo24FRnFfYKv8fRl1L+3W4FF4PTaBi8hR8Fm6HP4YHIbQavWd4TircDlhL7mr4X7gVPgp3wxchfBreDhfD5fByuBGuh9Bq9Z4JT4nwcbgZ/hF+E34QToOce+Hj0FgaUJq9NfKsBAN+Dq3uZpMnju0k9MtfqbfS2QlpTC3eipmtgVdC0M51vZPHnXRXTsyuJ6cdQ4NW4bTGm29Rwlpoe2ulH3EOcKgKP6TzXRlp21iNsXLbThPkdOeqkq32KHR6V8Pvwz9Ds/8nHMO/cb4cC8RnjLFPQ1o0aauh1psZvGIEPhmnt05k+cXAN92itdu+nBpLiyZt4J+xYvtukP5SuBUehg6Mlh9tkbbQ2tWvVl5pKESTNr9acyWYfncjuRweMRrYHjRAW2AjVKzaNk98J6Q9zwi6FVeSa9BEdkWCEu2t/tn6bF/7jttYjSnfkzhofzYEjrzoCrp7ib0YgrZoJfwyVECewSbqulwO5YCDZJvFtOxfwt9CoEnbLQfH3Qnr+6NP8atNhGhNwNkAcddkxcpXcfYZEDYA/MoQMKvnodivA9OMwif17Wikd9KwKzRp125279j2wX5oq24zgppQb519EsLzUBoLSaL915A8q2i9470hsDgEq5GDRNrtY9ekK1a+8ielw+d5KrrXm5eOJfjeDDCj7XA5tEUOkEL8aILaQmtXv1p5xtKgRZM2v1qHCksWhJ9CF8caIyh/b53dfiKFts9XY++m75XQBv5uxQwHwCT8c9gIH4a3Qp9RXfjpvgWn2WczBmOMnQ8fhOshbTXUegvt+1N8J6xPSYE2buCdcEWngZyajLG/h5un4o150rXNYMZ+xBW38oI41jby65efDcYoSqN2rLTjGkclGGC2fk/vhW2xmKOQcz+svz4Ti54+EKWmuBMJqwPZW6FdeBLWZeByWAgXwy9CY70qhFar9+Q5qfDpAX7EvwqXQhe9Q+LuBSf2KPSdbodO70EIo0UFziss7rDUt8mW76TeCK0UrHw/3AvlgonJPWS8KwiYuXYaLpx7EbEqJtcOaG1trY5thWwrLH+6k/EazMPI1WuoPt4AAAAASUVORK5CYII=');\n  background-size: 26px auto;\n  width: 26px;\n  height: 26px;\n  cursor: pointer;\n  opacity: 0.5;\n  transition: all .35s;\n}\n.ff-marker .ff-marker-head:hover {\n  opacity: 1;\n  transform: rotate(-180deg);\n}\n.ff-marker .ff-marker-tools {\n  height: 0;\n  overflow: hidden;\n  margin: 0;\n  padding: 0;\n  padding-left: 15px;\n  transition: all 0.25s;\n}\n.ff-marker .ff-marker-tools .ff-marker-tools-btn {\n  display: inline-block;\n  cursor: pointer;\n  height: 36px;\n  line-height: 34px;\n  padding: 0 12px;\n  margin: 10px 0;\n  margin-right: 8px;\n  border: 1px solid #ccc;\n}\n.ff-marker.ff-marker-open .ff-marker-head {\n  top: 15px;\n}\n.ff-marker.ff-marker-open .ff-marker-tools {\n  height: 56px;\n}\n.ff-marker-tools-btn {\n  color: #232323;\n}\n", ""]);
 
 // exports
 
@@ -3602,7 +3621,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.ff-paragraph.ff-focus-state {\n  background-color: initial;\n  outline: #ccc dotted 1px;\n}\n.ff-paragraph[draggable] {\n  background-color: #eee;\n}\n", ""]);
+exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n.ff-file.ff-file-align-right {\n  text-align: right;\n}\n.ff-file.ff-file-align-center {\n  text-align: center;\n}\n", ""]);
 
 // exports
 
@@ -3616,7 +3635,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-row {\n  display: block;\n  margin-bottom: 10px;\n}\n.ff-row .ff-row-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .ff-row-row .ff-row-cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-top .ff-row-cell {\n  vertical-align: top;\n}\n.ff-row.ff-row-valign-middle .ff-row-cell {\n  vertical-align: middle;\n}\n.ff-row.ff-row-valign-bottom .ff-row-cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
+exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -3630,7 +3649,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.ff-paragraph.ff-focus-state {\n  background-color: initial;\n  outline: #ccc dotted 1px;\n}\n.ff-paragraph[draggable] {\n  background-color: #eee;\n}\n", ""]);
 
 // exports
 
@@ -3644,7 +3663,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-video-embed-responsive {\n  position: relative;\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n}\n.ff-video .ff-video-embed-responsive-16by9 {\n  padding-bottom: 56.25%;\n}\n.ff-video .ff-video-embed-responsive .ff-video-embed-responsive-item {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video .mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.ff-video-size-narrow {\n  width: 50%;\n}\n.ff-video.ff-video-size-fit {\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.ff-row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.ff-row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n", ""]);
 
 // exports
 
@@ -3653,53 +3672,29 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 /* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
+exports = module.exports = __webpack_require__(1)();
+// imports
 
-// load the styles
-var content = __webpack_require__(35);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+
+// module
+exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0;\n  padding: 0;\n  height: auto;\n  border-top: 0;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+
+// exports
+
 
 /***/ }),
 /* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
+exports = module.exports = __webpack_require__(1)();
+// imports
 
-// load the styles
-var content = __webpack_require__(36);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
+
+// module
+exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.ff-video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video.f_video_narrow {\n  width: 50%;\n}\n.ff-video.f_video_fit {\n  width: 100%;\n}\n", ""]);
+
+// exports
+
 
 /***/ }),
 /* 48 */
@@ -3717,8 +3712,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3743,8 +3738,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3769,8 +3764,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3795,8 +3790,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3821,8 +3816,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3847,8 +3842,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3873,8 +3868,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3899,8 +3894,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3925,8 +3920,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3939,12 +3934,64 @@ if(false) {
 /* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(46);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 58 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(47);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 59 */
+/***/ (function(module, exports, __webpack_require__) {
+
 var win = window;
 var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(14);
+var util = __webpack_require__(15);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -4010,10 +4057,10 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 58 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(14);
+var util = __webpack_require__(15);
 
 module.exports = function(ctx) {
   var fn = ctx.fn;

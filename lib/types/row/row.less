@@ -1,34 +1,29 @@
 .ff-row {
-  display: block;
-  margin-bottom: 10px;
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 5px;
   
-  .ff-row-row {
-    display: table;
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: separate;
-    border-spacing: 5px;
-    
-    .ff-row-cell {
-      display: table-cell;
+  .f_row_cell {
+    display: table-cell;
+    vertical-align: top;
+  }
+  
+  &.f_row_top {
+    .f_row_cell {
       vertical-align: top;
     }
   }
   
-  &.ff-row-valign-top {
-    .ff-row-cell {
-      vertical-align: top;
-    }
-  }
-  
-  &.ff-row-valign-middle {
-    .ff-row-cell {
+  &.f_row_middle {
+    .f_row_cell {
       vertical-align: middle;
     }
   }
   
-  &.ff-row-valign-bottom {
-    .ff-row-cell {
+  &.f_row_bottom {
+    .f_row_cell {
       vertical-align: bottom;
     }
   }
@@ -39,4 +34,3 @@
     margin: 0 auto;
   }
 }
-
