@@ -3657,7 +3657,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.f_article_view {\n  overflow-y: auto;\n  clear: both;\n}\n", ""]);
+exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.f_article_view {\n  clear: both;\n}\n", ""]);
 
 // exports
 
