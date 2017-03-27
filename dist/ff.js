@@ -1593,7 +1593,7 @@ module.exports = new Items()
     part.context().selectFile(function(err, file) {
       if( err ) return context.error(err);
       
-      part.insert(new context.File(file));
+      part.insert(new context.Link(file));
     });
   }
 });
@@ -2108,18 +2108,16 @@ proto.insert = function(node, ref) {
     if( window.File && item instanceof File ) {
       var type = item.type;
       
-      if( type ) {
-        return context.upload(item, function(err, result) {
-          if( err ) return done(err);
-          
-          if( type.indexOf('image/') === 0 )
-            images.push(new context.Image(result));
-          else
-            insert(new context.File(result).dom(), ref);
-          
-          done();
-        });
-      }
+      return context.upload(item, function(err, result) {
+        if( err ) return done(err);
+        
+        if( type.indexOf('image/') === 0 )
+          images.push(new context.Image(result));
+        else
+          insert(new context.Link(result).dom(), ref);
+        
+        done();
+      });
     } else {
       insert(el, ref);
     }
@@ -2171,85 +2169,11 @@ module.exports = ArticlePart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
-
-__webpack_require__(53);
-
-function FilePart() {
-  Part.apply(this, arguments);
-  
-  var el = $(this.dom()).ac('ff-file');
-  
-  this.toolbar()
-  .add({
-    text: '<i class="fa fa-align-justify"></i>',
-    tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
-      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-      else btn.text('<i class="fa fa-align-justify"></i>');
-    },
-    fn: function(e) {
-      var btn = this;
-      if( btn.align == 'center' ) {
-        el.css('text-align', 'right');
-        btn.align = 'right';
-      } else if( btn.align == 'right' ) {
-        el.css('text-align', 'left');
-        btn.align = 'left';
-      } else if( btn.align == 'left' ) {
-        el.css('text-align', '');
-        btn.align = '';
-      } else {
-        el.css('text-align', 'center');
-        btn.align = 'center';
-      }
-    }
-  });
-}
-
-var proto = FilePart.prototype = Object.create(Part.prototype);
-
-proto.create = function(arg) {
-  var def = FilePart.defaultLabel;
-  var href = arg && (arg.src || arg.href);
-  var label = arg && (arg.name || arg.title || arg.label) || def;
-  
-  if( typeof href !== 'string' ) href = null;
-  if( typeof label !== 'string' ) label = def;
-  if( !href.indexOf('data:') ) href = '';
-  
-  return $('<div ff-type="file"/>').append($('<a href="' + (href || 'javascript:;') + '" target="_blank"/>"').html(label))[0];
-};
-
-proto.target = function(target) {
-  if( !arguments.length ) return $(this.dom()).find('a').attr('target');
-  $(this.dom()).find('a').attr('target', target);
-  return this;
-};
-
-proto.href = function(href) {
-  if( !arguments.length ) return $(this.dom()).find('a').attr('href');
-  $(this.dom()).find('a').attr('href', href);
-  return this;
-};
-
-FilePart.defaultLabel = 'Download';
-
-module.exports = FilePart;
-
-/***/ }),
-/* 18 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(54);
+__webpack_require__(53);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2288,8 +2212,7 @@ proto.oninit = function() {
     });
   })
   .on('dragend', function(e) {
-    if( self.editmode() && !$(self.dom()).parent().hc('f_img_wrap') )
-      self.floating(false);
+    self.floating(false);
   })
   .on('drop', function(e) {
     //console.log('drop', e);
@@ -2333,42 +2256,11 @@ proto.floating = function(direction) {
   var el = $(this.dom());
   if( !arguments.length ) return el.hc('f_img_left') ? 'left' : el.hc('f_img_right') ? 'right' : false;
   
-  var ctx = this.context();
-  var paragraph = Part(el[0].nextSibling);
-  var parent = el.parent();
+  el.rc('f_img_left f_img_right')
+  if( direction == 'left' ) el.ac('f_img_left');
+  else if( direction == 'right') el.ac('f_img_right');
   
-  if( parent.hc('f_img_wrap') ) parent.nodes().unwrap();
-  
-  if( !(paragraph instanceof ctx.Paragraph) )
-    paragraph = new ctx.Paragraph();
-  
-  if( direction === 'left' ) {
-    el
-    .rc('f_img_right')
-    .ac('f_img_left')
-    .wrap('<div class="f_img_wrap ff-acc" />')
-    .parent()
-    .on('click', function(e) {
-      var target = e.target || e.srcElement;
-      if( target !== el[0] ) paragraph.focus();
-    })
-    .append(paragraph.dom());
-  } else if( direction === 'right' ) {
-    el
-    .rc('f_img_left')
-    .ac('f_img_right')
-    .wrap('<div class="f_img_wrap ff-acc" />')
-    .parent()
-    .on('click', function(e) {
-      var target = e.target || e.srcElement;
-      if( target !== el[0] ) paragraph.focus();
-    })
-    .append(paragraph.dom());
-  } else {
-    el
-    .rc('f_img_right')
-    .rc('f_img_left');
-  }
+  return this;
 };
 
 proto.blockmode = function(mode) {
@@ -2377,7 +2269,7 @@ proto.blockmode = function(mode) {
     el.hc('f_img_full') ? 'full' : 
     el.hc('f_img_medium') ? 'medium' : false;
   
-  el.rc('f_img_block f_img_medium f_img_full')
+  el.rc('f_img_block f_img_medium f_img_full');
   if( mode == 'natural' ) el.ac('f_img_block');
   else if( mode == 'medium') el.ac('f_img_medium');
   else if( mode == 'full') el.ac('f_img_full');
@@ -2388,6 +2280,80 @@ proto.blockmode = function(mode) {
 module.exports = ImagePart;
 
 
+
+/***/ }),
+/* 18 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var Part = __webpack_require__(4);
+
+__webpack_require__(54);
+
+function Link() {
+  Part.apply(this, arguments);
+  
+  var el = $(this.dom()).ac('ff-link');
+  
+  this.toolbar()
+  .add({
+    text: '<i class="fa fa-align-justify"></i>',
+    tooltip: '정렬',
+    onupdate: function() {
+      var btn = this;
+      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
+      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
+      else btn.text('<i class="fa fa-align-justify"></i>');
+    },
+    fn: function(e) {
+      var btn = this;
+      if( btn.align == 'center' ) {
+        el.css('text-align', 'right');
+        btn.align = 'right';
+      } else if( btn.align == 'right' ) {
+        el.css('text-align', 'left');
+        btn.align = 'left';
+      } else if( btn.align == 'left' ) {
+        el.css('text-align', '');
+        btn.align = '';
+      } else {
+        el.css('text-align', 'center');
+        btn.align = 'center';
+      }
+    }
+  });
+}
+
+var proto = Link.prototype = Object.create(Part.prototype);
+
+proto.create = function(arg) {
+  var def = Link.defaultLabel;
+  var href = arg && (arg.src || arg.href);
+  var label = arg && (arg.name || arg.title || arg.label) || def;
+  
+  if( typeof href !== 'string' ) href = null;
+  if( typeof label !== 'string' ) label = def;
+  if( !href.indexOf('data:') ) href = '';
+  
+  return $('<div ff-type="link"/>').append($('<a href="' + (href || 'javascript:;') + '" target="_blank"/>"').html(label))[0];
+};
+
+proto.target = function(target) {
+  if( !arguments.length ) return $(this.dom()).find('a').attr('target');
+  $(this.dom()).find('a').attr('target', target);
+  return this;
+};
+
+proto.href = function(href) {
+  if( !arguments.length ) return $(this.dom()).find('a').attr('href');
+  $(this.dom()).find('a').attr('href', href);
+  return this;
+};
+
+Link.defaultLabel = 'Download';
+
+module.exports = Link;
 
 /***/ }),
 /* 19 */
@@ -2567,6 +2533,7 @@ __webpack_require__(57);
 function Separator() {
   Part.apply(this, arguments);
   
+  var part = this;
   var el = $(this.dom()).ac('ff-separator');
   
   this.toolbar().add({
@@ -2574,21 +2541,21 @@ function Separator() {
     tooltip: '모양',
     onupdate: function() {
       var btn = this;
-      if( el.hc('ff-separator-dotted') ) btn.text('<i class="fa fa-ellipsis-h"></i>');
-      else if( el.hc('ff-separator-dashed') ) btn.text('<i class="fa fa-ellipsis-h"></i>');
-      else if( el.hc('ff-separator-zigzag') ) btn.text('<i class="fa fa-chevron-up"></i>');
+      var shape = part.shape();
+      if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
+      else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
+      else if( shape == 'zigzag' ) btn.text('<i class="fa fa-chevron-up"></i>');
+      else if( shape == 'empty' ) btn.text('<i class="fa fa-asterisk"></i>');
       else btn.text('<i class="fa fa-minus"></i>');
     },
     fn: function(e) {
-      if( el.hc('ff-separator-dotted') ) {
-        el.rc('ff-separator-dotted').ac('ff-separator-dashed');
-      } else if( el.hc('ff-separator-dashed') ) {
-        el.rc('ff-separator-dashed').ac('ff-separator-zigzag');
-      } else if( el.hc('ff-separator-zigzag') ) {
-        el.rc('ff-separator-zigzag');
-      } else {
-        el.ac('ff-separator-dotted');
-      }
+      var shape = part.shape();
+      
+      if( shape == 'dotted' ) part.shape('dashed');
+      else if( shape == 'dashed' ) part.shape('zigzag');
+      else if( shape == 'zigzag' ) part.shape('empty');
+      else if( shape == 'empty' ) part.shape(false);
+      else part.shape('dotted');
     }
   })
   .add({
@@ -2596,22 +2563,47 @@ function Separator() {
     tooltip: '너비',
     onupdate: function() {
       var btn = this;
-      if( el.hc('ff-separator-narrow') ) btn.text('<i class="fa fa-minus"></i>');
+      if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-arrows-h"></i>');
     },
     fn: function(e) {
-      el.tc('ff-separator-narrow');
+      el.tc('f_sep_narrow');
+    }
+  })
+  .add({
+    text: '<i class="fa fa-asterisk"></i>',
+    tooltip: '플로트 취소',
+    onupdate: function() {
+      this.active(el.hc('f_sep_clearfix'));
+    },
+    fn: function(e) {
+      el.tc('f_sep_clearfix');
     }
   });
 }
 
-Separator.prototype = Object.create(Part.prototype, {
-  create: {
-    value: function(arg) {
-      return $('<hr/>')[0];
-    }
-  }
-});
+var proto = Separator.prototype = Object.create(Part.prototype);
+
+proto.create = function(arg) {
+  return $('<hr/>')[0];
+};
+
+proto.shape = function(shape) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.hc('f_sep_dotted') ? 'dotted' : 
+    el.hc('f_sep_dashed') ? 'dashed' : 
+    el.hc('f_sep_zigzag') ? 'zigzag' : 
+    el.hc('f_sep_empty') ? 'empty' : false;
+
+  el.rc('f_sep_dotted f_sep_dashed f_sep_zigzag f_sep_empty');
+  if( shape == 'dotted' ) el.ac('f_sep_dotted');
+  else if( shape == 'dashed') el.ac('f_sep_dashed');
+  else if( shape == 'zigzag') el.ac('f_sep_zigzag');
+  else if( shape == 'empty') el.ac('f_sep_empty');
+  
+  return this;
+};
+
 
 module.exports = Separator;
 
@@ -2778,10 +2770,10 @@ ctx.Items = Items;
 var ArticlePart = __webpack_require__(16);
 var ParagraphPart = __webpack_require__(8);
 var SeparatorPart = __webpack_require__(20);
-var ImagePart = __webpack_require__(18);
+var ImagePart = __webpack_require__(17);
 var VideoPart = __webpack_require__(22);
 var RowPart = __webpack_require__(19);
-var FilePart = __webpack_require__(17);
+var LinkPart = __webpack_require__(18);
 var TextPart = __webpack_require__(21);
 
 ctx.Article = ArticlePart;
@@ -2790,7 +2782,7 @@ ctx.Separator = SeparatorPart;
 ctx.Image = ImagePart;
 ctx.Video = VideoPart;
 ctx.Row = RowPart;
-ctx.File = FilePart;
+ctx.Link = LinkPart;
 ctx.Text = TextPart;
 
 ctx.type('default', ParagraphPart);
@@ -2801,7 +2793,7 @@ ctx.type('separator', SeparatorPart);
 ctx.type('image', ImagePart);
 ctx.type('video', VideoPart);
 ctx.type('row', RowPart);
-ctx.type('file', FilePart);
+ctx.type('link', LinkPart);
 
 (function() {
   var readyfn;
@@ -3419,8 +3411,6 @@ module.exports = new Items()
     else if( blockmode == 'medium' ) part.blockmode('full');
     else if( blockmode == 'full' ) part.blockmode(false);
     else part.blockmode('natural');
-    
-    this.owner().floating(false);
   }
 })
 .add({
@@ -3667,7 +3657,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n", ""]);
+exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.f_article_view {\n  overflow-y: auto;\n  clear: both;\n}\n", ""]);
 
 // exports
 
@@ -3709,7 +3699,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-file {\n  margin: 15px 0;\n}\n.ff-file a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-file a:hover,\n.ff-file a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n", ""]);
+exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -3723,7 +3713,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-link a:hover,\n.ff-link a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n", ""]);
 
 // exports
 
@@ -3765,7 +3755,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.ff-separator-narrow:before {\n  max-width: 180px;\n}\n.ff-separator.ff-separator-dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.ff-separator-dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.ff-separator-zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n}\n.ff-separator:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-separator:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.ff-separator.f_sep_clearfix {\n  clear: both;\n}\n.ff-separator.f_sep_empty:before {\n  border: 0;\n  padding-top: 5px;\n}\n.ff-separator.f_sep_empty:after {\n  padding-bottom: 5px;\n}\n.ff-separator.f_sep_narrow:before {\n  max-width: 180px;\n}\n.ff-separator.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.ff-separator.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.ff-separator.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 
@@ -3930,8 +3920,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./file.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3956,8 +3946,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
