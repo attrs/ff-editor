@@ -1332,17 +1332,7 @@ module.exports = new Items()
     var part = this.owner();
     
     context.prompt('Please enter the image URL.', function(src) {
-      if( !src ) return;
-      
-      if( ~src.indexOf('instagram.com') ) {
-        var vid = src.split('//')[1];
-        vid = vid && vid.split('/p/')[1];
-        vid = vid && vid.split('/')[0];
-        
-        if( vid ) src = 'https://www.instagram.com/p/' + vid + '/media';
-      }
-      
-      part.insert(new context.Image(src));
+      src && part.insert(new context.Image(src));
     });
   }
 })
@@ -2108,22 +2098,33 @@ proto.oninit = function() {
   var dom = this.dom();
   var el = $(dom).ac('ff-image')
   .on('click', function(e) {
-    if( self.editmode() ) return;
-    
-    context.fire('imageshow', {
+    if( !self.editmode() ) context.fire('imageshow', {
       originalEvent: e,
       image: dom,
       src: dom.src,
       part: self
     });
+  })
+  .on('dragend', function(e) {
+    if( self.editmode() && !$(self.dom()).parent().hc('f_img_wrap') )
+      self.floating(false);
+  })
+  .on('drop', function(e) {
+    console.log('drop', e);
   });
-  
-  el.on('dragend', function(e) {
-    if( this.editmode() && !$(this.dom()).parent().hc('ff-image-float-wrap') ) {
-      this.floating(false);
-    }
-  }.bind(this));
 };
+
+function translatesrc(src) {
+  if( src && ~src.indexOf('instagram.com') ) {
+    var vid = src.split('//')[1];
+    vid = vid && vid.split('/p/')[1];
+    vid = vid && vid.split('/')[0];
+    
+    if( vid ) src = 'https://www.instagram.com/p/' + vid + '/media';
+  }
+  
+  return src;
+}
 
 proto.create = function(arg) {
   var src;
@@ -2137,28 +2138,45 @@ proto.create = function(arg) {
   }
   
   return $('<img/>')
+  .ac('f_img_block')
   .attr('title', title)
-  .src(src || 'https://goo.gl/KRjd3U')[0];
+  .src(translatesrc(src))[0];
+};
+
+proto.src = function(src) {
+  if( !arguments.length ) return this.dom().src;
+  
+  src = translatesrc(src);
+  if( src ) this.dom().src = src;
+  
+  return this;
+};
+
+proto.title = function(title) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.attr('title');
+  el.attr('title', title);
+  return this;
 };
 
 proto.floating = function(direction) {
   var el = $(this.dom());
-  if( !arguments.length ) return el.hc('ff-image-float-left') ? 'left' : el.hc('ff-image-float-left') ? 'right' : false;
+  if( !arguments.length ) return el.hc('f_img_left') ? 'left' : el.hc('f_img_right') ? 'right' : false;
   
   var ctx = this.context();
   var paragraph = Part(el[0].nextSibling);
+  var parent = el.parent();
   
-  el.unwrap('.ff-image-float-wrap');
+  if( parent.hc('f_img_wrap') ) parent.nodes().unwrap();
   
-  if( !(paragraph instanceof ctx.Paragraph) ) {
+  if( !(paragraph instanceof ctx.Paragraph) )
     paragraph = new ctx.Paragraph();
-  }
   
   if( direction === 'left' ) {
     el
-    .rc('ff-image-float-right')
-    .ac('ff-image-float-left')
-    .wrap('<div class="ff-image-float-wrap ff-acc" />')
+    .rc('f_img_right')
+    .ac('f_img_left')
+    .wrap('<div class="f_img_wrap ff-acc" />')
     .parent()
     .on('click', function(e) {
       var target = e.target || e.srcElement;
@@ -2167,9 +2185,9 @@ proto.floating = function(direction) {
     .append(paragraph.dom());
   } else if( direction === 'right' ) {
     el
-    .rc('ff-image-float-left')
-    .ac('ff-image-float-right')
-    .wrap('<div class="ff-image-float-wrap ff-acc" />')
+    .rc('f_img_left')
+    .ac('f_img_right')
+    .wrap('<div class="f_img_wrap ff-acc" />')
     .parent()
     .on('click', function(e) {
       var target = e.target || e.srcElement;
@@ -2178,9 +2196,23 @@ proto.floating = function(direction) {
     .append(paragraph.dom());
   } else {
     el
-    .rc('ff-image-float-right')
-    .rc('ff-image-float-left');
+    .rc('f_img_right')
+    .rc('f_img_left');
   }
+};
+
+proto.blockmode = function(mode) {
+  var el = $(this.dom());
+  if( !arguments.length ) return el.hc('f_img_block') ? 'natural' : 
+    el.hc('f_img_full') ? 'full' : 
+    el.hc('f_img_medium') ? 'medium' : false;
+  
+  el.rc('f_img_block f_img_medium f_img_full')
+  if( mode == 'natural' ) el.ac('f_img_block');
+  else if( mode == 'medium') el.ac('f_img_medium');
+  else if( mode == 'full') el.ac('f_img_full');
+  
+  return this;
 };
 
 module.exports = ImagePart;
@@ -3288,17 +3320,6 @@ module.exports = new Items()
   }
 })
 .add({
-  text: '<i class="fa fa-angle-up"></i>',
-  tooltip: '플로팅제거',
-  onupdate: function() {
-    if( this.owner().floating() ) this.show();
-    else this.hide();
-  },
-  fn: function(e) {
-    this.owner().floating(false);
-  }
-})
-.add({
   text: '<i class="fa fa-dedent ff-flip"></i>',
   tooltip: '우측플로팅',
   fn: function(e) {
@@ -3307,41 +3328,50 @@ module.exports = new Items()
 })
 .add({
   text: '<i class="fa fa-circle-o"></i>',
-  tooltip: '원본크기',
+  tooltip: '크기변경',
   onupdate: function() {
-    if( this.owner().floating() ) this.hide();
-    else this.show();
+    var part = this.owner();
+    
+    var blockmode = part.blockmode();
+    if( blockmode == 'natural' ) this.text('<i class="fa fa-square-o"></i>');
+    else if( blockmode == 'medium' ) this.text('<i class="fa fa-arrows-alt"></i>');
+    else if( blockmode == 'full' ) this.text('<i class="fa fa-circle-o"></i>');
+    else this.text('<i class="fa fa-align-center"></i>');
   },
   fn: function(e) {
-    $(this.owner().dom())
-    .rc('ff-image-size-full')
-    .rc('ff-image-size-medium');
+    var part = this.owner();
+    
+    var blockmode = part.blockmode();
+    if( blockmode == 'natural' ) part.blockmode('medium');
+    else if( blockmode == 'medium' ) part.blockmode('full');
+    else if( blockmode == 'full' ) part.blockmode(false);
+    else part.blockmode('natural');
+    
+    this.owner().floating(false);
   }
 })
 .add({
-  text: '<i class="fa fa-square-o"></i>',
-  tooltip: '기본크기',
-  onupdate: function() {
-    if( this.owner().floating() ) this.hide();
-    else this.show();
-  },
+  text: '<i class="fa fa-file-image-o"></i>',
+  tooltip: '사진변경(업로드)',
   fn: function(e) {
-    $(this.owner().dom())
-    .rc('ff-image-size-full')
-    .ac('ff-image-size-medium');
+    var part = this.owner();
+    part.context().selectFile(function(err, file) {
+      if( err ) return context.error(err);
+      if( !file ) return;
+      
+      part.src(file.src).title(file.name);
+    });
   }
 })
 .add({
-  text: '<i class="fa fa-arrows-alt"></i>',
-  tooltip: '풀사이즈',
-  onupdate: function() {
-    if( this.owner().floating() ) this.hide();
-    else this.show();
-  },
+  text: '<i class="fa fa-instagram"></i>',
+  tooltip: '사진변경',
   fn: function(e) {
-    $(this.owner().dom())
-    .rc('ff-image-size-medium')
-    .ac('ff-image-size-full');
+    var part = this.owner();
+    
+    context.prompt('Please enter the image URL.', function(src) {
+      src && part.src(src).title(null);
+    });
   }
 });
 
@@ -3558,7 +3588,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-image-size-medium {\n  display: block;\n  width: 50%;\n}\n.ff-image-size-full {\n  display: block;\n  width: 100%;\n}\n.ff-image-float-left {\n  display: block;\n  float: left;\n  margin-right: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-right {\n  display: block;\n  float: right;\n  margin-left: 25px !important;\n  max-width: 40% !important;\n}\n.ff-image-float-wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n", ""]);
+exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_wrap {\n  display: block;\n  overflow: auto;\n  clear: both;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -4101,7 +4131,7 @@ module.exports = function(ctx) {
     if( arguments.length === 1 ) return this[0] && this[0].getAttribute && this[0].getAttribute(key);
     
     return this.each(function() {
-      if( isNaN(value) || value === null || value === undefined ) this.removeAttribute(key);
+      if( value === null || value === undefined ) this.removeAttribute(key);
       else this.setAttribute(key, value + '');
     });
   };
@@ -4444,7 +4474,7 @@ module.exports = function(ctx) {
   
   fn.unwrap = function(selector) {
     var $ = this.$;
-    return this.each(function() {
+    return this.reverse().each(function() {
       if( !isNode(this) ) return;
       
       var p = selector ? $(this).parent(selector)[0] : this.parentNode;
