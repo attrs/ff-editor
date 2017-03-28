@@ -1,6 +1,6 @@
 /*!
 * ff-editor
-* https://github.com/attrs/ff-editor
+* https://attrs.github.io/ff-editor/
 *
 * Copyright attrs and others
 * Released under the MIT license
@@ -88,9 +88,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(59);
+var Context = __webpack_require__(58);
 
-__webpack_require__(60)(Context);
+__webpack_require__(59)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -987,7 +987,7 @@ Part.prototype = {
       id: 'remove',
       text: '<i class="fa fa-remove"></i>',
       fn: function(e) {
-        this.owner().remove();
+        this.remove();
       }
     });
     
@@ -1082,7 +1082,7 @@ module.exports = Part;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(28);
+var Toolbar = __webpack_require__(27);
 
 Toolbar.Button = __webpack_require__(7);
 Toolbar.Separator = __webpack_require__(10);
@@ -1116,16 +1116,13 @@ module.exports = Items;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(49);
+__webpack_require__(48);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
   
-  var self = this;
-  self.options(options);
-  self.owner(options.owner);
-  
-  self._el = $('<div class="ff-toolbar-btn"></div>')
+  this.options(options);
+  this._el = $('<div class="ff-toolbar-btn"></div>')
   .ac(options.cls)
   .on('click', this);
   
@@ -1137,21 +1134,32 @@ Button.prototype = {
     if( e.type == 'click' ) {
       e.stopPropagation();
       this.click(e);
-      this.update(e);
+      
+      var toolbar = this.toolbar();
+      toolbar && toolbar.update(e);
     }
   },
   options: function(options) {
-    if( !arguments.length ) return this._options = this._options || {};
-    this._options = options || {};
-    this.id = this._options.id;
+    var o = this._options = this._options || options || {};
+    
+    if( !arguments.length ) return o;
+    
+    this.id = o.id;
+    this._scope = o.scope || this._scope;
+    this._toolbar = o.toolbar || this._toolbar;
     return this;
   },
   dom: function() {
     return this._el[0];
   },
-  owner: function(owner) {
-    if( !arguments.length ) return this._owner;
-    this._owner = owner;
+  scope: function(scope) {
+    if( !arguments.length ) return this._scope;
+    this._scope = scope;
+    return this;
+  },
+  toolbar: function(toolbar) {
+    if( !arguments.length ) return this._toolbar;
+    this._toolbar = toolbar;
     return this;
   },
   cls: function(cls) {
@@ -1176,16 +1184,16 @@ Button.prototype = {
     this._el.tc('ff-toolbar-btn-disabled', !b);
     return this;
   },
-  update: function(e) {
+  update: function(a, b, c, d) {
     var o = this.options();
     var fn = o.onupdate;
-    fn && fn.call(this, e);
+    fn && fn.call(this.scope(), this, a, b, c, d);
     return this;
   },
-  click: function(e) {
+  click: function(a, b, c, d) {
     var o = this.options();
     var fn = o.onclick || o.fn;
-    fn && fn.call(this, e);
+    fn && fn.call(this.scope(), this, a, b, c, d);
     return this;
   },
   text: function(text) {
@@ -1211,9 +1219,9 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(33);
+var buildtoolbar = __webpack_require__(32);
 
-__webpack_require__(55);
+__webpack_require__(54);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -1460,11 +1468,6 @@ function Separator(options) {
 }
 
 Separator.prototype = {
-  owner: function(owner) {
-    if( !arguments.length ) return this._owner;
-    this._owner = owner;
-    return this;
-  },
   appendTo: function(parent) {
     $(parent).append(this.el);
     return this;
@@ -1525,15 +1528,15 @@ module.exports = new Items()
   text: '<i class="fa fa-font"></i>',
   tooltip: '문단',
   fn: function(e) {
-    var placeholder = $(this.owner().dom()).attr('placeholder');
-    this.owner().insert(new context.Paragraph().placeholder(placeholder));
+    var placeholder = $(this.dom()).attr('placeholder');
+    this.insert(new context.Paragraph().placeholder(placeholder));
   }
 })
 .add({
   text: '<i class="fa fa-picture-o"></i>',
   tooltip: '이미지 파일',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     part.context().selectFiles(function(err, files) {
       if( err ) return context.error(err);
       if( !files.length ) return;
@@ -1554,7 +1557,7 @@ module.exports = new Items()
   text: '<i class="fa fa-instagram"></i>',
   tooltip: '이미지',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     
     context.prompt('Please enter the image URL.', function(src) {
       src && part.insert(new context.Image(src));
@@ -1565,7 +1568,7 @@ module.exports = new Items()
   text: '<i class="fa fa-youtube-square"></i>',
   tooltip: '동영상',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     
     context.prompt('Please enter the video URL', function(src) {
       src && part.insert(new context.Video(src));
@@ -1576,14 +1579,14 @@ module.exports = new Items()
   text: '<i class="fa fa-arrows-h"></i>',
   tooltip: '구분선',
   fn: function(e) {
-    this.owner().insert(new context.Separator());
+    this.insert(new context.Separator());
   }
 })
 .add({
   text: '<i class="fa fa-paperclip"></i>',
   tooltip: '첨부파일',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     part.context().selectFile(function(err, file) {
       if( err ) return context.error(err);
       
@@ -1892,10 +1895,10 @@ var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(31);
-var DnD = __webpack_require__(30);
+var Marker = __webpack_require__(30);
+var DnD = __webpack_require__(29);
 
-__webpack_require__(50);
+__webpack_require__(49);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -1910,7 +1913,7 @@ proto.createToolbar = function() {
     text: '<i class="fa fa-eraser"></i>',
     tooltip: '내용 삭제',
     fn: function(e) {
-      this.owner().clear();
+      this.clear();
     }
   }, 0)
   .add(items)
@@ -2166,7 +2169,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(53);
+__webpack_require__(52);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2184,7 +2187,7 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(32);
+var items = ImagePart.toolbar = __webpack_require__(31);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2280,7 +2283,7 @@ module.exports = ImagePart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(54);
+__webpack_require__(53);
 
 function Link() {
   Part.apply(this, arguments);
@@ -2291,15 +2294,13 @@ function Link() {
   .add({
     text: '<i class="fa fa-align-justify"></i>',
     tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
       if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
       else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
       else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
       else btn.text('<i class="fa fa-align-justify"></i>');
     },
-    fn: function(e) {
-      var btn = this;
+    fn: function(btn) {
       if( btn.align == 'center' ) {
         el.css('text-align', 'right');
         btn.align = 'right';
@@ -2356,13 +2357,13 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(56);
+__webpack_require__(55);
 
 function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(34);
+var items = RowPart.toolbar = __webpack_require__(33);
 var proto = RowPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2544,7 +2545,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(57);
+__webpack_require__(56);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2555,8 +2556,8 @@ function Separator() {
   this.toolbar().add({
     text: '<i class="fa fa-chevron-up"></i>',
     tooltip: '모양',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
+      var part = this;
       var shape = part.shape();
       if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
       else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
@@ -2564,7 +2565,8 @@ function Separator() {
       else if( shape == 'empty' ) btn.text('<i class="fa fa-asterisk"></i>');
       else btn.text('<i class="fa fa-minus"></i>');
     },
-    fn: function(e) {
+    fn: function(btn) {
+      var part = this;
       var shape = part.shape();
       
       if( shape == 'dotted' ) part.shape('dashed');
@@ -2577,8 +2579,8 @@ function Separator() {
   .add({
     text: '<i class="fa fa-arrows-h"></i>',
     tooltip: '너비',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
+      var part = this;
       if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-arrows-h"></i>');
     },
@@ -2589,8 +2591,8 @@ function Separator() {
   .add({
     text: '<i class="fa fa-asterisk"></i>',
     tooltip: '플로트 취소',
-    onupdate: function() {
-      this.active(el.hc('f_sep_clearfix'));
+    onupdate: function(btn) {
+      btn.active(el.hc('f_sep_clearfix'));
     },
     fn: function(e) {
       el.tc('f_sep_clearfix');
@@ -2660,7 +2662,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(58);
+__webpack_require__(57);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -2686,7 +2688,7 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(35);
+var items = VideoPart.toolbar = __webpack_require__(34);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2734,7 +2736,7 @@ module.exports = VideoPart;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2833,7 +2835,7 @@ module.exports = ctx;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(29);
+var Button = __webpack_require__(28);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -2848,11 +2850,13 @@ Buttons.prototype = {
     return this._toolbar;
   },
   update: function() {
+    var toolbar = this.toolbar();
+    var scope = toolbar.scope();
     var el = this._el[0];
     var list = this._list = [];
     var append = function(btns) {
       btns.forEach(function(btn) {
-        btn.appendTo(el).update();
+        btn.scope(scope).toolbar(toolbar).appendTo(el).update();
         list.push(btn);
         if( btn.id ) list[btn.id] = btn;
       });
@@ -2869,11 +2873,10 @@ Buttons.prototype = {
   add: function(btn, index) {
     if( !btn ) return this;
     
-    var owner = this._toolbar.owner();
     var btns = this._buttons;
     
     $(btn).each(function() {
-      var btn = Button.eval(this).owner(owner);
+      var btn = Button.eval(this);
       if( !btn ) return;
       
       if( index >= 0 ) btns.splice(index++, 0, btn);
@@ -2886,11 +2889,10 @@ Buttons.prototype = {
   first: function(btn, index) {
     if( !btn ) return this;
     
-    var owner = this._toolbar.owner();
     var btns = this._first;
     
     $(btn).each(function() {
-      var btn = Button.eval(this).owner(owner);
+      var btn = Button.eval(this);
       if( !btn ) return;
       
       if( index >= 0 ) btns.splice(index++, 0, btn);
@@ -2903,11 +2905,10 @@ Buttons.prototype = {
   last: function(btn, index) {
     if( !btn ) return this;
     
-    var owner = this._toolbar.owner();
     var btns = this._last;
     
     $(btn).each(function() {
-      var btn = Button.eval(this).owner(owner);
+      var btn = Button.eval(this);
       if( !btn ) return;
       
       if( index >= 0 ) btns.splice(index++, 0, btn);
@@ -2944,34 +2945,13 @@ module.exports = Buttons;
 
 /***/ }),
 /* 27 */
-/***/ (function(module, exports) {
-
-module.exports = function(el) {
-  var top = 0;
-  var left = 0;
-  
-  var c = el;
-  do {
-    if ( +c.offsetTop ) top += c.offsetTop;
-    if ( +c.offsetLeft ) left += c.offsetLeft;
-  } while( c = c.offsetParent );
-  
-  return {
-    top: top,
-    left: left,
-    width: el.offsetWidth,
-    height: el.offsetHeight
-  };
-};
-
-/***/ }),
-/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(27);
 var Buttons = __webpack_require__(26);
-__webpack_require__(48);
+var doc = document;
+
+__webpack_require__(47);
 
 function clone(o) {
   var result = {};
@@ -2979,141 +2959,56 @@ function clone(o) {
   return result; 
 }
 
-function Toolbar(owner, options) {
-  if( !owner || typeof owner.dom !== 'function' ) throw new TypeError('illegal owner(owner.dom() requried)');
-  
-  this._owner = owner;
-  this._el = $('<div/>').css('opacity', 0).ac('ff-toolbar').hide();
+function Toolbar(scope, options) {
+  this._el = $('<div/>').ac('ff-toolbar');
   this._buttons = new Buttons(this);
-  this._enable = true;
   this.options(options);
-  
-  $(window).on('scroll resize', this);
+  this.scope(scope);
 }
 
+Toolbar.DEFAULT_GAP = 10;
+Toolbar.DEFAULT_LIMIT_Y = 15;
+
 Toolbar.prototype = {
-  handleEvent: function(e) {
-    this.update();
-  },
-  options: function(o) {
-    if( !arguments.length ) return this._options;
-    this._options = clone(o);
-    return this;
-  },
-  position: function(position) {
-    this.options().position = position;
-    this.update();
-    return this;
-  },
   dom: function() {
     return this._el[0];
   },
-  owner: function() {
-    return this._owner;
+  scope: function(scope) {
+    if( !arguments.length ) return this._scope || this;
+    this._scope = scope;
+    if( scope && scope.dom && scope.dom() ) this.tracker(scope.dom());
+    return this;
   },
-  buttons: function() {
-    return this._buttons;
-  },
-  update: function() {
-    var options = this.options();
+  options: function(o) {
+    if( !arguments.length ) return this._options;
+    o = this._options = clone(o);
+    
+    this.enable(o.enable === false ? false : true);
+    this.always(o.always === true ? true : false);
+    this.tracker(o.tracker);
+    this.position(o.position);
+    
     var dom = this.dom();
-    var ownerElement = this.owner().dom();
-    var position = options.position || 'top center outside';
-    
-    if( !document.body.contains(ownerElement) ) {
-      $(window).off('scroll resize', this);
-      var p = dom.parentNode;
-      p && p.removeChild(dom);
-      return;
-    }
-    
-    $(window).on('scroll resize', this);
-    
-    var el = this._el
-    .css(options.style || {})
-    .ac(options.cls)
-    .appendTo(document.body);
-    
-    if( ownerElement ) {
-      var ownerposition = getPosition(ownerElement);
-      var posarr = position.split(' ');
-      var inside = ~posarr.indexOf('inside');
-      var vertical = ~posarr.indexOf('vertical');
-      var nomargin = ~posarr.indexOf('nomargin');
-      if( vertical ) el.ac('ff-toolbar-vertical');
-      
-      var width = ownerElement.clientWidth;
-      var height = ownerElement.clientHeight;
-      var tbarwidth = dom.clientWidth;
-      var tbarheight = dom.clientHeight;
-      var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
-      
-      posarr.forEach(function(pos) {
-        if( !vertical ) {
-          if( pos === 'top' ) {
-            if( inside ) top = ownerposition.top + margin;
-            else top = ownerposition.top - tbarheight - margin;
-          } else if( pos == 'bottom' ) {
-            if( inside ) top = ownerposition.top + height - tbarheight - margin;
-            else top = ownerposition.top + height + margin;
-          } else if( pos == 'left' ) {
-            left = ownerposition.left;
-            if( inside ) left += margin;
-          } else if( pos == 'center' ) {
-            left = ownerposition.left + (width - tbarwidth) / 2;
-          } else if( pos == 'right' ) {
-            left = ownerposition.left + width - tbarwidth;
-            if( inside ) left -= margin;
-          }
-        } else {
-          if( pos === 'top' ) {
-            top = ownerposition.top;
-            if( inside ) top += margin;
-          } else if( pos == 'middle' ) {
-            top = ownerposition.top + (height - tbarheight) / 2;
-          } else if( pos == 'bottom' ) {
-            top = ownerposition.top + height - tbarheight;
-            if( inside ) top -= margin;
-          } else if( pos == 'left' ) {
-            if( inside ) left = ownerposition.left + margin;
-            else left = ownerposition.left - tbarwidth - margin;
-          } else if( pos == 'right' ) {
-            if( inside ) left = ownerposition.left + width - tbarwidth - margin;
-            else left = ownerposition.left + width + margin;
-          }
-        }
-      });
-      
-      if( top <= 5 ) top = 5;
-      if( left <= 5 ) left = 5;
-      
-      if( vertical ) {
-        //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
-        if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
-      }
-    
-      dom.style.top = top + 'px';
-      dom.style.left = left + 'px';
-    }
-    
-    this.buttons().update();
+    if( o.cls ) dom.className = o.cls;
+    if( o.style ) dom.style = o.style;
     
     return this;
   },
-  show: function() {
-    if( !this.enable() ) return this;
-    this._el.css('opacity', 0).show();
+  gap: function(gap) {
+    if( !arguments.length ) return this._gap || Toolbar.DEFAULT_GAP;
+    this._gap = +gap;
     this.update();
-    this._el.css('opacity', 1);
     return this;
   },
-  hide: function(force) {
-    if( !force && this.always() ) return this;
-    $(window).off('scroll resize', this);
-    this._el.css('opacity', 0).hide();
+  tracker: function(tracker) {
+    if( !arguments.length ) return this._tracker;
+    this._tracker = tracker;
+    this.update();
     return this;
   },
-  refresh: function() {
+  enable: function(b) {
+    if( !arguments.length ) return this._enable;
+    this._enable = !!b;
     this.update();
     return this;
   },
@@ -3123,11 +3018,14 @@ Toolbar.prototype = {
     this.update();
     return this;
   },
-  enable: function(b) {
-    if( !arguments.length ) return this._enable;
-    this._enable = !!b;
+  position: function(position) {
+    if( !arguments.length ) return this._position || 'top center outside';
+    this._position = position;
     this.update();
     return this;
+  },
+  buttons: function() {
+    return this._buttons;
   },
   add: function(btn, index) {
     this.buttons().add(btn, index);
@@ -3151,6 +3049,105 @@ Toolbar.prototype = {
   remove: function(btn) {
     this.buttons().remove(btn);
     return this;
+  },
+  handleEvent: function(e) {
+    this.update();
+  },
+  show: function(b) {
+    if( !this.enable() ) return this;
+    
+    var el = $(this.dom()).css('opacity', 0).appendTo(doc.body).css('opacity', 1);
+    this.update();
+    return this;
+  },
+  hide: function(force) {
+    if( !force && this.always() ) return this;
+    
+    $(this.dom()).remove();
+    return this;
+  },
+  update: function() {
+    var dom = this.dom();
+    var el = $(dom);
+    var tracker = this.tracker();
+    var enable = this.enable();
+    var win = $(window).off('scroll resize', this);
+    
+    if( !enable || !doc.body || !doc.body.contains(dom) || !doc.body.contains(tracker) ) {
+      el.remove();
+      return this;
+    }
+    
+    if( !tracker ) return this;
+    
+    var scope = this.scope();
+    var position = this.position();
+    var gap = this.gap();
+    var limitY = Toolbar.DEFAULT_LIMIT_Y;
+    var scopeposition = $(tracker).offset();
+    var posarr = position.split(' ');
+    var inside = ~posarr.indexOf('inside');
+    var vertical = ~posarr.indexOf('vertical');
+    var nomargin = ~posarr.indexOf('nomargin');
+    if( vertical ) el.ac('ff-toolbar-vertical');
+    
+    var width = tracker.clientWidth;
+    var height = tracker.clientHeight;
+    var tbarwidth = dom.clientWidth;
+    var tbarheight = dom.clientHeight;
+    var top = 0, left = 0, margin = nomargin ? 0 : gap;
+    
+    posarr.forEach(function(pos) {
+      if( !vertical ) {
+        if( pos === 'top' ) {
+          if( inside ) top = scopeposition.top + margin;
+          else top = scopeposition.top - tbarheight - margin;
+        } else if( pos == 'bottom' ) {
+          if( inside ) top = scopeposition.top + height - tbarheight - margin;
+          else top = scopeposition.top + height + margin;
+        } else if( pos == 'left' ) {
+          left = scopeposition.left;
+          if( inside ) left += margin;
+        } else if( pos == 'center' ) {
+          left = scopeposition.left + (width - tbarwidth) / 2;
+        } else if( pos == 'right' ) {
+          left = scopeposition.left + width - tbarwidth;
+          if( inside ) left -= margin;
+        }
+      } else {
+        if( pos === 'top' ) {
+          top = scopeposition.top;
+          if( inside ) top += margin;
+        } else if( pos == 'middle' ) {
+          top = scopeposition.top + (height - tbarheight) / 2;
+        } else if( pos == 'bottom' ) {
+          top = scopeposition.top + height - tbarheight;
+          if( inside ) top -= margin;
+        } else if( pos == 'left' ) {
+          if( inside ) left = scopeposition.left + margin;
+          else left = scopeposition.left - tbarwidth - margin;
+        } else if( pos == 'right' ) {
+          if( inside ) left = scopeposition.left + width - tbarwidth - margin;
+          else left = scopeposition.left + width + margin;
+        }
+      }
+    });
+    
+    if( top <= 5 ) top = 5;
+    if( left <= 5 ) left = 5;
+    
+    if( vertical ) {
+      if( window.scrollY + limitY > tracker.offsetTop ) top = window.scrollY + limitY;
+      if( top > tracker.offsetTop + height - tbarheight ) top = tracker.offsetTop + height - tbarheight;
+    }
+    
+    dom.style.top = top + 'px';
+    dom.style.left = left + 'px';
+    
+    this.buttons().update();
+    
+    win.on('scroll resize', this);
+    return this;
   }
 };
 
@@ -3159,7 +3156,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 29 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(7);
@@ -3182,13 +3179,13 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 30 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(12);
 
-__webpack_require__(51);
+__webpack_require__(50);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3277,7 +3274,7 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 31 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3285,7 +3282,7 @@ var getOffsetTop = __webpack_require__(12);
 var toolbar = __webpack_require__(13);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(52);
+__webpack_require__(51);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3297,7 +3294,7 @@ function Marker(part, dom) {
     toolbar.forEach(function(item) {
       if( !item || !item.text ) return;
       
-      new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
+      new Button(item).cls('ff-marker-tools-btn').scope(part).appendTo(tools);
     });
   }
   
@@ -3385,7 +3382,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 32 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3396,31 +3393,31 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-dedent"></i>',
   tooltip: '좌측플로팅',
-  fn: function(e) {
-    this.owner().floating('left');
+  fn: function(btn) {
+    this.floating('left');
   }
 })
 .add({
   text: '<i class="fa fa-dedent ff-flip"></i>',
   tooltip: '우측플로팅',
-  fn: function(e) {
-    this.owner().floating('right');
+  fn: function(btn) {
+    this.floating('right');
   }
 })
 .add({
   text: '<i class="fa fa-circle-o"></i>',
   tooltip: '크기변경',
-  onupdate: function() {
-    var part = this.owner();
+  onupdate: function(btn) {
+    var part = this;
     
     var blockmode = part.blockmode();
-    if( blockmode == 'natural' ) this.text('<i class="fa fa-square-o"></i>');
-    else if( blockmode == 'medium' ) this.text('<i class="fa fa-arrows-alt"></i>');
-    else if( blockmode == 'full' ) this.text('<i class="fa fa-circle-o"></i>');
-    else this.text('<i class="fa fa-align-center"></i>');
+    if( blockmode == 'natural' ) btn.text('<i class="fa fa-square-o"></i>');
+    else if( blockmode == 'medium' ) btn.text('<i class="fa fa-arrows-alt"></i>');
+    else if( blockmode == 'full' ) btn.text('<i class="fa fa-circle-o"></i>');
+    else btn.text('<i class="fa fa-align-center"></i>');
   },
-  fn: function(e) {
-    var part = this.owner();
+  fn: function(btn) {
+    var part = this;
     
     var blockmode = part.blockmode();
     if( blockmode == 'natural' ) part.blockmode('medium');
@@ -3432,8 +3429,8 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-file-image-o"></i>',
   tooltip: '사진변경(업로드)',
-  fn: function(e) {
-    var part = this.owner();
+  fn: function() {
+    var part = this;
     context.selectFile(function(err, file) {
       if( err ) return context.error(err);
       if( !file ) return;
@@ -3445,9 +3442,8 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-instagram"></i>',
   tooltip: '사진변경',
-  fn: function(e) {
-    var part = this.owner();
-    
+  fn: function() {
+    var part = this;
     context.prompt('Please enter the image URL.', function(src) {
       src && part.src(src).title(null);
     });
@@ -3455,7 +3451,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 33 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3466,15 +3462,15 @@ function rangeitem(text, tooltip, selector, fn) {
   return {
     text: text,
     tooltip: tooltip,
-    onupdate: function() {
-      var range = this.owner().range();
-      if( !range ) return this.enable(false);
+    onupdate: function(btn) {
+      var range = this.range();
+      if( !range ) return btn.enable(false);
       
-      this.enable(true);
-      this.active(context.wrapped(range, selector));
+      btn.enable(true);
+      btn.active(context.wrapped(range, selector));
     },
-    fn: fn || function(e) {
-      context.toggleWrap(this.owner().range(), selector);
+    fn: fn || function(btn) {
+      context.toggleWrap(this.range(), selector);
     }
   };
 }
@@ -3509,7 +3505,7 @@ module.exports = function(part) {
   .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
   .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
   .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
-    var range = this.owner().range();
+    var range = this.range();
     if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
     
     context.prompt('Please enter the anchor URL.', function(href) {
@@ -3522,15 +3518,13 @@ module.exports = function(part) {
   .add({
     text: '<i class="fa fa-align-justify"></i>',
     tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
       if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
       else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
       else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
       else btn.text('<i class="fa fa-align-justify"></i>');
     },
-    fn: function(e) {
-      var btn = this;
+    fn: function(btn) {
       if( btn.align == 'center' ) {
         el.css('text-align', 'right');
         btn.align = 'right';
@@ -3549,8 +3543,7 @@ module.exports = function(part) {
   .add({
     text: '<i class="fa fa-hand-pointer-o"></i>',
     tooltip: '요소이동',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
       if( el.ha('draggable') ) btn.active(true);
       else btn.active(false);
     },
@@ -3559,6 +3552,38 @@ module.exports = function(part) {
     }
   });
 };
+
+/***/ }),
+/* 33 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
+var Items = __webpack_require__(6);
+
+module.exports = new Items()
+.add({
+  text: '<i class="fa fa-align-justify"></i>',
+  tooltip: '정렬',
+  onupdate: function(btn) {
+    var part = this;
+    var valign = part.valign();
+    
+    if( valign == 'middle' ) btn.text('<i class="fa fa-align-center ff-vert"></i>');
+    else if( valign == 'bottom' ) btn.text('<i class="fa fa-align-left ff-vert"></i>');
+    else if( valign == 'justify' ) btn.text('<i class="fa fa-align-justify ff-vert"></i>');
+    else btn.text('<i class="fa fa-align-right ff-vert"></i>');
+  },
+  fn: function(btn) {
+    var part = this;
+    var valign = part.valign();
+    
+    if( valign == 'middle' ) part.valign('bottom');
+    else if( valign == 'bottom' ) part.valign('justify');
+    else if( valign == 'justify' ) part.valign(false);
+    else part.valign('middle');
+  }
+});
 
 /***/ }),
 /* 34 */
@@ -3570,44 +3595,10 @@ var Items = __webpack_require__(6);
 
 module.exports = new Items()
 .add({
-  text: '<i class="fa fa-align-justify"></i>',
-  tooltip: '정렬',
-  onupdate: function() {
-    var btn = this;
-    var part = this.owner();
-    var valign = part.valign();
-    
-    if( valign == 'middle' ) btn.text('<i class="fa fa-align-center ff-vert"></i>');
-    else if( valign == 'bottom' ) btn.text('<i class="fa fa-align-left ff-vert"></i>');
-    else if( valign == 'justify' ) btn.text('<i class="fa fa-align-justify ff-vert"></i>');
-    else btn.text('<i class="fa fa-align-right ff-vert"></i>');
-  },
-  fn: function(e) {
-    var btn = this;
-    var part = this.owner();
-    var valign = part.valign();
-    
-    if( valign == 'middle' ) part.valign('bottom');
-    else if( valign == 'bottom' ) part.valign('justify');
-    else if( valign == 'justify' ) part.valign(false);
-    else part.valign('middle');
-  }
-});
-
-/***/ }),
-/* 35 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(6);
-
-module.exports = new Items()
-.add({
   text: '<i class="fa fa-circle-o"></i>',
   tooltip: '작은크기',
-  fn: function(e) {
-    $(this.owner().dom())
+  fn: function() {
+    $(this.dom())
     .rc('f_video_fit')
     .ac('f_video_narrow');
   }
@@ -3615,15 +3606,15 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-arrows-alt"></i>',
   tooltip: '화면에 맞춤',
-  fn: function(e) {
-    $(this.owner().dom())
+  fn: function() {
+    $(this.dom())
     .ac('f_video_fit')
     .rc('f_video_narrow');
   }
 });
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3637,7 +3628,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3651,7 +3642,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3665,7 +3656,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: 
 
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3679,7 +3670,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3693,7 +3684,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3707,7 +3698,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3721,7 +3712,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3735,7 +3726,7 @@ exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  displ
 
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3749,7 +3740,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3763,7 +3754,7 @@ exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-l
 
 
 /***/ }),
-/* 46 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3777,7 +3768,7 @@ exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0 !import
 
 
 /***/ }),
-/* 47 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3789,6 +3780,32 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 // exports
 
+
+/***/ }),
+/* 47 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(36);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
 
 /***/ }),
 /* 48 */
@@ -3806,8 +3823,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3832,8 +3849,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3858,8 +3875,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3884,8 +3901,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3910,8 +3927,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3936,8 +3953,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3962,8 +3979,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3988,8 +4005,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4014,8 +4031,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4040,32 +4057,6 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 58 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(47);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
 		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
 			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
@@ -4077,7 +4068,7 @@ if(false) {
 }
 
 /***/ }),
-/* 59 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -4151,7 +4142,7 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 60 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(15);

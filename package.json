@@ -3,7 +3,7 @@
   "version": "0.3.8",
   "description": "Extensible WYSIWYG HTML Editor",
   "main": "lib/index.js",
-  "homepage": "https://github.com/attrs/ff-editor",
+  "homepage": "https://attrs.github.io/ff-editor/",
   "repository": "attrs/ff-editor",
   "author": "joje <joje.attrs@gmail.com>",
   "scripts": {

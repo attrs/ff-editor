@@ -70,9 +70,9 @@
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(91);
+var Context = __webpack_require__(90);
 
-__webpack_require__(92)(Context);
+__webpack_require__(91)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -969,7 +969,7 @@ Part.prototype = {
       id: 'remove',
       text: '<i class="fa fa-remove"></i>',
       fn: function(e) {
-        this.owner().remove();
+        this.remove();
       }
     });
     
@@ -1064,7 +1064,7 @@ module.exports = Part;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(34);
+var Toolbar = __webpack_require__(33);
 
 Toolbar.Button = __webpack_require__(10);
 Toolbar.Separator = __webpack_require__(13);
@@ -1314,7 +1314,7 @@ var _defaultParams2 = _interopRequireWildcard(_defaultParams);
  * Add modal + overlay to DOM
  */
 
-var _injectedHTML = __webpack_require__(84);
+var _injectedHTML = __webpack_require__(83);
 
 var _injectedHTML2 = _interopRequireWildcard(_injectedHTML);
 
@@ -1547,16 +1547,13 @@ exports.colorLuminance = colorLuminance;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(72);
+__webpack_require__(71);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
   
-  var self = this;
-  self.options(options);
-  self.owner(options.owner);
-  
-  self._el = $('<div class="ff-toolbar-btn"></div>')
+  this.options(options);
+  this._el = $('<div class="ff-toolbar-btn"></div>')
   .ac(options.cls)
   .on('click', this);
   
@@ -1568,21 +1565,32 @@ Button.prototype = {
     if( e.type == 'click' ) {
       e.stopPropagation();
       this.click(e);
-      this.update(e);
+      
+      var toolbar = this.toolbar();
+      toolbar && toolbar.update(e);
     }
   },
   options: function(options) {
-    if( !arguments.length ) return this._options = this._options || {};
-    this._options = options || {};
-    this.id = this._options.id;
+    var o = this._options = this._options || options || {};
+    
+    if( !arguments.length ) return o;
+    
+    this.id = o.id;
+    this._scope = o.scope || this._scope;
+    this._toolbar = o.toolbar || this._toolbar;
     return this;
   },
   dom: function() {
     return this._el[0];
   },
-  owner: function(owner) {
-    if( !arguments.length ) return this._owner;
-    this._owner = owner;
+  scope: function(scope) {
+    if( !arguments.length ) return this._scope;
+    this._scope = scope;
+    return this;
+  },
+  toolbar: function(toolbar) {
+    if( !arguments.length ) return this._toolbar;
+    this._toolbar = toolbar;
     return this;
   },
   cls: function(cls) {
@@ -1607,16 +1615,16 @@ Button.prototype = {
     this._el.tc('ff-toolbar-btn-disabled', !b);
     return this;
   },
-  update: function(e) {
+  update: function(a, b, c, d) {
     var o = this.options();
     var fn = o.onupdate;
-    fn && fn.call(this, e);
+    fn && fn.call(this.scope(), this, a, b, c, d);
     return this;
   },
-  click: function(e) {
+  click: function(a, b, c, d) {
     var o = this.options();
     var fn = o.onclick || o.fn;
-    fn && fn.call(this, e);
+    fn && fn.call(this.scope(), this, a, b, c, d);
     return this;
   },
   text: function(text) {
@@ -1645,20 +1653,20 @@ var Toolbar = __webpack_require__(5);
 var Part = __webpack_require__(4);
 var Items = __webpack_require__(6);
 
-__webpack_require__(70);
+__webpack_require__(69);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(36);
+var ArticlePart = __webpack_require__(35);
 var ParagraphPart = __webpack_require__(17);
-var SeparatorPart = __webpack_require__(45);
-var ImagePart = __webpack_require__(39);
-var VideoPart = __webpack_require__(48);
-var RowPart = __webpack_require__(43);
-var LinkPart = __webpack_require__(41);
-var TextPart = __webpack_require__(46);
+var SeparatorPart = __webpack_require__(44);
+var ImagePart = __webpack_require__(38);
+var VideoPart = __webpack_require__(47);
+var RowPart = __webpack_require__(42);
+var LinkPart = __webpack_require__(40);
+var TextPart = __webpack_require__(45);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
@@ -1746,11 +1754,6 @@ function Separator(options) {
 }
 
 Separator.prototype = {
-  owner: function(owner) {
-    if( !arguments.length ) return this._owner;
-    this._owner = owner;
-    return this;
-  },
   appendTo: function(parent) {
     $(parent).append(this.el);
     return this;
@@ -1811,15 +1814,15 @@ module.exports = new Items()
   text: '<i class="fa fa-font"></i>',
   tooltip: '문단',
   fn: function(e) {
-    var placeholder = $(this.owner().dom()).attr('placeholder');
-    this.owner().insert(new context.Paragraph().placeholder(placeholder));
+    var placeholder = $(this.dom()).attr('placeholder');
+    this.insert(new context.Paragraph().placeholder(placeholder));
   }
 })
 .add({
   text: '<i class="fa fa-picture-o"></i>',
   tooltip: '이미지 파일',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     part.context().selectFiles(function(err, files) {
       if( err ) return context.error(err);
       if( !files.length ) return;
@@ -1840,7 +1843,7 @@ module.exports = new Items()
   text: '<i class="fa fa-instagram"></i>',
   tooltip: '이미지',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     
     context.prompt('Please enter the image URL.', function(src) {
       src && part.insert(new context.Image(src));
@@ -1851,7 +1854,7 @@ module.exports = new Items()
   text: '<i class="fa fa-youtube-square"></i>',
   tooltip: '동영상',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     
     context.prompt('Please enter the video URL', function(src) {
       src && part.insert(new context.Video(src));
@@ -1862,14 +1865,14 @@ module.exports = new Items()
   text: '<i class="fa fa-arrows-h"></i>',
   tooltip: '구분선',
   fn: function(e) {
-    this.owner().insert(new context.Separator());
+    this.insert(new context.Separator());
   }
 })
 .add({
   text: '<i class="fa fa-paperclip"></i>',
   tooltip: '첨부파일',
   fn: function(e) {
-    var part = this.owner();
+    var part = this;
     part.context().selectFile(function(err, file) {
       if( err ) return context.error(err);
       
@@ -1885,9 +1888,9 @@ module.exports = new Items()
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(42);
+var buildtoolbar = __webpack_require__(41);
 
-__webpack_require__(78);
+__webpack_require__(77);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -2423,7 +2426,7 @@ module.exports = {
       html: 'SpongeBob SquarePants'
     },
     content: {
-      html: __webpack_require__(66)
+      html: __webpack_require__(65)
     }
   },
   patrick: {
@@ -2431,7 +2434,7 @@ module.exports = {
       html: '<a href="#">Patrick<br>Star</a>'
     },
     content: {
-      html: __webpack_require__(65)
+      html: __webpack_require__(64)
     }
   },
   squidward: {
@@ -2439,7 +2442,7 @@ module.exports = {
       html: 'Squidward Tentacles'
     },
     content: {
-      html: __webpack_require__(67)
+      html: __webpack_require__(66)
     }
   },
   mrkrabs: {
@@ -2447,7 +2450,7 @@ module.exports = {
       html: 'Eugene H. Krabs'
     },
     content: {
-      html: __webpack_require__(64)
+      html: __webpack_require__(63)
     }
   }
 };
@@ -7129,7 +7132,7 @@ _registerModule('History', {
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(61);
+var content = __webpack_require__(60);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -7155,7 +7158,7 @@ if(false) {
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(62);
+var content = __webpack_require__(61);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -7181,7 +7184,7 @@ if(false) {
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(63);
+var content = __webpack_require__(62);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -7236,9 +7239,9 @@ var _sweetAlertInitialize$getModal$getOverlay$getInput$setFocusStyle$openModal$r
 
 // Handle button events and keyboard events
 
-var _handleButton$handleConfirm$handleCancel = __webpack_require__(82);
+var _handleButton$handleConfirm$handleCancel = __webpack_require__(81);
 
-var _handleKeyDown = __webpack_require__(83);
+var _handleKeyDown = __webpack_require__(82);
 
 var _handleKeyDown2 = _interopRequireWildcard(_handleKeyDown);
 
@@ -7248,7 +7251,7 @@ var _defaultParams = __webpack_require__(18);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
-var _setParameters = __webpack_require__(85);
+var _setParameters = __webpack_require__(84);
 
 var _setParameters2 = _interopRequireWildcard(_setParameters);
 
@@ -7646,7 +7649,7 @@ module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(35);
+var Button = __webpack_require__(34);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -7661,11 +7664,13 @@ Buttons.prototype = {
     return this._toolbar;
   },
   update: function() {
+    var toolbar = this.toolbar();
+    var scope = toolbar.scope();
     var el = this._el[0];
     var list = this._list = [];
     var append = function(btns) {
       btns.forEach(function(btn) {
-        btn.appendTo(el).update();
+        btn.scope(scope).toolbar(toolbar).appendTo(el).update();
         list.push(btn);
         if( btn.id ) list[btn.id] = btn;
       });
@@ -7682,11 +7687,10 @@ Buttons.prototype = {
   add: function(btn, index) {
     if( !btn ) return this;
     
-    var owner = this._toolbar.owner();
     var btns = this._buttons;
     
     $(btn).each(function() {
-      var btn = Button.eval(this).owner(owner);
+      var btn = Button.eval(this);
       if( !btn ) return;
       
       if( index >= 0 ) btns.splice(index++, 0, btn);
@@ -7699,11 +7703,10 @@ Buttons.prototype = {
   first: function(btn, index) {
     if( !btn ) return this;
     
-    var owner = this._toolbar.owner();
     var btns = this._first;
     
     $(btn).each(function() {
-      var btn = Button.eval(this).owner(owner);
+      var btn = Button.eval(this);
       if( !btn ) return;
       
       if( index >= 0 ) btns.splice(index++, 0, btn);
@@ -7716,11 +7719,10 @@ Buttons.prototype = {
   last: function(btn, index) {
     if( !btn ) return this;
     
-    var owner = this._toolbar.owner();
     var btns = this._last;
     
     $(btn).each(function() {
-      var btn = Button.eval(this).owner(owner);
+      var btn = Button.eval(this);
       if( !btn ) return;
       
       if( index >= 0 ) btns.splice(index++, 0, btn);
@@ -7757,34 +7759,13 @@ module.exports = Buttons;
 
 /***/ }),
 /* 33 */
-/***/ (function(module, exports) {
-
-module.exports = function(el) {
-  var top = 0;
-  var left = 0;
-  
-  var c = el;
-  do {
-    if ( +c.offsetTop ) top += c.offsetTop;
-    if ( +c.offsetLeft ) left += c.offsetLeft;
-  } while( c = c.offsetParent );
-  
-  return {
-    top: top,
-    left: left,
-    width: el.offsetWidth,
-    height: el.offsetHeight
-  };
-};
-
-/***/ }),
-/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var getPosition = __webpack_require__(33);
 var Buttons = __webpack_require__(32);
-__webpack_require__(71);
+var doc = document;
+
+__webpack_require__(70);
 
 function clone(o) {
   var result = {};
@@ -7792,141 +7773,56 @@ function clone(o) {
   return result; 
 }
 
-function Toolbar(owner, options) {
-  if( !owner || typeof owner.dom !== 'function' ) throw new TypeError('illegal owner(owner.dom() requried)');
-  
-  this._owner = owner;
-  this._el = $('<div/>').css('opacity', 0).ac('ff-toolbar').hide();
+function Toolbar(scope, options) {
+  this._el = $('<div/>').ac('ff-toolbar');
   this._buttons = new Buttons(this);
-  this._enable = true;
   this.options(options);
-  
-  $(window).on('scroll resize', this);
+  this.scope(scope);
 }
 
+Toolbar.DEFAULT_GAP = 10;
+Toolbar.DEFAULT_LIMIT_Y = 15;
+
 Toolbar.prototype = {
-  handleEvent: function(e) {
-    this.update();
-  },
-  options: function(o) {
-    if( !arguments.length ) return this._options;
-    this._options = clone(o);
-    return this;
-  },
-  position: function(position) {
-    this.options().position = position;
-    this.update();
-    return this;
-  },
   dom: function() {
     return this._el[0];
   },
-  owner: function() {
-    return this._owner;
+  scope: function(scope) {
+    if( !arguments.length ) return this._scope || this;
+    this._scope = scope;
+    if( scope && scope.dom && scope.dom() ) this.tracker(scope.dom());
+    return this;
   },
-  buttons: function() {
-    return this._buttons;
-  },
-  update: function() {
-    var options = this.options();
+  options: function(o) {
+    if( !arguments.length ) return this._options;
+    o = this._options = clone(o);
+    
+    this.enable(o.enable === false ? false : true);
+    this.always(o.always === true ? true : false);
+    this.tracker(o.tracker);
+    this.position(o.position);
+    
     var dom = this.dom();
-    var ownerElement = this.owner().dom();
-    var position = options.position || 'top center outside';
-    
-    if( !document.body.contains(ownerElement) ) {
-      $(window).off('scroll resize', this);
-      var p = dom.parentNode;
-      p && p.removeChild(dom);
-      return;
-    }
-    
-    $(window).on('scroll resize', this);
-    
-    var el = this._el
-    .css(options.style || {})
-    .ac(options.cls)
-    .appendTo(document.body);
-    
-    if( ownerElement ) {
-      var ownerposition = getPosition(ownerElement);
-      var posarr = position.split(' ');
-      var inside = ~posarr.indexOf('inside');
-      var vertical = ~posarr.indexOf('vertical');
-      var nomargin = ~posarr.indexOf('nomargin');
-      if( vertical ) el.ac('ff-toolbar-vertical');
-      
-      var width = ownerElement.clientWidth;
-      var height = ownerElement.clientHeight;
-      var tbarwidth = dom.clientWidth;
-      var tbarheight = dom.clientHeight;
-      var top = 0, left = 0, margin = nomargin ? 0 : (+options.margin || 10);
-      
-      posarr.forEach(function(pos) {
-        if( !vertical ) {
-          if( pos === 'top' ) {
-            if( inside ) top = ownerposition.top + margin;
-            else top = ownerposition.top - tbarheight - margin;
-          } else if( pos == 'bottom' ) {
-            if( inside ) top = ownerposition.top + height - tbarheight - margin;
-            else top = ownerposition.top + height + margin;
-          } else if( pos == 'left' ) {
-            left = ownerposition.left;
-            if( inside ) left += margin;
-          } else if( pos == 'center' ) {
-            left = ownerposition.left + (width - tbarwidth) / 2;
-          } else if( pos == 'right' ) {
-            left = ownerposition.left + width - tbarwidth;
-            if( inside ) left -= margin;
-          }
-        } else {
-          if( pos === 'top' ) {
-            top = ownerposition.top;
-            if( inside ) top += margin;
-          } else if( pos == 'middle' ) {
-            top = ownerposition.top + (height - tbarheight) / 2;
-          } else if( pos == 'bottom' ) {
-            top = ownerposition.top + height - tbarheight;
-            if( inside ) top -= margin;
-          } else if( pos == 'left' ) {
-            if( inside ) left = ownerposition.left + margin;
-            else left = ownerposition.left - tbarwidth - margin;
-          } else if( pos == 'right' ) {
-            if( inside ) left = ownerposition.left + width - tbarwidth - margin;
-            else left = ownerposition.left + width + margin;
-          }
-        }
-      });
-      
-      if( top <= 5 ) top = 5;
-      if( left <= 5 ) left = 5;
-      
-      if( vertical ) {
-        //if( window.scrollY + 100 > ownerElement.offsetTop ) top = window.scrollY + 100;
-        if( top > ownerElement.offsetTop + height - tbarheight ) top = ownerElement.offsetTop + height - tbarheight;
-      }
-    
-      dom.style.top = top + 'px';
-      dom.style.left = left + 'px';
-    }
-    
-    this.buttons().update();
+    if( o.cls ) dom.className = o.cls;
+    if( o.style ) dom.style = o.style;
     
     return this;
   },
-  show: function() {
-    if( !this.enable() ) return this;
-    this._el.css('opacity', 0).show();
+  gap: function(gap) {
+    if( !arguments.length ) return this._gap || Toolbar.DEFAULT_GAP;
+    this._gap = +gap;
     this.update();
-    this._el.css('opacity', 1);
     return this;
   },
-  hide: function(force) {
-    if( !force && this.always() ) return this;
-    $(window).off('scroll resize', this);
-    this._el.css('opacity', 0).hide();
+  tracker: function(tracker) {
+    if( !arguments.length ) return this._tracker;
+    this._tracker = tracker;
+    this.update();
     return this;
   },
-  refresh: function() {
+  enable: function(b) {
+    if( !arguments.length ) return this._enable;
+    this._enable = !!b;
     this.update();
     return this;
   },
@@ -7936,11 +7832,14 @@ Toolbar.prototype = {
     this.update();
     return this;
   },
-  enable: function(b) {
-    if( !arguments.length ) return this._enable;
-    this._enable = !!b;
+  position: function(position) {
+    if( !arguments.length ) return this._position || 'top center outside';
+    this._position = position;
     this.update();
     return this;
+  },
+  buttons: function() {
+    return this._buttons;
   },
   add: function(btn, index) {
     this.buttons().add(btn, index);
@@ -7964,6 +7863,105 @@ Toolbar.prototype = {
   remove: function(btn) {
     this.buttons().remove(btn);
     return this;
+  },
+  handleEvent: function(e) {
+    this.update();
+  },
+  show: function(b) {
+    if( !this.enable() ) return this;
+    
+    var el = $(this.dom()).css('opacity', 0).appendTo(doc.body).css('opacity', 1);
+    this.update();
+    return this;
+  },
+  hide: function(force) {
+    if( !force && this.always() ) return this;
+    
+    $(this.dom()).remove();
+    return this;
+  },
+  update: function() {
+    var dom = this.dom();
+    var el = $(dom);
+    var tracker = this.tracker();
+    var enable = this.enable();
+    var win = $(window).off('scroll resize', this);
+    
+    if( !enable || !doc.body || !doc.body.contains(dom) || !doc.body.contains(tracker) ) {
+      el.remove();
+      return this;
+    }
+    
+    if( !tracker ) return this;
+    
+    var scope = this.scope();
+    var position = this.position();
+    var gap = this.gap();
+    var limitY = Toolbar.DEFAULT_LIMIT_Y;
+    var scopeposition = $(tracker).offset();
+    var posarr = position.split(' ');
+    var inside = ~posarr.indexOf('inside');
+    var vertical = ~posarr.indexOf('vertical');
+    var nomargin = ~posarr.indexOf('nomargin');
+    if( vertical ) el.ac('ff-toolbar-vertical');
+    
+    var width = tracker.clientWidth;
+    var height = tracker.clientHeight;
+    var tbarwidth = dom.clientWidth;
+    var tbarheight = dom.clientHeight;
+    var top = 0, left = 0, margin = nomargin ? 0 : gap;
+    
+    posarr.forEach(function(pos) {
+      if( !vertical ) {
+        if( pos === 'top' ) {
+          if( inside ) top = scopeposition.top + margin;
+          else top = scopeposition.top - tbarheight - margin;
+        } else if( pos == 'bottom' ) {
+          if( inside ) top = scopeposition.top + height - tbarheight - margin;
+          else top = scopeposition.top + height + margin;
+        } else if( pos == 'left' ) {
+          left = scopeposition.left;
+          if( inside ) left += margin;
+        } else if( pos == 'center' ) {
+          left = scopeposition.left + (width - tbarwidth) / 2;
+        } else if( pos == 'right' ) {
+          left = scopeposition.left + width - tbarwidth;
+          if( inside ) left -= margin;
+        }
+      } else {
+        if( pos === 'top' ) {
+          top = scopeposition.top;
+          if( inside ) top += margin;
+        } else if( pos == 'middle' ) {
+          top = scopeposition.top + (height - tbarheight) / 2;
+        } else if( pos == 'bottom' ) {
+          top = scopeposition.top + height - tbarheight;
+          if( inside ) top -= margin;
+        } else if( pos == 'left' ) {
+          if( inside ) left = scopeposition.left + margin;
+          else left = scopeposition.left - tbarwidth - margin;
+        } else if( pos == 'right' ) {
+          if( inside ) left = scopeposition.left + width - tbarwidth - margin;
+          else left = scopeposition.left + width + margin;
+        }
+      }
+    });
+    
+    if( top <= 5 ) top = 5;
+    if( left <= 5 ) left = 5;
+    
+    if( vertical ) {
+      if( window.scrollY + limitY > tracker.offsetTop ) top = window.scrollY + limitY;
+      if( top > tracker.offsetTop + height - tbarheight ) top = tracker.offsetTop + height - tbarheight;
+    }
+    
+    dom.style.top = top + 'px';
+    dom.style.left = left + 'px';
+    
+    this.buttons().update();
+    
+    win.on('scroll resize', this);
+    return this;
   }
 };
 
@@ -7972,7 +7970,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 35 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(10);
@@ -7995,17 +7993,17 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 36 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(38);
-var DnD = __webpack_require__(37);
+var Marker = __webpack_require__(37);
+var DnD = __webpack_require__(36);
 
-__webpack_require__(73);
+__webpack_require__(72);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -8020,7 +8018,7 @@ proto.createToolbar = function() {
     text: '<i class="fa fa-eraser"></i>',
     tooltip: '내용 삭제',
     fn: function(e) {
-      this.owner().clear();
+      this.clear();
     }
   }, 0)
   .add(items)
@@ -8268,13 +8266,13 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 37 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(15);
 
-__webpack_require__(74);
+__webpack_require__(73);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -8363,7 +8361,7 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 38 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8371,7 +8369,7 @@ var getOffsetTop = __webpack_require__(15);
 var toolbar = __webpack_require__(16);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(75);
+__webpack_require__(74);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -8383,7 +8381,7 @@ function Marker(part, dom) {
     toolbar.forEach(function(item) {
       if( !item || !item.text ) return;
       
-      new Button(item).cls('ff-marker-tools-btn').owner(part).appendTo(tools);
+      new Button(item).cls('ff-marker-tools-btn').scope(part).appendTo(tools);
     });
   }
   
@@ -8471,7 +8469,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 39 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8479,7 +8477,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(76);
+__webpack_require__(75);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -8497,7 +8495,7 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(40);
+var items = ImagePart.toolbar = __webpack_require__(39);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -8587,7 +8585,7 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 40 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8598,31 +8596,31 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-dedent"></i>',
   tooltip: '좌측플로팅',
-  fn: function(e) {
-    this.owner().floating('left');
+  fn: function(btn) {
+    this.floating('left');
   }
 })
 .add({
   text: '<i class="fa fa-dedent ff-flip"></i>',
   tooltip: '우측플로팅',
-  fn: function(e) {
-    this.owner().floating('right');
+  fn: function(btn) {
+    this.floating('right');
   }
 })
 .add({
   text: '<i class="fa fa-circle-o"></i>',
   tooltip: '크기변경',
-  onupdate: function() {
-    var part = this.owner();
+  onupdate: function(btn) {
+    var part = this;
     
     var blockmode = part.blockmode();
-    if( blockmode == 'natural' ) this.text('<i class="fa fa-square-o"></i>');
-    else if( blockmode == 'medium' ) this.text('<i class="fa fa-arrows-alt"></i>');
-    else if( blockmode == 'full' ) this.text('<i class="fa fa-circle-o"></i>');
-    else this.text('<i class="fa fa-align-center"></i>');
+    if( blockmode == 'natural' ) btn.text('<i class="fa fa-square-o"></i>');
+    else if( blockmode == 'medium' ) btn.text('<i class="fa fa-arrows-alt"></i>');
+    else if( blockmode == 'full' ) btn.text('<i class="fa fa-circle-o"></i>');
+    else btn.text('<i class="fa fa-align-center"></i>');
   },
-  fn: function(e) {
-    var part = this.owner();
+  fn: function(btn) {
+    var part = this;
     
     var blockmode = part.blockmode();
     if( blockmode == 'natural' ) part.blockmode('medium');
@@ -8634,8 +8632,8 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-file-image-o"></i>',
   tooltip: '사진변경(업로드)',
-  fn: function(e) {
-    var part = this.owner();
+  fn: function() {
+    var part = this;
     context.selectFile(function(err, file) {
       if( err ) return context.error(err);
       if( !file ) return;
@@ -8647,9 +8645,8 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-instagram"></i>',
   tooltip: '사진변경',
-  fn: function(e) {
-    var part = this.owner();
-    
+  fn: function() {
+    var part = this;
     context.prompt('Please enter the image URL.', function(src) {
       src && part.src(src).title(null);
     });
@@ -8657,13 +8654,13 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 41 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(77);
+__webpack_require__(76);
 
 function Link() {
   Part.apply(this, arguments);
@@ -8674,15 +8671,13 @@ function Link() {
   .add({
     text: '<i class="fa fa-align-justify"></i>',
     tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
       if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
       else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
       else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
       else btn.text('<i class="fa fa-align-justify"></i>');
     },
-    fn: function(e) {
-      var btn = this;
+    fn: function(btn) {
       if( btn.align == 'center' ) {
         el.css('text-align', 'right');
         btn.align = 'right';
@@ -8731,7 +8726,7 @@ Link.defaultLabel = 'Download';
 module.exports = Link;
 
 /***/ }),
-/* 42 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8742,15 +8737,15 @@ function rangeitem(text, tooltip, selector, fn) {
   return {
     text: text,
     tooltip: tooltip,
-    onupdate: function() {
-      var range = this.owner().range();
-      if( !range ) return this.enable(false);
+    onupdate: function(btn) {
+      var range = this.range();
+      if( !range ) return btn.enable(false);
       
-      this.enable(true);
-      this.active(context.wrapped(range, selector));
+      btn.enable(true);
+      btn.active(context.wrapped(range, selector));
     },
-    fn: fn || function(e) {
-      context.toggleWrap(this.owner().range(), selector);
+    fn: fn || function(btn) {
+      context.toggleWrap(this.range(), selector);
     }
   };
 }
@@ -8785,7 +8780,7 @@ module.exports = function(part) {
   .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
   .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
   .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
-    var range = this.owner().range();
+    var range = this.range();
     if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
     
     context.prompt('Please enter the anchor URL.', function(href) {
@@ -8798,15 +8793,13 @@ module.exports = function(part) {
   .add({
     text: '<i class="fa fa-align-justify"></i>',
     tooltip: '정렬',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
       if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
       else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
       else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
       else btn.text('<i class="fa fa-align-justify"></i>');
     },
-    fn: function(e) {
-      var btn = this;
+    fn: function(btn) {
       if( btn.align == 'center' ) {
         el.css('text-align', 'right');
         btn.align = 'right';
@@ -8825,8 +8818,7 @@ module.exports = function(part) {
   .add({
     text: '<i class="fa fa-hand-pointer-o"></i>',
     tooltip: '요소이동',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
       if( el.ha('draggable') ) btn.active(true);
       else btn.active(false);
     },
@@ -8837,7 +8829,7 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 43 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -8845,13 +8837,13 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(79);
+__webpack_require__(78);
 
 function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(44);
+var items = RowPart.toolbar = __webpack_require__(43);
 var proto = RowPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -9027,7 +9019,7 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 44 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -9038,9 +9030,8 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-align-justify"></i>',
   tooltip: '정렬',
-  onupdate: function() {
-    var btn = this;
-    var part = this.owner();
+  onupdate: function(btn) {
+    var part = this;
     var valign = part.valign();
     
     if( valign == 'middle' ) btn.text('<i class="fa fa-align-center ff-vert"></i>');
@@ -9048,9 +9039,8 @@ module.exports = new Items()
     else if( valign == 'justify' ) btn.text('<i class="fa fa-align-justify ff-vert"></i>');
     else btn.text('<i class="fa fa-align-right ff-vert"></i>');
   },
-  fn: function(e) {
-    var btn = this;
-    var part = this.owner();
+  fn: function(btn) {
+    var part = this;
     var valign = part.valign();
     
     if( valign == 'middle' ) part.valign('bottom');
@@ -9061,13 +9051,13 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 45 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(80);
+__webpack_require__(79);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -9078,8 +9068,8 @@ function Separator() {
   this.toolbar().add({
     text: '<i class="fa fa-chevron-up"></i>',
     tooltip: '모양',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
+      var part = this;
       var shape = part.shape();
       if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
       else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
@@ -9087,7 +9077,8 @@ function Separator() {
       else if( shape == 'empty' ) btn.text('<i class="fa fa-asterisk"></i>');
       else btn.text('<i class="fa fa-minus"></i>');
     },
-    fn: function(e) {
+    fn: function(btn) {
+      var part = this;
       var shape = part.shape();
       
       if( shape == 'dotted' ) part.shape('dashed');
@@ -9100,8 +9091,8 @@ function Separator() {
   .add({
     text: '<i class="fa fa-arrows-h"></i>',
     tooltip: '너비',
-    onupdate: function() {
-      var btn = this;
+    onupdate: function(btn) {
+      var part = this;
       if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-arrows-h"></i>');
     },
@@ -9112,8 +9103,8 @@ function Separator() {
   .add({
     text: '<i class="fa fa-asterisk"></i>',
     tooltip: '플로트 취소',
-    onupdate: function() {
-      this.active(el.hc('f_sep_clearfix'));
+    onupdate: function(btn) {
+      btn.active(el.hc('f_sep_clearfix'));
     },
     fn: function(e) {
       el.tc('f_sep_clearfix');
@@ -9147,7 +9138,7 @@ proto.shape = function(shape) {
 module.exports = Separator;
 
 /***/ }),
-/* 46 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -9175,7 +9166,7 @@ proto.multiline = function() {
 module.exports = TextPart;
 
 /***/ }),
-/* 47 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -9186,8 +9177,8 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-circle-o"></i>',
   tooltip: '작은크기',
-  fn: function(e) {
-    $(this.owner().dom())
+  fn: function() {
+    $(this.dom())
     .rc('f_video_fit')
     .ac('f_video_narrow');
   }
@@ -9195,15 +9186,15 @@ module.exports = new Items()
 .add({
   text: '<i class="fa fa-arrows-alt"></i>',
   tooltip: '화면에 맞춤',
-  fn: function(e) {
-    $(this.owner().dom())
+  fn: function() {
+    $(this.dom())
     .ac('f_video_fit')
     .rc('f_video_narrow');
   }
 });
 
 /***/ }),
-/* 48 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -9211,7 +9202,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(81);
+__webpack_require__(80);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -9237,7 +9228,7 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(47);
+var items = VideoPart.toolbar = __webpack_require__(46);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -9279,7 +9270,7 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 49 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9293,7 +9284,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 50 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9307,7 +9298,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 51 */
+/* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9321,7 +9312,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: inline-block;\n  cursor: 
 
 
 /***/ }),
-/* 52 */
+/* 51 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9335,7 +9326,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 53 */
+/* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9349,7 +9340,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 54 */
+/* 53 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9363,7 +9354,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 55 */
+/* 54 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9377,7 +9368,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 
 
 /***/ }),
-/* 56 */
+/* 55 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9391,7 +9382,7 @@ exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  displ
 
 
 /***/ }),
-/* 57 */
+/* 56 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9405,7 +9396,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 58 */
+/* 57 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9419,7 +9410,7 @@ exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-l
 
 
 /***/ }),
-/* 59 */
+/* 58 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9433,7 +9424,7 @@ exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0 !import
 
 
 /***/ }),
-/* 60 */
+/* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9447,7 +9438,7 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 
 /***/ }),
-/* 61 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9455,13 +9446,13 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, "/*! PhotoSwipe Default UI CSS by Dmitry Semenov | photoswipe.com | MIT license */\n/*\n\n\tContents:\n\n\t1. Buttons\n\t2. Share modal and links\n\t3. Index indicator (\"1 of X\" counter)\n\t4. Caption\n\t5. Loading indicator\n\t6. Additional styles (root element, top bar, idle state, hidden state, etc.)\n\n*/\n/*\n\t\n\t1. Buttons\n\n */\n/* <button> css reset */\n.pswp__button {\n  width: 44px;\n  height: 44px;\n  position: relative;\n  background: none;\n  cursor: pointer;\n  overflow: visible;\n  -webkit-appearance: none;\n  display: block;\n  border: 0;\n  padding: 0;\n  margin: 0;\n  float: right;\n  opacity: 0.75;\n  -webkit-transition: opacity 0.2s;\n          transition: opacity 0.2s;\n  -webkit-box-shadow: none;\n          box-shadow: none; }\n  .pswp__button:focus,\n  .pswp__button:hover {\n    opacity: 1; }\n  .pswp__button:active {\n    outline: none;\n    opacity: 0.9; }\n  .pswp__button::-moz-focus-inner {\n    padding: 0;\n    border: 0; }\n\n/* pswp__ui--over-close class it added when mouse is over element that should close gallery */\n.pswp__ui--over-close .pswp__button--close {\n  opacity: 1; }\n\n.pswp__button,\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  background: url(" + __webpack_require__(86) + ") 0 0 no-repeat;\n  background-size: 264px 88px;\n  width: 44px;\n  height: 44px; }\n\n@media (-webkit-min-device-pixel-ratio: 1.1), (-webkit-min-device-pixel-ratio: 1.09375), (min-resolution: 105dpi), (min-resolution: 1.1dppx) {\n  /* Serve SVG sprite if browser supports SVG and resolution is more than 105dpi */\n  .pswp--svg .pswp__button,\n  .pswp--svg .pswp__button--arrow--left:before,\n  .pswp--svg .pswp__button--arrow--right:before {\n    background-image: url(" + __webpack_require__(87) + "); }\n  .pswp--svg .pswp__button--arrow--left,\n  .pswp--svg .pswp__button--arrow--right {\n    background: none; } }\n\n.pswp__button--close {\n  background-position: 0 -44px; }\n\n.pswp__button--share {\n  background-position: -44px -44px; }\n\n.pswp__button--fs {\n  display: none; }\n\n.pswp--supports-fs .pswp__button--fs {\n  display: block; }\n\n.pswp--fs .pswp__button--fs {\n  background-position: -44px 0; }\n\n.pswp__button--zoom {\n  display: none;\n  background-position: -88px 0; }\n\n.pswp--zoom-allowed .pswp__button--zoom {\n  display: block; }\n\n.pswp--zoomed-in .pswp__button--zoom {\n  background-position: -132px 0; }\n\n/* no arrows on touch screens */\n.pswp--touch .pswp__button--arrow--left,\n.pswp--touch .pswp__button--arrow--right {\n  visibility: hidden; }\n\n/*\n\tArrow buttons hit area\n\t(icon is added to :before pseudo-element)\n*/\n.pswp__button--arrow--left,\n.pswp__button--arrow--right {\n  background: none;\n  top: 50%;\n  margin-top: -50px;\n  width: 70px;\n  height: 100px;\n  position: absolute; }\n\n.pswp__button--arrow--left {\n  left: 0; }\n\n.pswp__button--arrow--right {\n  right: 0; }\n\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  content: '';\n  top: 35px;\n  background-color: rgba(0, 0, 0, 0.3);\n  height: 30px;\n  width: 32px;\n  position: absolute; }\n\n.pswp__button--arrow--left:before {\n  left: 6px;\n  background-position: -138px -44px; }\n\n.pswp__button--arrow--right:before {\n  right: 6px;\n  background-position: -94px -44px; }\n\n/*\n\n\t2. Share modal/popup and links\n\n */\n.pswp__counter,\n.pswp__share-modal {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n      user-select: none; }\n\n.pswp__share-modal {\n  display: block;\n  background: rgba(0, 0, 0, 0.5);\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  padding: 10px;\n  position: absolute;\n  z-index: 1600;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  -webkit-backface-visibility: hidden;\n  will-change: opacity; }\n\n.pswp__share-modal--hidden {\n  display: none; }\n\n.pswp__share-tooltip {\n  z-index: 1620;\n  position: absolute;\n  background: #FFF;\n  top: 56px;\n  border-radius: 2px;\n  display: block;\n  width: auto;\n  right: 44px;\n  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n  -webkit-transform: translateY(6px);\n      -ms-transform: translateY(6px);\n          transform: translateY(6px);\n  -webkit-transition: -webkit-transform 0.25s;\n          transition: transform 0.25s;\n  -webkit-backface-visibility: hidden;\n  will-change: transform; }\n  .pswp__share-tooltip a {\n    display: block;\n    padding: 8px 12px;\n    color: #000;\n    text-decoration: none;\n    font-size: 14px;\n    line-height: 18px; }\n    .pswp__share-tooltip a:hover {\n      text-decoration: none;\n      color: #000; }\n    .pswp__share-tooltip a:first-child {\n      /* round corners on the first/last list item */\n      border-radius: 2px 2px 0 0; }\n    .pswp__share-tooltip a:last-child {\n      border-radius: 0 0 2px 2px; }\n\n.pswp__share-modal--fade-in {\n  opacity: 1; }\n  .pswp__share-modal--fade-in .pswp__share-tooltip {\n    -webkit-transform: translateY(0);\n        -ms-transform: translateY(0);\n            transform: translateY(0); }\n\n/* increase size of share links on touch devices */\n.pswp--touch .pswp__share-tooltip a {\n  padding: 16px 12px; }\n\na.pswp__share--facebook:before {\n  content: '';\n  display: block;\n  width: 0;\n  height: 0;\n  position: absolute;\n  top: -12px;\n  right: 15px;\n  border: 6px solid transparent;\n  border-bottom-color: #FFF;\n  -webkit-pointer-events: none;\n  -moz-pointer-events: none;\n  pointer-events: none; }\n\na.pswp__share--facebook:hover {\n  background: #3E5C9A;\n  color: #FFF; }\n  a.pswp__share--facebook:hover:before {\n    border-bottom-color: #3E5C9A; }\n\na.pswp__share--twitter:hover {\n  background: #55ACEE;\n  color: #FFF; }\n\na.pswp__share--pinterest:hover {\n  background: #CCC;\n  color: #CE272D; }\n\na.pswp__share--download:hover {\n  background: #DDD; }\n\n/*\n\n\t3. Index indicator (\"1 of X\" counter)\n\n */\n.pswp__counter {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  font-size: 13px;\n  line-height: 44px;\n  color: #FFF;\n  opacity: 0.75;\n  padding: 0 10px; }\n\n/*\n\t\n\t4. Caption\n\n */\n.pswp__caption {\n  position: absolute;\n  left: 0;\n  bottom: 0;\n  width: 100%;\n  min-height: 44px; }\n  .pswp__caption small {\n    font-size: 11px;\n    color: #BBB; }\n\n.pswp__caption__center {\n  text-align: left;\n  max-width: 420px;\n  margin: 0 auto;\n  font-size: 13px;\n  padding: 10px;\n  line-height: 20px;\n  color: #CCC; }\n\n.pswp__caption--empty {\n  display: none; }\n\n/* Fake caption element, used to calculate height of next/prev image */\n.pswp__caption--fake {\n  visibility: hidden; }\n\n/*\n\n\t5. Loading indicator (preloader)\n\n\tYou can play with it here - http://codepen.io/dimsemenov/pen/yyBWoR\n\n */\n.pswp__preloader {\n  width: 44px;\n  height: 44px;\n  position: absolute;\n  top: 0;\n  left: 50%;\n  margin-left: -22px;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  will-change: opacity;\n  direction: ltr; }\n\n.pswp__preloader__icn {\n  width: 20px;\n  height: 20px;\n  margin: 12px; }\n\n.pswp__preloader--active {\n  opacity: 1; }\n  .pswp__preloader--active .pswp__preloader__icn {\n    /* We use .gif in browsers that don't support CSS animation */\n    background: url(" + __webpack_require__(88) + ") 0 0 no-repeat; }\n\n.pswp--css_animation .pswp__preloader--active {\n  opacity: 1; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__icn {\n    -webkit-animation: clockwise 500ms linear infinite;\n            animation: clockwise 500ms linear infinite; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__donut {\n    -webkit-animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite;\n            animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite; }\n\n.pswp--css_animation .pswp__preloader__icn {\n  background: none;\n  opacity: 0.75;\n  width: 14px;\n  height: 14px;\n  position: absolute;\n  left: 15px;\n  top: 15px;\n  margin: 0; }\n\n.pswp--css_animation .pswp__preloader__cut {\n  /* \n\t\t\tThe idea of animating inner circle is based on Polymer (\"material\") loading indicator \n\t\t\t by Keanu Lee https://blog.keanulee.com/2014/10/20/the-tale-of-three-spinners.html\n\t\t*/\n  position: relative;\n  width: 7px;\n  height: 14px;\n  overflow: hidden; }\n\n.pswp--css_animation .pswp__preloader__donut {\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  width: 14px;\n  height: 14px;\n  border: 2px solid #FFF;\n  border-radius: 50%;\n  border-left-color: transparent;\n  border-bottom-color: transparent;\n  position: absolute;\n  top: 0;\n  left: 0;\n  background: none;\n  margin: 0; }\n\n@media screen and (max-width: 1024px) {\n  .pswp__preloader {\n    position: relative;\n    left: auto;\n    top: auto;\n    margin: 0;\n    float: right; } }\n\n@-webkit-keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@-webkit-keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n@keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n/*\n\t\n\t6. Additional styles\n\n */\n/* root element of UI */\n.pswp__ui {\n  -webkit-font-smoothing: auto;\n  visibility: visible;\n  opacity: 1;\n  z-index: 1550; }\n\n/* top black bar with buttons and \"1 of X\" indicator */\n.pswp__top-bar {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  width: 100%; }\n\n.pswp__caption,\n.pswp__top-bar,\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  -webkit-backface-visibility: hidden;\n  will-change: opacity;\n  -webkit-transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1);\n          transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1); }\n\n/* pswp--has_mouse class is added only when two subsequent mousemove events occur */\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  visibility: visible; }\n\n.pswp__top-bar,\n.pswp__caption {\n  background-color: rgba(0, 0, 0, 0.5); }\n\n/* pswp__ui--fit class is added when main image \"fits\" between top bar and bottom bar (caption) */\n.pswp__ui--fit .pswp__top-bar,\n.pswp__ui--fit .pswp__caption {\n  background-color: rgba(0, 0, 0, 0.3); }\n\n/* pswp__ui--idle class is added when mouse isn't moving for several seconds (JS option timeToIdle) */\n.pswp__ui--idle .pswp__top-bar {\n  opacity: 0; }\n\n.pswp__ui--idle .pswp__button--arrow--left,\n.pswp__ui--idle .pswp__button--arrow--right {\n  opacity: 0; }\n\n/*\n\tpswp__ui--hidden class is added when controls are hidden\n\te.g. when user taps to toggle visibility of controls\n*/\n.pswp__ui--hidden .pswp__top-bar,\n.pswp__ui--hidden .pswp__caption,\n.pswp__ui--hidden .pswp__button--arrow--left,\n.pswp__ui--hidden .pswp__button--arrow--right {\n  /* Force paint & create composition layer for controls. */\n  opacity: 0.001; }\n\n/* pswp__ui--one-slide class is added when there is just one item in gallery */\n.pswp__ui--one-slide .pswp__button--arrow--left,\n.pswp__ui--one-slide .pswp__button--arrow--right,\n.pswp__ui--one-slide .pswp__counter {\n  display: none; }\n\n.pswp__element--disabled {\n  display: none !important; }\n\n.pswp--minimal--dark .pswp__top-bar {\n  background: none; }\n", ""]);
+exports.push([module.i, "/*! PhotoSwipe Default UI CSS by Dmitry Semenov | photoswipe.com | MIT license */\n/*\n\n\tContents:\n\n\t1. Buttons\n\t2. Share modal and links\n\t3. Index indicator (\"1 of X\" counter)\n\t4. Caption\n\t5. Loading indicator\n\t6. Additional styles (root element, top bar, idle state, hidden state, etc.)\n\n*/\n/*\n\t\n\t1. Buttons\n\n */\n/* <button> css reset */\n.pswp__button {\n  width: 44px;\n  height: 44px;\n  position: relative;\n  background: none;\n  cursor: pointer;\n  overflow: visible;\n  -webkit-appearance: none;\n  display: block;\n  border: 0;\n  padding: 0;\n  margin: 0;\n  float: right;\n  opacity: 0.75;\n  -webkit-transition: opacity 0.2s;\n          transition: opacity 0.2s;\n  -webkit-box-shadow: none;\n          box-shadow: none; }\n  .pswp__button:focus,\n  .pswp__button:hover {\n    opacity: 1; }\n  .pswp__button:active {\n    outline: none;\n    opacity: 0.9; }\n  .pswp__button::-moz-focus-inner {\n    padding: 0;\n    border: 0; }\n\n/* pswp__ui--over-close class it added when mouse is over element that should close gallery */\n.pswp__ui--over-close .pswp__button--close {\n  opacity: 1; }\n\n.pswp__button,\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  background: url(" + __webpack_require__(85) + ") 0 0 no-repeat;\n  background-size: 264px 88px;\n  width: 44px;\n  height: 44px; }\n\n@media (-webkit-min-device-pixel-ratio: 1.1), (-webkit-min-device-pixel-ratio: 1.09375), (min-resolution: 105dpi), (min-resolution: 1.1dppx) {\n  /* Serve SVG sprite if browser supports SVG and resolution is more than 105dpi */\n  .pswp--svg .pswp__button,\n  .pswp--svg .pswp__button--arrow--left:before,\n  .pswp--svg .pswp__button--arrow--right:before {\n    background-image: url(" + __webpack_require__(86) + "); }\n  .pswp--svg .pswp__button--arrow--left,\n  .pswp--svg .pswp__button--arrow--right {\n    background: none; } }\n\n.pswp__button--close {\n  background-position: 0 -44px; }\n\n.pswp__button--share {\n  background-position: -44px -44px; }\n\n.pswp__button--fs {\n  display: none; }\n\n.pswp--supports-fs .pswp__button--fs {\n  display: block; }\n\n.pswp--fs .pswp__button--fs {\n  background-position: -44px 0; }\n\n.pswp__button--zoom {\n  display: none;\n  background-position: -88px 0; }\n\n.pswp--zoom-allowed .pswp__button--zoom {\n  display: block; }\n\n.pswp--zoomed-in .pswp__button--zoom {\n  background-position: -132px 0; }\n\n/* no arrows on touch screens */\n.pswp--touch .pswp__button--arrow--left,\n.pswp--touch .pswp__button--arrow--right {\n  visibility: hidden; }\n\n/*\n\tArrow buttons hit area\n\t(icon is added to :before pseudo-element)\n*/\n.pswp__button--arrow--left,\n.pswp__button--arrow--right {\n  background: none;\n  top: 50%;\n  margin-top: -50px;\n  width: 70px;\n  height: 100px;\n  position: absolute; }\n\n.pswp__button--arrow--left {\n  left: 0; }\n\n.pswp__button--arrow--right {\n  right: 0; }\n\n.pswp__button--arrow--left:before,\n.pswp__button--arrow--right:before {\n  content: '';\n  top: 35px;\n  background-color: rgba(0, 0, 0, 0.3);\n  height: 30px;\n  width: 32px;\n  position: absolute; }\n\n.pswp__button--arrow--left:before {\n  left: 6px;\n  background-position: -138px -44px; }\n\n.pswp__button--arrow--right:before {\n  right: 6px;\n  background-position: -94px -44px; }\n\n/*\n\n\t2. Share modal/popup and links\n\n */\n.pswp__counter,\n.pswp__share-modal {\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n      user-select: none; }\n\n.pswp__share-modal {\n  display: block;\n  background: rgba(0, 0, 0, 0.5);\n  width: 100%;\n  height: 100%;\n  top: 0;\n  left: 0;\n  padding: 10px;\n  position: absolute;\n  z-index: 1600;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  -webkit-backface-visibility: hidden;\n  will-change: opacity; }\n\n.pswp__share-modal--hidden {\n  display: none; }\n\n.pswp__share-tooltip {\n  z-index: 1620;\n  position: absolute;\n  background: #FFF;\n  top: 56px;\n  border-radius: 2px;\n  display: block;\n  width: auto;\n  right: 44px;\n  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);\n  -webkit-transform: translateY(6px);\n      -ms-transform: translateY(6px);\n          transform: translateY(6px);\n  -webkit-transition: -webkit-transform 0.25s;\n          transition: transform 0.25s;\n  -webkit-backface-visibility: hidden;\n  will-change: transform; }\n  .pswp__share-tooltip a {\n    display: block;\n    padding: 8px 12px;\n    color: #000;\n    text-decoration: none;\n    font-size: 14px;\n    line-height: 18px; }\n    .pswp__share-tooltip a:hover {\n      text-decoration: none;\n      color: #000; }\n    .pswp__share-tooltip a:first-child {\n      /* round corners on the first/last list item */\n      border-radius: 2px 2px 0 0; }\n    .pswp__share-tooltip a:last-child {\n      border-radius: 0 0 2px 2px; }\n\n.pswp__share-modal--fade-in {\n  opacity: 1; }\n  .pswp__share-modal--fade-in .pswp__share-tooltip {\n    -webkit-transform: translateY(0);\n        -ms-transform: translateY(0);\n            transform: translateY(0); }\n\n/* increase size of share links on touch devices */\n.pswp--touch .pswp__share-tooltip a {\n  padding: 16px 12px; }\n\na.pswp__share--facebook:before {\n  content: '';\n  display: block;\n  width: 0;\n  height: 0;\n  position: absolute;\n  top: -12px;\n  right: 15px;\n  border: 6px solid transparent;\n  border-bottom-color: #FFF;\n  -webkit-pointer-events: none;\n  -moz-pointer-events: none;\n  pointer-events: none; }\n\na.pswp__share--facebook:hover {\n  background: #3E5C9A;\n  color: #FFF; }\n  a.pswp__share--facebook:hover:before {\n    border-bottom-color: #3E5C9A; }\n\na.pswp__share--twitter:hover {\n  background: #55ACEE;\n  color: #FFF; }\n\na.pswp__share--pinterest:hover {\n  background: #CCC;\n  color: #CE272D; }\n\na.pswp__share--download:hover {\n  background: #DDD; }\n\n/*\n\n\t3. Index indicator (\"1 of X\" counter)\n\n */\n.pswp__counter {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  font-size: 13px;\n  line-height: 44px;\n  color: #FFF;\n  opacity: 0.75;\n  padding: 0 10px; }\n\n/*\n\t\n\t4. Caption\n\n */\n.pswp__caption {\n  position: absolute;\n  left: 0;\n  bottom: 0;\n  width: 100%;\n  min-height: 44px; }\n  .pswp__caption small {\n    font-size: 11px;\n    color: #BBB; }\n\n.pswp__caption__center {\n  text-align: left;\n  max-width: 420px;\n  margin: 0 auto;\n  font-size: 13px;\n  padding: 10px;\n  line-height: 20px;\n  color: #CCC; }\n\n.pswp__caption--empty {\n  display: none; }\n\n/* Fake caption element, used to calculate height of next/prev image */\n.pswp__caption--fake {\n  visibility: hidden; }\n\n/*\n\n\t5. Loading indicator (preloader)\n\n\tYou can play with it here - http://codepen.io/dimsemenov/pen/yyBWoR\n\n */\n.pswp__preloader {\n  width: 44px;\n  height: 44px;\n  position: absolute;\n  top: 0;\n  left: 50%;\n  margin-left: -22px;\n  opacity: 0;\n  -webkit-transition: opacity 0.25s ease-out;\n          transition: opacity 0.25s ease-out;\n  will-change: opacity;\n  direction: ltr; }\n\n.pswp__preloader__icn {\n  width: 20px;\n  height: 20px;\n  margin: 12px; }\n\n.pswp__preloader--active {\n  opacity: 1; }\n  .pswp__preloader--active .pswp__preloader__icn {\n    /* We use .gif in browsers that don't support CSS animation */\n    background: url(" + __webpack_require__(87) + ") 0 0 no-repeat; }\n\n.pswp--css_animation .pswp__preloader--active {\n  opacity: 1; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__icn {\n    -webkit-animation: clockwise 500ms linear infinite;\n            animation: clockwise 500ms linear infinite; }\n  .pswp--css_animation .pswp__preloader--active .pswp__preloader__donut {\n    -webkit-animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite;\n            animation: donut-rotate 1000ms cubic-bezier(0.4, 0, 0.22, 1) infinite; }\n\n.pswp--css_animation .pswp__preloader__icn {\n  background: none;\n  opacity: 0.75;\n  width: 14px;\n  height: 14px;\n  position: absolute;\n  left: 15px;\n  top: 15px;\n  margin: 0; }\n\n.pswp--css_animation .pswp__preloader__cut {\n  /* \n\t\t\tThe idea of animating inner circle is based on Polymer (\"material\") loading indicator \n\t\t\t by Keanu Lee https://blog.keanulee.com/2014/10/20/the-tale-of-three-spinners.html\n\t\t*/\n  position: relative;\n  width: 7px;\n  height: 14px;\n  overflow: hidden; }\n\n.pswp--css_animation .pswp__preloader__donut {\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  width: 14px;\n  height: 14px;\n  border: 2px solid #FFF;\n  border-radius: 50%;\n  border-left-color: transparent;\n  border-bottom-color: transparent;\n  position: absolute;\n  top: 0;\n  left: 0;\n  background: none;\n  margin: 0; }\n\n@media screen and (max-width: 1024px) {\n  .pswp__preloader {\n    position: relative;\n    left: auto;\n    top: auto;\n    margin: 0;\n    float: right; } }\n\n@-webkit-keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@keyframes clockwise {\n  0% {\n    -webkit-transform: rotate(0deg);\n            transform: rotate(0deg); }\n  100% {\n    -webkit-transform: rotate(360deg);\n            transform: rotate(360deg); } }\n\n@-webkit-keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n@keyframes donut-rotate {\n  0% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); }\n  50% {\n    -webkit-transform: rotate(-140deg);\n            transform: rotate(-140deg); }\n  100% {\n    -webkit-transform: rotate(0);\n            transform: rotate(0); } }\n\n/*\n\t\n\t6. Additional styles\n\n */\n/* root element of UI */\n.pswp__ui {\n  -webkit-font-smoothing: auto;\n  visibility: visible;\n  opacity: 1;\n  z-index: 1550; }\n\n/* top black bar with buttons and \"1 of X\" indicator */\n.pswp__top-bar {\n  position: absolute;\n  left: 0;\n  top: 0;\n  height: 44px;\n  width: 100%; }\n\n.pswp__caption,\n.pswp__top-bar,\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  -webkit-backface-visibility: hidden;\n  will-change: opacity;\n  -webkit-transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1);\n          transition: opacity 333ms cubic-bezier(0.4, 0, 0.22, 1); }\n\n/* pswp--has_mouse class is added only when two subsequent mousemove events occur */\n.pswp--has_mouse .pswp__button--arrow--left,\n.pswp--has_mouse .pswp__button--arrow--right {\n  visibility: visible; }\n\n.pswp__top-bar,\n.pswp__caption {\n  background-color: rgba(0, 0, 0, 0.5); }\n\n/* pswp__ui--fit class is added when main image \"fits\" between top bar and bottom bar (caption) */\n.pswp__ui--fit .pswp__top-bar,\n.pswp__ui--fit .pswp__caption {\n  background-color: rgba(0, 0, 0, 0.3); }\n\n/* pswp__ui--idle class is added when mouse isn't moving for several seconds (JS option timeToIdle) */\n.pswp__ui--idle .pswp__top-bar {\n  opacity: 0; }\n\n.pswp__ui--idle .pswp__button--arrow--left,\n.pswp__ui--idle .pswp__button--arrow--right {\n  opacity: 0; }\n\n/*\n\tpswp__ui--hidden class is added when controls are hidden\n\te.g. when user taps to toggle visibility of controls\n*/\n.pswp__ui--hidden .pswp__top-bar,\n.pswp__ui--hidden .pswp__caption,\n.pswp__ui--hidden .pswp__button--arrow--left,\n.pswp__ui--hidden .pswp__button--arrow--right {\n  /* Force paint & create composition layer for controls. */\n  opacity: 0.001; }\n\n/* pswp__ui--one-slide class is added when there is just one item in gallery */\n.pswp__ui--one-slide .pswp__button--arrow--left,\n.pswp__ui--one-slide .pswp__button--arrow--right,\n.pswp__ui--one-slide .pswp__counter {\n  display: none; }\n\n.pswp__element--disabled {\n  display: none !important; }\n\n.pswp--minimal--dark .pswp__top-bar {\n  background: none; }\n", ""]);
 
 // exports
 
 
 /***/ }),
-/* 62 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9475,7 +9466,7 @@ exports.push([module.i, "/*! PhotoSwipe main CSS by Dmitry Semenov | photoswipe.
 
 
 /***/ }),
-/* 63 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -9489,31 +9480,31 @@ exports.push([module.i, "body.stop-scrolling {\n  height: 100%;\n  overflow: hid
 
 
 /***/ }),
-/* 64 */
+/* 63 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/YcfIqI\">\n\n<h2>Mr. Krabs</h2>\n<div>Eugene H. Krabs, nicknamed \"Armor Abs\", \"Krabs\" and commonly known as Mr. Krabs, is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Clancy Brown, and first appeared in the series' first episode \"Help Wanted\" on May 1, 1999. Mr. Krabs was created and designed by marine biologist, animator, and creator of the show Stephen Hillenburg.</div>\n\n<hr>\n\n<h2>Role in Spongebob Squarepants</h2>\n<div>Mr. Krabs is the greedy founder and owner of the Krusty Krab restaurant, where Spongebob works as a frycook, and Squidward works as a cashier. The success of the restaurant is built in part on a lack of competition and in part on the success of the Krusty Krab's signature sandwich, the Krabby Patty, the formula to which is a closely guarded trade secret.\n\nHis rival and former best friend, Plankton, has a struggling restaurant called the Chum Bucket located across the street from the Krusty Krab. A recurring gag throughout the series is Plankton's futile attempts to steal the Krabby Patty formula, under the assumption that it would eventually put the Krusty Krab out of business. To avoid this, Krabs goes to extreme lengths to prevent Plankton from obtaining the formula (going so far as to refuse to allow him to even buy a Krabby Patty legitimately, out of fear that Plankton might reverse-engineer the formula) or to prevent the Chum Bucket from having any business whatsoever, not even just one single customer (as seen in the episode \"Plankton's Regular\").\n\nKrabs values money above all, and he views the other characters in regard to how they affect his money. He tolerates his two employees because of their low cost and positive impact on his finances, but he is quick to rebuke them, especially Spongebob, if they engage in behavior that drives away customers or costs him money. Krabs and Spongebob have a tentative father-son relationship - Krabs often scolds Spongebob if he gets in trouble, but at times gives him fatherly advice. However, Squidward strongly abhors Krabs for often taking money out of his paycheck for little reason at all.\n\nMr. Krabs has served in the navy, and in the episode \"Krusty Krab Training Video\" it is revealed that Mr. Krabs served during a time of war, and fell into a depression after finishing his service. His depression was alleviated after founding the Krusty Krab.</div>\n\n<hr>\n\n<h2>Daughter</h2>\n<div>Mr. Krabs has a daughter, a sperm whale named Pearl. Pearl is a stereotypical teenage girl, extremely socially conscious and embarrassed by her father's miserliness. She made her first appearance in the season one episode, \"Squeaky Boots,\" which aired on September 4, 1999. Due to her frequent appearances, Pearl has been featured in many types of merchandise, such as plush toys and action figures. Although she is officially Mr. Krabs' daughter, her mother is neither seen nor named, and in fact in the season two episode \"Krusty Love\" it is implied that Mr. Krabs is not (currently) married.\n\nPearl is voiced by Lori Alan.</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 65 */
+/* 64 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>\n<div>Patrick Star is a fictional character in the American animated television series SpongeBob SquarePants. He is voiced by actor Bill Fagerbakke, who also voices numerous other characters on the show. Created and designed by marine biologist and cartoonist Stephen Hillenburg, the series creator, Patrick first appeared on television in the show's pilot episode \"Help Wanted\" on May 1, 1999.\n\nSeen as an overweight, dimwitted pink starfish, Patrick lives under a rock in the underwater city of Bikini Bottom next door to Squidward Tentacles' moai. His most significant character trait is his lack of common sense, which sometimes leads him and his best friend, main character SpongeBob SquarePants, into trouble. Patrick is unemployed and a self-proclaimed expert in the \"art of doing nothing\".\n\nThe character has received positive reactions from critics and fans alike. Patrick has been included in various SpongeBob SquarePants-related merchandise, including trading cards, video games, plush toys, and comic books. He has been seen in the 2004 full-length feature film The SpongeBob SquarePants Movie and its 2015 sequel The SpongeBob Movie: Sponge Out of Water.\n\nDespite not appearing as frequently in episodes as Squidward, he is generally considered to be the show's most prominent character besides SpongeBob.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Patrick is the ignorant but humorous best friend of main character SpongeBob SquarePants. He is portrayed as being an overweight, dimwitted, pink starfish residing in the underwater city of Bikini Bottom. Patrick has been shown to make many ludicrous mistakes; despite this, he has occasionally been portrayed as a savant, with articulate observance to certain subjects in specific detail. However, he always reverts quickly back to his usual, unintelligent self after displaying a moment of wisdom. He holds no form of occupation except for several very brief stints working at the Krusty Krab and at the Chum Bucket in a variety of positions, and mostly spends his time either clowning around with SpongeBob, catching jellyfish with him, or lounging beneath the rock under which he resides.\n\nAt home, Patrick is typically depicted either sleeping, watching TV, or engaged in the \"art of doing nothing\", at which he is an expert. All the furnishings in the space under his rock are made of sand, and Patrick can simply opt to quickly build up furniture as needed; even so, his living space is sparse and contains only the barest essentials. Aside from his best friend SpongeBob, who is often impressed by Patrick's capacity to come up with naïve yet genius plans or solutions, Patrick frequently irritates those around him and is confounded by the simplest of questions or subjects. The characters of Mr. Krabs and Squidward have no patience for Patrick's stupidity, and the former does not pay him much regard; Clancy Brown, who provides Mr. Krabs' voice, said, \"The only person that he [Mr. Krabs] doesn't hire is Patrick because Patrick is just too stupid to work for nothing.\" Sandy often gets annoyed by Patrick, but still sees him as a friend.</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. In 1987, Hillenburg left the institute to pursue a career in animation.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of the Nickelodeon series Rocko's Modern Life, at an animation festival, and was offered a job as a director of the show. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not even considered creating his own series. However, he realized that if he ever did, this would be the best approach. Production on Rocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants.\n\n\nEarly drawings of Patrick from Stephen Hillenburg's bible.\nFor the show's characters, Hillenburg started to draw and used character designs from his comic book—including starfish, crab, and sponge. He described Patrick as \"probably the dumbest guy in town\". The character was conceived as a starfish to embody the animal's nature; according to Hillenburg, starfish look \"dumb and slow\", but they are \"very active and aggressive\" in reality, like Patrick. Hillenburg incorporated character comedy rather than topical humor on the show to emphasize \"things that are more about humorous situations and about characters and their flaws.\" He designed Patrick and SpongeBob as such because \"they're whipping themselves up into situations—that's always where the humor comes from. The rule is: Follow the innocence and avoid topical [humor].\"\n\nIn spite of being depicted as having a good temperament or state of mind, Patrick has been shown in some episodes to have a tantrum. Patrick's emotional outbreak was originally written only for the first season episode \"Valentine's Day\", where SpongeBob and Sandy try to give Patrick a Valentine's Day gift, and \"was supposed to be a one-time thing\". However, according to episode writer Jay Lender, \"when that show came back it felt so right that his dark side started popping up everywhere. You can plan ahead all you want, but the characters eventually tell you who they are.\"\n\nEvery main character in the show has its own unique footstep sound. The sound of Patrick's footsteps is recorded by the show's Foley crew, with a Foley talent wearing a slip-on shoe. Jeff Hutchins, show's sound designer said, \"[Going] barefoot makes it tough to have much presence, so we decided that Patrick would be performed with shoes on.\"</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 66 */
+/* 65 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 67 */
+/* 66 */
 /***/ (function(module, exports) {
 
 module.exports = "<img src=\"https://goo.gl/rbeKqO\" />\n\n<h2>Squidward Tentacles</h2>\n<div>Squidward Tentacles is a fictional character voiced by actor Rodger Bumpass in the American animated television series SpongeBob SquarePants. Squidward was created and designed by marine biologist and animator Stephen Hillenburg. He first appeared on television in the series' pilot episode \"Help Wanted\" on May 1, 1999.\n\nAlthough his name has the word \"squid\" in it and he has six arms, Squidward is an anthropomorphic octopus.[a] He lives in a moai between SpongeBob SquarePants' and Patrick Star's houses. The character is portrayed as ill-tempered, manipulative, pretentious, and cynical, and he strongly despises his neighbors for their constant boisterous, noisy behavior. However, the pair are unaware of Squidward's antipathy towards them and see him as a friend. Squidward works as a cashier at the Krusty Krab restaurant, a job that he is apathetic towards.\n\nThe character's critical reception from professionals and fans has been positive. Squidward has appeared in many SpongeBob SquarePants publications, toys, and other merchandise. He appears in the 2004 full-length feature film The SpongeBob SquarePants Movie and in its sequel which was released in 2015.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>Squidward is depicted as a bitter, very unfortunate, desperate, somewhat depressed, curt, arrogant, turquoise octopus. He lives in the underwater city of Bikini Bottom in a moai situated between SpongeBob SquarePants' pineapple house and Patrick Star's rock. Squidward detests his neighbors for their perpetual laughter and boisterous behavior, though SpongeBob and Patrick are oblivious to Squidward's animosity towards them and regard him as a friend.\n\nSquidward lives in a constant state of self-pity and misery; he is unhappy with his humdrum lifestyle and yearns for celebrity status, wealth, hair, and a glamorous and distinguished career as a musician or painter with a passion for art and playing the clarinet. However, he is left to endure the lowly status as a fast-food cashier at the Krusty Krab restaurant. Squidward resents his job and is irritated by his greedy employer Mr. Krabs and by having SpongeBob as a colleague.\n\nSquidward longs for peace but his wishes remain unsatisfied. He believes he is talented and deserves a higher social status. The populace of Bikini Bottom do not consider him talented, and frequently boo him and walk out on his performances.</div>\n\n<hr>\n\n<h2>Development</h2>\n\n<hr>\n\n<h3>Creation and design</h3>\n\n<div>Stephen Hillenburg first became fascinated with the ocean and began developing his artistic abilities as a child. During college, he majored in marine biology and minored in art. After graduating in 1984, he joined the Ocean Institute, an ocean education organization, where he had the idea to create a comic book titled The Intertidal Zone, which led to the creation of SpongeBob SquarePants. In 1987, Hillenburg left the Institute to pursue a career in animation.\n\n\nEarly rough sketches of Squidward from creator Stephen Hillenburg's series bible.\nSeveral years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, creator of Rocko's Modern Life, at an animation festival. Murray offered Hillenburg a job as a director of the series. Martin Olson, one of the writers for Rocko's Modern Life, read The Intertidal Zone and encouraged Hillenburg to create a television series with a similar concept. At that point, Hillenburg had not considered creating his own series, but soon realized that this was his chance. Shortly after production on Rocko's Modern Life ended in 1996, Hillenburg began working on SpongeBob SquarePants.\n\nHillenburg used some character designs from his comic book. He designed \"SpongeBob's grumpy next door neighbor\" as an octopus because the species' large head; octopi, he said, \"have such a large bulbous head and Squidward thinks he's an intellectual so of course, he's gonna have a large bulbous head.\" Hillenburg drew Squidward with six tentacles because \"it was really just simpler for animation to draw him with six legs instead of eight\". Show writer and storyboard artist Vincent Waller said:\n\nSquidward is hard to draw—he has a very odd-shaped head. Fortunately, his emotions are pretty even, but to get a whole lot of big emoting out of him is a challenge. His nose splits everything in half, so it's always like, 'OK, how am I going to work this and still make it read?'\n\nHillenburg thought of making jokes with Squidward ejecting ink but retired it because, according to him, \"it always looks like he's pooping his pants\". However, it occurs in The SpongeBob Movie: Sponge Out of Water and the sixth season episode, \"Giant Squidward\".\n\nConflicting statements from Hillenburg and Nickelodeon's official website have led to some doubt over whether the character is an octopus or a squid. Hillenburg named him Squidward because the name Octoward—in the words of Squidward's voice actor Rodger Bumpass—\"just didn't work\". The sound of Squidward's footsteps is produced by rubbing hot water bottles. The footsteps, and those of the rest of the main characters, are recorded by the show's foley crew. Sound designer Jeff Hutchins said that footstep sounds \"[help] tell which character it is and what surface they're stepping on\". Bumpass inspired the idea of having Squidward ride a recumbent bicycle; Bumpass owns one of these bicycles, which he rides around Burbank, California. Bumpass described it as his \"little inside joke\".</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
 
 /***/ }),
-/* 68 */
+/* 67 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -9699,7 +9690,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 69 */
+/* 68 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global, process) {(function (global, undefined) {
@@ -9889,7 +9880,33 @@ process.umask = function() { return 0; };
     attachTo.clearImmediate = clearImmediate;
 }(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(89), __webpack_require__(68)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(88), __webpack_require__(67)))
+
+/***/ }),
+/* 69 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(48);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
 
 /***/ }),
 /* 70 */
@@ -9907,8 +9924,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./index.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -9933,8 +9950,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -9959,8 +9976,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -9985,8 +10002,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10011,8 +10028,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10037,8 +10054,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10063,8 +10080,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10089,8 +10106,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10115,8 +10132,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10141,8 +10158,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -10167,32 +10184,6 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 81 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(60);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
 		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
 			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
@@ -10204,7 +10195,7 @@ if(false) {
 }
 
 /***/ }),
-/* 82 */
+/* 81 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10345,7 +10336,7 @@ exports['default'] = {
 module.exports = exports['default'];
 
 /***/ }),
-/* 83 */
+/* 82 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10430,7 +10421,7 @@ exports['default'] = handleKeyDown;
 module.exports = exports['default'];
 
 /***/ }),
-/* 84 */
+/* 83 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10478,7 +10469,7 @@ exports["default"] = injectedHTML;
 module.exports = exports["default"];
 
 /***/ }),
-/* 85 */
+/* 84 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -10709,25 +10700,25 @@ exports['default'] = setParameters;
 module.exports = exports['default'];
 
 /***/ }),
-/* 86 */
+/* 85 */
 /***/ (function(module, exports) {
 
 module.exports = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQgAAABYCAQAAACjBqE3AAAB6klEQVR4Ae3bsWpUQRTG8YkkanwCa7GzVotsI/gEgk9h4Vu4ySLYmMYgbJrc3lrwZbJwC0FMt4j7F6Y4oIZrsXtgxvx/1c0ufEX4cnbmLCmSJEmSJEmSJEmSJP3XCBPvbJU+8doWmDFwyZpLBmYlNJebz0KwzykwsuSYJSNwykEJreV2BaBMaLIQZ2xYcFgqDlmw4ayE/FwL0dDk4Qh4W37DAjgqIT+3HRbigjH+iikVdxgZStgyN0Su2sXIeTwTT+esdpcbIlfNAuZ/TxresG4zV8kYWSZNiKUTokMMSWeIwTNEn4fK2TW3gRNgVkJLuVksROA9G+bEvoATNlBCa7nZXEwdxEZxzpKRKFh+bsv8LmPFmhX1OwfIz81jIRJQ5eeqG9B+riRJkiRJkiRJkiRJkiRJkiRJUkvA/8RQoEpKlJWINFkJ62AlrEP/mNBibnv2yz/A3t7Uq3LcpoxP8COjC1T5vxoAD5VdoEqdDrd5QuW1swtUSaueh3zkiuBiqgtA2OlkeMcP/uDqugsJdbjHF65VdPMKwS0+WQc/MgKvrIOHysB9vgPwk8+85hmPbnQdvHZyDMAFD7L3EOpgMcVdvnHFS0/vlatrXvCVx0U9gt3fxvnA0/hB4nmRJEmSJEmSJEmSJGmHfgFLaDPoMu5xWwAAAABJRU5ErkJggg=="
 
 /***/ }),
-/* 87 */
+/* 86 */
 /***/ (function(module, exports) {
 
 module.exports = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjY0IiBoZWlnaHQ9Ijg4IiB2aWV3Qm94PSIwIDAgMjY0IDg4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0aXRsZT5kZWZhdWx0LXNraW4gMjwvdGl0bGU+PGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj48Zz48cGF0aCBkPSJNNjcuMDAyIDU5LjV2My43NjhjLTYuMzA3Ljg0LTkuMTg0IDUuNzUtMTAuMDAyIDkuNzMyIDIuMjItMi44MyA1LjU2NC01LjA5OCAxMC4wMDItNS4wOThWNzEuNUw3MyA2NS41ODUgNjcuMDAyIDU5LjV6IiBpZD0iU2hhcGUiIGZpbGw9IiNmZmYiLz48ZyBmaWxsPSIjZmZmIj48cGF0aCBkPSJNMTMgMjl2LTVoMnYzaDN2MmgtNXpNMTMgMTVoNXYyaC0zdjNoLTJ2LTV6TTMxIDE1djVoLTJ2LTNoLTN2LTJoNXpNMzEgMjloLTV2LTJoM3YtM2gydjV6IiBpZD0iU2hhcGUiLz48L2c+PGcgZmlsbD0iI2ZmZiI+PHBhdGggZD0iTTYyIDI0djVoLTJ2LTNoLTN2LTJoNXpNNjIgMjBoLTV2LTJoM3YtM2gydjV6TTcwIDIwdi01aDJ2M2gzdjJoLTV6TTcwIDI0aDV2MmgtM3YzaC0ydi01eiIvPjwvZz48cGF0aCBkPSJNMjAuNTg2IDY2bC01LjY1Ni01LjY1NiAxLjQxNC0xLjQxNEwyMiA2NC41ODZsNS42NTYtNS42NTYgMS40MTQgMS40MTRMMjMuNDE0IDY2bDUuNjU2IDUuNjU2LTEuNDE0IDEuNDE0TDIyIDY3LjQxNGwtNS42NTYgNS42NTYtMS40MTQtMS40MTRMMjAuNTg2IDY2eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xMTEuNzg1IDY1LjAzTDExMCA2My41bDMtMy41aC0xMHYtMmgxMGwtMy0zLjUgMS43ODUtMS40NjhMMTE3IDU5bC01LjIxNSA2LjAzeiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xNTIuMjE1IDY1LjAzTDE1NCA2My41bC0zLTMuNWgxMHYtMmgtMTBsMy0zLjUtMS43ODUtMS40NjhMMTQ3IDU5bDUuMjE1IDYuMDN6IiBmaWxsPSIjZmZmIi8+PGc+PHBhdGggaWQ9IlJlY3RhbmdsZS0xMSIgZmlsbD0iI2ZmZiIgZD0iTTE2MC45NTcgMjguNTQzbC0zLjI1LTMuMjUtMS40MTMgMS40MTQgMy4yNSAzLjI1eiIvPjxwYXRoIGQ9Ik0xNTIuNSAyN2MzLjAzOCAwIDUuNS0yLjQ2MiA1LjUtNS41cy0yLjQ2Mi01LjUtNS41LTUuNS01LjUgMi40NjItNS41IDUuNSAyLjQ2MiA1LjUgNS41IDUuNXoiIGlkPSJPdmFsLTEiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTUwIDIxaDV2MWgtNXoiLz48L2c+PGc+PHBhdGggZD0iTTExNi45NTcgMjguNTQzbC0xLjQxNCAxLjQxNC0zLjI1LTMuMjUgMS40MTQtMS40MTQgMy4yNSAzLjI1eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Ik0xMDguNSAyN2MzLjAzOCAwIDUuNS0yLjQ2MiA1LjUtNS41cy0yLjQ2Mi01LjUtNS41LTUuNS01LjUgMi40NjItNS41IDUuNSAyLjQ2MiA1LjUgNS41IDUuNXoiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA2IDIxaDV2MWgtNXoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA5LjA0MyAxOS4wMDhsLS4wODUgNS0xLS4wMTcuMDg1LTV6Ii8+PC9nPjwvZz48L2c+PC9zdmc+"
 
 /***/ }),
-/* 88 */
+/* 87 */
 /***/ (function(module, exports) {
 
 module.exports = "data:image/gif;base64,R0lGODlhFAAUAPMIAIeHhz8/P1dXVycnJ8/Pz7e3t5+fn29vb////wAAAAAAAAAAAAAAAAAAAAAAAAAAACH/C05FVFNDQVBFMi4wAwEAAAAh+QQFBwAIACwAAAAAFAAUAEAEUxDJSatFxtwaggWAdIyHJAhXoRYSQUhDPGx0TbmujahbXGWZWqdDAYEsp5NupLPkdDwE7oXwWVasimzWrAE1tKFHErQRK8eL8mMUlRBJVI307uoiACH5BAUHAAgALAEAAQASABIAAAROEMkpS6E4W5upMdUmEQT2feFIltMJYivbvhnZ3R0A4NMwIDodz+cL7nDEn5CH8DGZh8MtEMBEoxkqlXKVIgQCibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpjaE4W5spANUmFQX2feFIltMJYivbvhnZ3d1x4BNBIDodz+cL7nDEn5CH8DGZAsFtMMBEoxkqlXKVIgIBibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpAaA4W5vpOdUmGQb2feFIltMJYivbvhnZ3Z0g4FNRIDodz+cL7nDEn5CH8DGZgcCNQMBEoxkqlXKVIgYDibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpz6E4W5upENUmAQD2feFIltMJYivbvhnZ3V0Q4JNhIDodz+cL7nDEn5CH8DGZg8GtUMBEoxkqlXKVIggEibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkphaA4W5tpCNUmHQf2feFIltMJYivbvhnZ3d0w4BMAIDodz+cL7nDEn5CH8DGZBMLNYMBEoxkqlXKVIgoFibbK9YLBYvLtHH5K0J0IACH5BAUHAAgALAEAAQASABIAAAROEMkpQ6A4W5vpGNUmCQL2feFIltMJYivbvhnZ3R1B4NNxIDodz+cL7nDEn5CH8DGZhcINAMBEoxkqlXKVIgwGibbK9YLBYvLtHH5K0J0IACH5BAUHAAcALAEAAQASABIAAANCeLo6wzA6FxkhbaoQ4L3ZxnXLh0EjWZ4RV71VUcCLIByyTNt2PsO8m452sBGJBsNxkUwuD03lAQBASqnUJ7aq5UYSADs="
 
 /***/ }),
-/* 89 */
+/* 88 */
 /***/ (function(module, exports) {
 
 var g;
@@ -10754,7 +10745,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 90 */
+/* 89 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var apply = Function.prototype.apply;
@@ -10807,13 +10798,13 @@ exports._unrefActive = exports.active = function(item) {
 };
 
 // setimmediate attaches itself to the global object
-__webpack_require__(69);
+__webpack_require__(68);
 exports.setImmediate = setImmediate;
 exports.clearImmediate = clearImmediate;
 
 
 /***/ }),
-/* 91 */
+/* 90 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -10887,7 +10878,7 @@ Context.util = util;
 module.exports = Context;
 
 /***/ }),
-/* 92 */
+/* 91 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(setImmediate) {var util = __webpack_require__(20);
@@ -11492,7 +11483,7 @@ module.exports = function(ctx) {
     return arr;
   };
 };
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(90).setImmediate))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(89).setImmediate))
 
 /***/ })
 /******/ ]);
