@@ -1,0 +1,26 @@
+.ff-toolbar-list-btn {
+  .ff-toolbar-list-dropdown {
+    display: none;
+    position: absolute;
+    top: 42px;
+    left: 0;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #eee;
+    background-color: #fff;
+    color: #333;
+    
+    & > li {
+      list-style: none;
+      padding: 8px 15px;
+      
+      &:hover {
+        background-color: #efefef;
+      }
+    }
+    
+    &.open {
+      display: block;
+    }
+  }
+}
