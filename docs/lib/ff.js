@@ -806,58 +806,8 @@ $(document).on('mousedown', function(e) {
   else if( focused && typeof focused.blur == 'function' ) focused.blur();
 });
 
-/*
-var ranges = [];.on('mouseup mousedown', function(e) {
-  var target = e.target || e.srcElement;
-  var isToolbar = $(target).parent('.ff-toolbar')[0];
-  if( isToolbar ) return;
-  
-  var selection = window.getSelection();
-  ranges = [];
-  if( selection.rangeCount ) {
-    for(var i=0; i < selection.rangeCount; i++)
-      ranges.push(selection.getRangeAt(i));
-  }
-});*/
-
-
 module.exports = context;
 
-
-
-/*
-getRange: function(index) {
-  if( !window.getSelection ) return null;
-  
-  var selection = window.getSelection();
-  if( selection.rangeCount && selection.rangeCount > (index || 0) ) return selection.getRangeAt(index || 0);
-  return null;
-},
-setRange: function(range) {
-  if( !range || !window.getSelection ) return this;
-  
-  var selection = window.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  return this;
-}
-getCaretPosition: function(node) {
-  if( !window.getSelection ) return -1;
-  if( !node ) return -1;
-
-  var position = -1;
-  var selection = window.getSelection();
-
-  if( selection.rangeCount ) {
-    var range = selection.getRangeAt(0);
-    if( range.commonAncestorContainer.parentNode == node ) {
-      position = range.endOffset;
-    }
-  }
-
-  return position;
-},*/
 
 /***/ }),
 /* 4 */
@@ -1259,14 +1209,15 @@ proto.oninit = function(e) {
     var text = clipboard.getData('Text');
     if( !text ) return;
     
-    var node = document.createTextNode(text.split('\n').join(' '));
+    if( !part.multiline() ) text = text.split('\n').join(' ');
+    var node = document.createTextNode(text);
     
     if( range ) {
       range.deleteContents();
       range.insertNode(node);
       
       range = document.createRange();
-      range.setStart(node, text.length);
+      range.setStart(node, 0);
       range.setEnd(node, text.length);
       
       var selection = window.getSelection();
@@ -1388,11 +1339,14 @@ proto.onfocus = function(e) {
   
   e.stopImmediatePropagation();
   
+  var dom = this.dom();
   this.toolbar().show();
   this.placeholder().hide();
-  $(this.dom()).attr('draggable', null);
+  $(dom).attr('draggable', null);
   
-  var el = this.dom();
+  dom.focus();
+  
+  /*var el = this.dom();
   var selection = window.getSelection();
   var range = selection.rangeCount && selection.getRangeAt(0);
   
@@ -1404,7 +1358,7 @@ proto.onfocus = function(e) {
       el.focus();
       el.click();
     }, 10);
-  }
+  }*/
 };
 
 proto.onblur = function() {
@@ -1484,8 +1438,19 @@ proto.handleEvent = function(e) {
   Button.prototype.handleEvent.call(this, e);
 };
 
+proto.enable = function(b) {
+  var result = Button.prototype.enable.apply(this, arguments);
+  
+  if( !arguments.length ) return result;
+  
+  if( !b ) $(this.dropdown()).rc('open');
+  return this;
+},
+
 proto.toggleList = function() {
-  $(this.dropdown()).tc('open');
+  var el = $(this.dropdown());
+  if( !this.enable() ) el.rc('open');
+  else el.tc('open');
   return this;
 };
 
@@ -3576,9 +3541,16 @@ module.exports = function(part) {
   .add({
     type: 'list',
     text: '<i class="fa fa-font"></i>',
-    onselect: function(item, i, btn) {
+    onupdate: function(btn) {
       var range = this.range();
       if( !range ) return btn.enable(false);
+      
+      btn.enable(true);
+      btn.active(context.wrapped(range, 'span.f_txt_font'));
+    },
+    onselect: function(item, i, btn) {
+      var range = this.range();
+      if( !range ) return;
       
       context.unwrap(range, 'span.f_txt_font');
       
