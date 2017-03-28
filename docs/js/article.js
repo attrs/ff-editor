@@ -923,6 +923,7 @@ function Part(arg) {
     if( target === dom ) {
       self.toolbar().hide();
       context.dragging = dom;
+      e.dataTransfer.setDragImage(el[0], 0, 0);
       e.dataTransfer.setData('text', target.outerHTML);
       el.ac('ff-dragging');
     }
@@ -1893,18 +1894,12 @@ function ParagraphPart() {
 }
 
 var proto = ParagraphPart.prototype = Object.create(Part.prototype);
-ParagraphPart.matches = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'span', 'p', 'blockquote'];
 
 proto.oninit = function(e) {
   var part = this;
   var dom = part.dom();
+  
   var el = $(dom).ac('ff-paragraph')
-  .on('dragstart', function(e) {
-    if( !part.editmode() || el.ha('draggable') ) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-  })
   .on('paste', function(e) {
     e.preventDefault();
     
@@ -1915,9 +1910,8 @@ proto.oninit = function(e) {
   .on('keydown', function(e) {
     if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
   })
-  .on('dragend', function(e) {
+  .on('dblclick', function(e) {
     part.dragmode(false);
-    part.toolbar().update();
   });
   
   buildtoolbar(this);
@@ -2367,10 +2361,9 @@ module.exports = {
     }
   },
   each: function(arr, fn) {
-    var i = 0;
     [].every.call(arr, function(el) {
       if( !el ) return true;
-      return ( fn && fn.apply(el, [i++, el]) === false ) ? false : true;
+      return ( fn && fn.apply(el, [arr.indexOf(el), el]) === false ) ? false : true;
     });
     return arr;
   },
@@ -8506,7 +8499,6 @@ function ImagePart(el) {
 
 var items = ImagePart.toolbar = __webpack_require__(40);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
-ImagePart.matches = ['img'];
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position || 'inside top center').add(items);
@@ -8877,18 +8869,34 @@ proto.oninit = function() {
   var dom = part.dom();
   $(dom)
   .ac('ff-row')
-  .on('drop', function(e) {
-    e.stopPropagation();
-    e.preventDefault();
+  .on('dragover', function(e) {
+    var target = e.target || e.srcElement;
+    var dragging = part.context().dragging;
     
+    if( dragging && dragging.tagName == 'IMG' ) {
+      if( target === dragging || dragging.contains(target) ) return;
+      
+      e.stopPropagation();
+      e.preventDefault();
+    } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  })
+  .on('drop', function(e) {
     var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
     var ref; // TODO
     
-    if( dragging ) {
+    if( dragging && dragging.tagName == 'IMG' ) {
       if( target === dragging || dragging.contains(target) ) return;
+      e.stopPropagation();
+      e.preventDefault();
       part.add(dragging, ref);
     } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
+      e.stopPropagation();
+      e.preventDefault();
+      
       $(e.dataTransfer.files).each(function() {
         var type = this.type;
         if( type ) {
@@ -8940,7 +8948,6 @@ proto.validate = function() {
   
   var cells = el.children('.f_row_cell');
   var cols = this.cols() || cells.length;
-  var cellwidth = 100 / cols;
   
   if( el.hc('f_row_justify') ) {
     var totalwidth = 0;
@@ -8948,24 +8955,33 @@ proto.validate = function() {
     cells
     .children(':first-child')
     .each(function(i) {
-      this.style.width = 'auto';
-      this.style.height = '100px';
-      var width = this.clientWidth;
-      totalwidth += width;
-      warr.push(width);
-      this.style.width = null;
-      this.style.height = null;
+      var width = this.naturalWidth;
+      var height = this.naturalHeight;
+      
+      if( width ) {
+        width = 100 * (width / height);
+        totalwidth += width;
+        warr.push(width);
+      } else {
+        this.style.width = 'auto';
+        this.style.height = '100px';
+        var width = this.offsetWidth;
+        totalwidth += width;
+        warr.push(width);
+        this.style.display = null;
+        this.style.width = null;
+        this.style.height = null;
+      }
+      //console.log(i, this, width);
     });
     
     cells.each(function(i) {
+      //console.log(i, this, ((warr[i] / totalwidth) * 100) + '%');
       $(this).css('width', ((warr[i] / totalwidth) * 100) + '%');
     });
   } else {
     cells.each(function() {
-      $(this).css('width', cellwidth + '%').children().each(function() {
-        this.style.width = null;
-        this.style.height = null;
-      });
+      $(this).css('width', (100 / cols) + '%');
     });
   }
   
@@ -9397,7 +9413,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n}\n.ff-row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.ff-row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.ff-row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n  padding: 15px 0;\n}\n.ff-row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.ff-row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.ff-row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.ff-row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.ff-row img {\n  display: block;\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -11137,7 +11153,6 @@ module.exports = function(ctx) {
   
   fn.appendTo = function(target, index) {
     if( target && typeof target === 'string' ) target = this.$(target);
-    if( !isElement(target) ) return this;
     
     var $ = this.$;
     return this.each(function() {

@@ -13,7 +13,7 @@
   "license": "MIT",
   "dependencies": {
     "tinyevent": "^0.2.1",
-    "tinyselector": "^0.1.14"
+    "tinyselector": "^0.1.15"
   },
   "devDependencies": {
     "babel-core": "^6.24.0",
