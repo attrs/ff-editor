@@ -630,15 +630,23 @@ var context = {
   },
   
   // range
-  ranges: function(node) {
+  ranges: function(node, collapsed) {
+    var selection = window.getSelection();
+    var ranges = [];
+    if( selection.rangeCount ) {
+      for(var i=0; i < selection.rangeCount; i++)
+        ranges.push(selection.getRangeAt(i));
+    }
+    
     if( !arguments.length ) return ranges;
     
     return ranges.filter(function(range) {
+      if( !collapsed && range.collapsed ) return;
       return range && node.contains(range.startContainer) && node.contains(range.endContainer);
     });
   },
-  range: function(node) {
-    return this.ranges(node)[0];
+  range: function(node, collapsed) {
+    return this.ranges(node, collapsed)[0];
   },
   wrap: function(range, selector) {
     if( !range ) return null;
@@ -699,12 +707,15 @@ var context = {
     return this;
   },
   wrapped: function(range, selector) {
+    if( !range ) return false;
+    
     var start = $(range.startContainer);
     var end = $(range.endContainer);
     
-    return start.is(selector) || start.parent(selector).length || start.find(selector).length || end.is(selector) || end.parent(selector).length || end.find(selector).length;
+    return !!(start.is(selector) || start.parent(selector).length || start.find(selector).length || end.is(selector) || end.parent(selector).length || end.find(selector).length);
   },
   toggleWrap: function(range, selector) {
+    if( !range ) return this;
     if( this.wrapped(range, selector) ) this.unwrap(range, selector);
     else this.wrap(range, selector);
     return this;
@@ -765,7 +776,6 @@ var context = {
 
 dispatcher.scope(context);
 
-var ranges = [];
 $(document).on('mousedown', function(e) {
   var target = e.target || e.srcElement;
   var part = context.get(target);
@@ -776,8 +786,10 @@ $(document).on('mousedown', function(e) {
   
   if( part ) part.focus();
   else if( focused && typeof focused.blur == 'function' ) focused.blur();
-})
-.on('mouseup mousedown', function(e) {
+});
+
+/*
+var ranges = [];.on('mouseup mousedown', function(e) {
   var target = e.target || e.srcElement;
   var isToolbar = $(target).parent('.ff-toolbar')[0];
   if( isToolbar ) return;
@@ -788,7 +800,7 @@ $(document).on('mousedown', function(e) {
     for(var i=0; i < selection.rangeCount; i++)
       ranges.push(selection.getRangeAt(i));
   }
-});
+});*/
 
 
 module.exports = context;
@@ -1052,11 +1064,11 @@ Part.prototype = {
     }
     return this;
   },
-  ranges: function() {
-    return context.ranges(this.dom());
+  ranges: function(collapsed) {
+    return context.ranges(this.dom(), collapsed);
   },
-  range: function() {
-    return context.range(this.dom());
+  range: function(collapsed) {
+    return context.range(this.dom(), collapsed);
   }
 };
 
@@ -1942,9 +1954,29 @@ proto.oninit = function(e) {
   .on('paste', function(e) {
     e.preventDefault();
     
+    var range = part.range(true);
     var clipboard = e.clipboardData || window.clipboardData;
     var text = clipboard.getData('Text');
-    this.innerText = text.split('\n').join(' ');
+    if( !text ) return;
+    
+    var node = document.createTextNode(text.split('\n').join(' '));
+    
+    if( range ) {
+      range.deleteContents();
+      range.insertNode(node);
+      
+      range = document.createRange();
+      range.setStart(node, text.length);
+      range.setEnd(node, text.length);
+      
+      var selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    } else {
+      el.append(node);
+    }
+    
+    dom.normalize();
   })
   .on('keydown', function(e) {
     if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
