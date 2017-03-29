@@ -2,12 +2,16 @@
   display: table-cell;
   cursor: pointer;
   font-size: 14px;
+  vertical-align: middle;
   line-height: 18px;
   background-color: transparent;
   color: white;
   padding: 12px 12px;
   text-decoration: none;
   user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -moz-user-select: none;
 
   &:hover, &.ff-toolbar-btn-active {
     color: #2796DD;
@@ -22,7 +26,8 @@
   }
   
   i {
-    min-width: 14px;
+    font-size: 14px;
+    min-width: 16px;
     text-align: center;
   }
 }
