@@ -1202,32 +1202,27 @@ proto.oninit = function(e) {
   
   var el = $(dom).ac('ff-paragraph')
   .on('paste', function(e) {
+    if( part.multiline() ) return;
+    
     e.preventDefault();
     
     var range = part.range(true);
     var clipboard = e.clipboardData || window.clipboardData;
     var text = clipboard.getData('Text');
-    if( !text ) return;
-    
-    if( !part.multiline() ) text = text.split('\n').join(' ');
-    var node = document.createTextNode(text);
-    
-    if( range ) {
+    if( text && range ) {
+      var node = document.createTextNode(text);
       range.deleteContents();
       range.insertNode(node);
-      
+      dom.normalize();
+    
       range = document.createRange();
       range.setStart(node, 0);
       range.setEnd(node, text.length);
-      
+    
       var selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
-    } else {
-      el.append(node);
     }
-    
-    dom.normalize();
   })
   .on('keydown', function(e) {
     if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
