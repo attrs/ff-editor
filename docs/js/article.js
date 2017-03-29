@@ -856,8 +856,9 @@ function Part(arg) {
       dispatcher.fire('editmode');
     } else {
       toolbar.hide(true);
-      el.rc('ff-edit-state');
+      el.rc('ff-edit-state').rc('ff-focus-state').rc('ff-enter-state').rc('ff-dragging');
       dispatcher.fire('viewmode');
+      self.blur();
     }
     
     dispatcher.fire('render', {
@@ -8358,7 +8359,6 @@ proto.html = function(html) {
     
     tmp.find('.ff-acc').remove();
     
-    console.log(tmp.html());
     return tmp.html();
   }
   
