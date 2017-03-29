@@ -575,13 +575,9 @@ var context = {
     return this;
   },
   selectFiles: function(done) {
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.setAttribute('multiple', 'true');
-    input.click();
-    input.onchange = function() {
+    $('<input type="file" multiple>').on('change', function() {
       var srcs = [];
-      $(input.files).async(function(file, done) {
+      $(this.files).async(function(file, done) {
         context.upload(file, function(err, src) {
           if( err ) return done(err);
           srcs.push(src);
@@ -591,18 +587,15 @@ var context = {
         if( err ) return done(err);
         done(null, srcs);
       });
-    };
+    }).click();
   
     return this;
   },
   selectFile: function(done) {
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.click();
-    input.onchange = function() {
-      context.upload(input.files[0], done);
-    };
-  
+    $('<input type="file">').on('change', function() {
+      context.upload(this.files[0], done);
+    }).click();
+    
     return this;
   },
   get: function(node) {
@@ -1396,22 +1389,7 @@ proto.onfocus = function(e) {
   this.placeholder().hide();
   $(dom).attr('draggable', null);
   
-  console.error('focus');
   dom.focus();
-  
-  /*var el = this.dom();
-  var selection = window.getSelection();
-  var range = selection.rangeCount && selection.getRangeAt(0);
-  
-  if( !range || !(el.contains(range.startContainer) && el.contains(range.endContainer))
-   || el === range.startContainer
-   || el === range.endContainer ) {
-    selection.removeAllRanges();
-    setTimeout(function() {
-      el.focus();
-      el.click();
-    }, 10);
-  }*/
 };
 
 proto.onblur = function() {
@@ -2390,7 +2368,7 @@ proto.blockmode = function(mode) {
     el.hc('f_img_full') ? 'full' : 
     el.hc('f_img_medium') ? 'medium' : false;
   
-  el.rc('f_img_block f_img_medium f_img_full');
+  el.rc('f_img_left f_img_right f_img_block f_img_medium f_img_full');
   if( mode == 'natural' ) el.ac('f_img_block');
   else if( mode == 'medium') el.ac('f_img_medium');
   else if( mode == 'full') el.ac('f_img_full');
@@ -2990,18 +2968,22 @@ ctx.type('link', LinkPart);
 })();
 
 ctx.fonts([
-  {id: 'default', text:'Default'},
+  {id: 'default', text:'Default Font'},
   {id: 'helvetica', text:'<span style="font-family: Helvetica;">Helvetica</span>', font: 'Helvetica'},
   {id: 'times', text:'<span style="font-family: Times New Roman;">Times New Roman</span>', font: 'Times New Roman'},
   {id: 'courier', text:'<span style="font-family: Courier New;">Courier New</span>', font: 'Courier New'}
 ]);
 
+
 ctx.colors([
-  {id: 'primary', text:'primary', color: ''},
-  {id: 'info', text:'info', font: ''},
-  {id: 'danger', text:'danger', font: ''},
-  {id: 'warning', text:'warning', font: ''},
-  {id: 'success', text:'success', font: ''}
+  {id: 'default', text:'Default Color'},
+  {id: 'primary', text:'<span style="color: #3498db;">Text Color</span>', color: '#3498db'},
+  {id: 'info', text:'<span style="color: #3bafda;">Text Color</span>', color: '#3bafda'},
+  {id: 'danger', text:'<span style="color: #e9573f;">Text Color</span>', color: '#e9573f'},
+  {id: 'warning', text:'<span style="color: #f6bb42;">Text Color</span>', color: '#f6bb42'},
+  {id: 'success', text:'<span style="color: #70AB4F;">Text Color</span>', color: '#70AB4F'},
+  {id: 'dark', text:'<span style="color: #3b3f4f;">Text Color</span>', color: '#3b3f4f'},
+  {id: 'system', text:'<span style="color: #6E5DA8;">Text Color</span>', color: '#6E5DA8'}
 ]);
 
 module.exports = ctx;
@@ -3712,7 +3694,7 @@ module.exports = function(part) {
     ]
   })
   .add({
-    type: 'color',
+    type: 'list',
     text: '<i class="fa fa-square"></i>',
     tooltip: 'Select Color',
     onupdate: function(btn) {
@@ -3721,17 +3703,32 @@ module.exports = function(part) {
     },
     onselect: function(item, i, btn) {
       var range = this.range();
-      if( !range ) {
-        dom.style.color = item.color || '';
-        return;
+      var change = function(color) {
+        if( !range ) {
+          dom.style.color = color || '';
+          return;
+        }
+        
+        context.unwrap(range, 'span.f_txt_color');
+        var node = context.wrap(range, 'span.f_txt_color');
+        node.style.color = color || '';
       }
       
-      context.unwrap(range, '.f_txt_color');
-      context.wrap(range, item.tag + '.f_txt_color');
-      node.style.color = item.color || '';
+      if( item.id == 'picker' ) {
+        $('<input type="color">').on('change', function() {
+          if( this.value ) change(this.value);
+        }).click();
+      } else {
+        change(item.color);
+      }
     },
     items: function() {
-      return context.colors();
+      var colors = context.colors().slice();
+      colors.push({
+        id: 'picker',
+        text: 'Select Color'
+      });
+      return colors;
     }
   })
   .add('-')
@@ -3745,14 +3742,14 @@ module.exports = function(part) {
       
       btn.enable(true);
       
-      range && btn.active(context.wrapped(range, '.f_txt_heading'));
+      range && btn.active(context.wrapped(range, 'h1, h2, h3, h4, h5, h6'));
     },
     onselect: function(item, i, btn) {
       var range = this.range();
       if( !range ) return;
       
-      context.unwrap(range, '.f_txt_heading');
-      item.tag && context.wrap(range, item.tag + '.f_txt_heading');
+      context.unwrap(range, 'h1, h2, h3, h4, h5, h6');
+      item.tag && context.wrap(range, item.tag);
     },
     items: [
       { text: 'Default' },
@@ -3928,7 +3925,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  display: none;\n  position: absolute;\n  top: 42px;\n  left: 0;\n  margin: 0;\n  padding: 0;\n  border: 1px solid #eee;\n  background-color: #fff;\n  color: #333;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li {\n  list-style: none;\n  padding: 8px 15px;\n  margin: 0;\n  white-space: nowrap;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h1,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h2,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h3,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h4,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h5,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h6 {\n  margin: 3px 0;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li:hover {\n  background-color: #efefef;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown.open {\n  display: block;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  display: none;\n  position: absolute;\n  top: 50px;\n  left: 0;\n  margin: 0;\n  padding: 0;\n  border: 1px solid #eee;\n  background-color: #fff;\n  color: #333;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li {\n  list-style: none;\n  padding: 8px 15px;\n  margin: 0;\n  white-space: nowrap;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h1,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h2,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h3,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h4,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h5,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h6 {\n  margin: 3px 0;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li:hover {\n  background-color: #efefef;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown.open {\n  display: block;\n}\n", ""]);
 
 // exports
 
@@ -4876,8 +4873,14 @@ module.exports = function(ctx) {
   };
   
   fn.click = function(fn) {
+    var isclick;
+    if( !arguments.length ) isclick = true;
+    
     return this.each(function() {
-      if( isNode(this) ) this.onclick = fn;
+      if( isElement(this) ) {
+        if( isclick ) this.click();
+        else this.onclick = fn;
+      }
     });
   };
   
