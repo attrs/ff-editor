@@ -81,16 +81,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 25);
+/******/ 	return __webpack_require__(__webpack_require__.s = 26);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(62);
+var Context = __webpack_require__(63);
 
-__webpack_require__(63)(Context);
+__webpack_require__(64)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -421,6 +421,7 @@ function updateLink(linkElement, obj) {
 
 var Events = __webpack_require__(14);
 var $ = __webpack_require__(0);
+var EditHistory = __webpack_require__(25);
 var types = __webpack_require__(11);
 var connector = __webpack_require__(24);
 
@@ -778,22 +779,41 @@ var context = {
     }
     
     return this;
+  },
+  
+  // history
+  history: function() {
+    return this._history = this._history || new EditHistory(this);
   }
 };
 
 dispatcher.scope(context);
 
-$(document).on('mousedown', function(e) {
-  var target = e.target || e.srcElement;
-  var part = context.get(target);
-  var focused = context.focused;
+(function() {
+  var platform = window.navigator.platform;
+  var mac = !!~platform.toLowerCase().indexOf('mac');
   
-  var isToolbar = $(target).parent('.ff-toolbar')[0];
-  if( isToolbar ) return;
+  $(document).on('mousedown', function(e) {
+    var target = e.target || e.srcElement;
+    var part = context.get(target);
+    var focused = context.focused;
   
-  if( part ) part.focus();
-  else if( focused && typeof focused.blur == 'function' ) focused.blur();
-});
+    var isToolbar = $(target).parent('.ff-toolbar')[0];
+    if( isToolbar ) return;
+  
+    if( part ) part.focus();
+    else if( focused && typeof focused.blur == 'function' ) focused.blur();
+  })
+  .on('keydown', function(e) {
+    if( mac ) {
+      if( e.metaKey && e.key == 'z' ) context.history().undo();
+      else if( e.metaKey && e.shiftKey && e.key == 'Z' ) context.history().redo();
+    } else {
+      if( e.ctrlKey && e.key == 'z' ) context.history().undo();
+      else if( e.ctrlKey && e.key == 'y' ) context.history().redo();
+    }
+  });
+})();
 
 module.exports = context;
 
@@ -1035,7 +1055,7 @@ module.exports = Part;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(27);
+var Toolbar = __webpack_require__(28);
 
 Toolbar.Button = __webpack_require__(7);
 Toolbar.Separator = __webpack_require__(10);
@@ -1069,7 +1089,7 @@ module.exports = Items;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(50);
+__webpack_require__(51);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1175,9 +1195,9 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(32);
+var buildtoolbar = __webpack_require__(33);
 
-__webpack_require__(58);
+__webpack_require__(59);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -1401,7 +1421,7 @@ module.exports = ParagraphPart;
 var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
-__webpack_require__(51);
+__webpack_require__(52);
 
 function ListButton(options) {
   Button.apply(this, arguments);
@@ -1485,7 +1505,7 @@ module.exports = ListButton;
 var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
-__webpack_require__(52);
+__webpack_require__(53);
 
 function Separator() {
   Button.apply(this, arguments);
@@ -1562,11 +1582,13 @@ module.exports = new Items()
       if( files.length === 1 ) {
         part.insert(new context.Image(files[0]));
       } else {
-        var row = new context.Row();
-        files.forEach(function(file) {
-          row.add(new context.Image(file));
+        $.util.chunk(files, 5).forEach(function(arr) {
+          var row = new context.Row().valign('justify');
+          arr.forEach(function(file) {
+            row.add(new context.Image(file));
+          });
+          part.insert(row);
         });
-        part.insert(row);
       }
     });
   }
@@ -1862,6 +1884,13 @@ var lib = module.exports = {
     });
     return arr;
   },
+  chunk: function(arr, size) {
+    return [].concat.apply([],
+      arr.map(function(item,i) {
+        return i % size ? [] : [arr.slice(i, i + size)];
+      })
+    );
+  },
   async: function(arr, iterator, done) {
     if( arr && !lib.isArrayLike(arr) ) arr = [arr];
     
@@ -1938,10 +1967,10 @@ var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(30);
-var DnD = __webpack_require__(29);
+var Marker = __webpack_require__(31);
+var DnD = __webpack_require__(30);
 
-__webpack_require__(53);
+__webpack_require__(54);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -1965,19 +1994,20 @@ proto.createToolbar = function() {
 };
 
 proto.oninit = function(e) {
-  $(this.dom()).ac('ff-article')
+  var part = this;
+  $(part.dom()).ac('ff-article')
   .on('click', function(e) {
     var target = e.target || e.srcElement;
-    if( this.editmode() && target === this.viewport() ) {
-      this.validate();
+    if( part.editmode() && target === part.viewport() ) {
+      part.validate();
       
-      var children = this.children();
+      var children = part.children();
       if( children.length ) {
         var p = Part(children[children.length - 1]);
         p && p.focus();
       }
     }
-  }.bind(this));
+  });
   
   this.scan();
 };
@@ -2169,12 +2199,13 @@ proto.insert = function(node, ref) {
     if( images.length === 1 ) {
       insert(images[0].dom(), ref);
     } else if( images.length ) {
-      var row = new context.Row();
-      images.reverse().forEach(function(image) {
-        row.add(image);
+      $.util.chunk(images, 5).forEach(function(arr) {
+        var row = new context.Row().valign('justify');
+        arr.forEach(function(image) {
+          row.add(image);
+        });
+        part.insert(row);
       });
-      
-      insert(row.dom(), ref);
     }
     
     part.fire('insert', {
@@ -2213,7 +2244,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(56);
+__webpack_require__(57);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2231,7 +2262,7 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(31);
+var items = ImagePart.toolbar = __webpack_require__(32);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2327,7 +2358,7 @@ module.exports = ImagePart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(57);
+__webpack_require__(58);
 
 function Link() {
   Part.apply(this, arguments);
@@ -2401,13 +2432,13 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(59);
+__webpack_require__(60);
 
 function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(33);
+var items = RowPart.toolbar = __webpack_require__(34);
 var proto = RowPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2457,8 +2488,10 @@ proto.oninit = function() {
         var type = this.type;
         if( type ) {
           context.upload(this, function(err, result) {
-            if( type.indexOf('image/') === 0 )
+            if( type.indexOf('image/') === 0 ) {
               part.add(new context.Image(result), ref);
+              part.validate();
+            }
           });
         }
       });
@@ -2589,7 +2622,7 @@ module.exports = RowPart;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(60);
+__webpack_require__(61);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2706,7 +2739,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(5);
 
-__webpack_require__(61);
+__webpack_require__(62);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -2732,7 +2765,7 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(34);
+var items = VideoPart.toolbar = __webpack_require__(35);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2780,7 +2813,7 @@ module.exports = VideoPart;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(35);
+var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2816,6 +2849,40 @@ module.exports = {
 
 /***/ }),
 /* 25 */
+/***/ (function(module, exports) {
+
+function EditHistory(part) {
+  var list = [];
+  var index = -1;
+  
+  function redo() {
+    //TODO: console.log('redo');
+  }
+  
+  function undo() {
+    //TODO: console.log('undo');
+  }
+  
+  function save(action) {
+    list.push(action);
+    index = list.length - 1;
+  }
+  
+  return {
+    save: save,
+    undo: undo,
+    redo: redo,
+    list:  function() {
+      return list;
+    }
+  }
+}
+
+
+module.exports = EditHistory;
+
+/***/ }),
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ctx = __webpack_require__(3);
@@ -2875,11 +2942,11 @@ module.exports = ctx;
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(28);
+var Button = __webpack_require__(29);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -2987,14 +3054,14 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Buttons = __webpack_require__(26);
+var Buttons = __webpack_require__(27);
 var doc = document;
 
-__webpack_require__(49);
+__webpack_require__(50);
 
 function clone(o) {
   var result = {};
@@ -3199,7 +3266,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(7);
@@ -3222,13 +3289,13 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(12);
 
-__webpack_require__(54);
+__webpack_require__(55);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3317,7 +3384,7 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3325,7 +3392,7 @@ var getOffsetTop = __webpack_require__(12);
 var toolbar = __webpack_require__(13);
 var Button = __webpack_require__(5).Button;
 
-__webpack_require__(55);
+__webpack_require__(56);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3425,7 +3492,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3494,7 +3561,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3609,7 +3676,7 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3641,7 +3708,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3669,7 +3736,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3683,7 +3750,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3697,7 +3764,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3711,7 +3778,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: po
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3725,7 +3792,7 @@ exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  dis
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3739,7 +3806,7 @@ exports.push([module.i, ".ff-toolbar-separator-btn {\n  letter-spacing: -99999;\
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3753,7 +3820,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3767,7 +3834,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3781,7 +3848,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3795,7 +3862,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3809,7 +3876,7 @@ exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  displ
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3823,7 +3890,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3837,7 +3904,7 @@ exports.push([module.i, ".ff-row {\n  display: table;\n  width: 100%;\n  table-l
 
 
 /***/ }),
-/* 47 */
+/* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3851,7 +3918,7 @@ exports.push([module.i, ".ff-separator {\n  display: block;\n  margin: 0 !import
 
 
 /***/ }),
-/* 48 */
+/* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3863,32 +3930,6 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 // exports
 
-
-/***/ }),
-/* 49 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(36);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
 
 /***/ }),
 /* 50 */
@@ -3906,8 +3947,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3932,8 +3973,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3958,8 +3999,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -3984,8 +4025,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4010,8 +4051,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4036,8 +4077,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4062,8 +4103,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4088,8 +4129,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4114,8 +4155,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4140,8 +4181,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4166,8 +4207,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4192,6 +4233,32 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 62 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(49);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
 		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
 			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
@@ -4203,7 +4270,7 @@ if(false) {
 }
 
 /***/ }),
-/* 62 */
+/* 63 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -4279,7 +4346,7 @@ Context.each = each;
 module.exports = Context;
 
 /***/ }),
-/* 63 */
+/* 64 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(15);
@@ -4314,6 +4381,10 @@ module.exports = function(ctx) {
   
   fn.each = function(fn, force) {
     return each(this, fn, force);
+  };
+  
+  fn.chunk = function(size) {
+    return chunk(this, size);
   };
   
   fn.index = function(item) {
