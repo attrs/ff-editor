@@ -66,7 +66,28 @@ var tpls = require('./tpls/');
       bgOpacity: 0.95
     }).init();
   });
+  
+  
+  // set default font & colors
+  ff.fonts().add([
+    { text:'<span style="font-family: Roboto;">Roboto</span>', font: 'Roboto' },
+    { text:'<span style="font-family: NotoSansKR;">Noto Sans</span>', font: 'NotoSansKR' },
+    { text:'<span style="font-family: Nanum Gothic;">나눔고딕</span>', font: 'Nanum Gothic' },
+    { text:'<span style="font-family: NanumBarunGothic;">나눔바른고딕</span>', font: 'NanumBarunGothic' },
+    { text:'<span style="font-family: Nanum Myeongjo;">나눔명조</span>', font: 'Nanum Myeongjo' }
+  ]);
+
+  ff.fonts().get('default').text = '기본 폰트';
+
+  ff.colors().add([
+    {id: 'roboto', text:'<span style="font-family: Roboto;">Roboto</span>', font: 'Roboto'},
+    {id: 'notosans', text:'<span style="font-family: NotoSansKR;">Noto Sans</span>', font: 'NotoSansKR'},
+    {id: 'nanumghothic', text:'<span style="font-family: Nanum Gothic;">나눔고딕</span>', font: 'Nanum Gothic'},
+    {id: 'nanumbarungothic', text:'<span style="font-family: NanumBarunGothic;">나눔바른고딕</span>', font: 'NanumBarunGothic'},
+    {id: 'nanummyungjo', text:'<span style="font-family: Nanum Myeongjo;">나눔명조</span>', font: 'Nanum Myeongjo'}
+  ]);
 })();
+
 
 // init gnb dropdown
 $(document).ready(function($) {

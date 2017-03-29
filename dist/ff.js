@@ -423,6 +423,7 @@ var Events = __webpack_require__(14);
 var $ = __webpack_require__(0);
 var EditHistory = __webpack_require__(25);
 var types = __webpack_require__(11);
+var Items = __webpack_require__(5);
 var connector = __webpack_require__(24);
 
 var parts = [];
@@ -430,6 +431,8 @@ var data = {};
 var editmode = false;
 var dispatcher = Events();
 var uploader;
+var fonts = new Items();
+var colors = new Items();
 
 function nextnode(node, skip){
   if( node.firstChild && !skip ) return node.firstChild;
@@ -451,10 +454,6 @@ function rangelist(range){
   
   return nodes;
 }
-
-document.addEventListener('selectionchange', function(e) {
-  //console.log('Selection changed.', e); 
-});
 
 var context = {
   connector: function() {
@@ -780,6 +779,16 @@ var context = {
     
     return this;
   },
+  fonts: function(arr) {
+    if( !arguments.length ) return fonts;
+    fonts = new Items(arr);
+    return this;
+  },
+  colors: function(arr) {
+    if( !arguments.length ) return colors;
+    colors = new Items(arr);
+    return this;
+  },
   
   // history
   history: function() {
@@ -796,11 +805,10 @@ dispatcher.scope(context);
   $(document).on('mousedown', function(e) {
     var target = e.target || e.srcElement;
     var part = context.get(target);
+    
+    if( !part ) return;
+    
     var focused = context.focused;
-  
-    var isToolbar = $(target).parent('.ff-toolbar')[0];
-    if( isToolbar ) return;
-  
     if( part ) part.focus();
     else if( focused && typeof focused.blur == 'function' ) focused.blur();
   })
@@ -812,6 +820,9 @@ dispatcher.scope(context);
       if( e.ctrlKey && e.key == 'z' ) context.history().undo();
       else if( e.ctrlKey && e.key == 'y' ) context.history().redo();
     }
+  })
+  .on('selectionchange', function(e) {
+    //console.log('Selection changed.', e); 
   });
 })();
 
@@ -824,7 +835,7 @@ module.exports = context;
 
 var Events = __webpack_require__(14);
 var Types = __webpack_require__(11);
-var Toolbar = __webpack_require__(5);
+var Toolbar = __webpack_require__(6);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 
@@ -1055,25 +1066,43 @@ module.exports = Part;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(28);
+var $ = __webpack_require__(0);
 
-Toolbar.Button = __webpack_require__(7);
-Toolbar.Separator = __webpack_require__(10);
-Toolbar.ListButton = __webpack_require__(9);
-
-module.exports = Toolbar;
-
-/***/ }),
-/* 6 */
-/***/ (function(module, exports) {
-
-function Items() {}
+function Items(arr) {
+  if( $.util.isArrayLike(arr) ) {
+    var self = this;
+    [].forEach.call(arr, function(item) {
+      self.add(item);
+    });
+  }
+}
 
 var proto = Items.prototype = [];
 
+proto.push = function() {
+  var self = this;
+  [].forEach.call(arguments, function(item) {
+    if( item && item.id ) self[item.id] = item;
+  });
+  
+  return [].push.apply(this, arguments);
+};
+
 proto.add = function(item) {
-  this.push(item);
+  if( $.util.isArrayLike(item) ) {
+    var self = this;
+    [].forEach.call(item, function(item) {
+      self.push(item);
+    });
+  } else {
+    this.push(item);
+  }
+  
   return this;
+};
+
+proto.get = function(id) {
+  return this[id];
 };
 
 proto.remove = function(item) {
@@ -1081,7 +1110,24 @@ proto.remove = function(item) {
   return this;
 };
 
+proto.clear = function() {
+  this.splice(0, this.length);
+  return this;
+};
+
 module.exports = Items;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var Toolbar = __webpack_require__(28);
+
+Toolbar.Button = __webpack_require__(7);
+Toolbar.Separator = __webpack_require__(10);
+Toolbar.ListButton = __webpack_require__(9);
+
+module.exports = Toolbar;
 
 /***/ }),
 /* 7 */
@@ -1098,7 +1144,9 @@ function Button(options) {
   self.options(options);
   self._el = $('<div class="ff-toolbar-btn"></div>')
   .ac(options.cls)
-  .on('click', self);
+  .on('click', self)
+  .on('mousemove', self)
+  .on('mousedown', self);
   
   setTimeout(function() {
     self.text(options.text);
@@ -1107,8 +1155,10 @@ function Button(options) {
 
 Button.prototype = {
   handleEvent: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+      
     if( e.type == 'click' ) {
-      e.stopImmediatePropagation();
       this.click(e);
       
       var toolbar = this.toolbar();
@@ -1258,7 +1308,6 @@ proto.oninit = function(e) {
           return this;
         }
         
-        el.attr('contenteditable', null);
         node.html(text).remove();
         var t = el.text().split('\n').join().trim();
         
@@ -1273,8 +1322,7 @@ proto.oninit = function(e) {
         return this;
       },
       hide: function() {
-        if( part.editmode() ) el.attr('contenteditable', true);
-        else if( minWidthWrited ) dom.style.minWidth = '';
+        if( minWidthWrited ) dom.style.minWidth = '';
         
         node.remove();
         return this;
@@ -1439,7 +1487,7 @@ proto.dropdown = function() {
 };
 
 proto.handleEvent = function(e) {
-  this.toggleList();
+  if( e.type == 'click' && !this.dropdown().contains(e.target) ) this.toggleList();
   Button.prototype.handleEvent.call(this, e);
 };
 
@@ -1454,6 +1502,7 @@ proto.enable = function(b) {
 
 proto.toggleList = function() {
   var el = $(this.dropdown());
+  $('.ff-toolbar-list-dropdown').rc('open');
   if( !this.enable() ) el.rc('open');
   else el.tc('open');
   return this;
@@ -1465,6 +1514,7 @@ proto.text = function(txt) {
 };
 
 proto.select = function(item) {
+  $('.ff-toolbar-list-dropdown').rc('open');
   var items = this.items();
   var index = items.indexOf(item);
   var o = this.options();
@@ -1476,6 +1526,7 @@ proto.select = function(item) {
 proto.items = function(items) {
   if( !arguments.length ) return this._items;
   if( !items ) items = [];
+  if( typeof items == 'function' ) items = items.call(this.scope(), this);
   
   var self = this;
   var dropdown = $(this.dropdown()).empty()[0];
@@ -1559,7 +1610,7 @@ module.exports = function(el) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(6);
+var Items = __webpack_require__(5);
 
 module.exports = new Items()
 .add({
@@ -2242,7 +2293,7 @@ module.exports = ArticlePart;
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
-var Toolbar = __webpack_require__(5);
+var Toolbar = __webpack_require__(6);
 
 __webpack_require__(57);
 
@@ -2430,7 +2481,7 @@ module.exports = Link;
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
-var Toolbar = __webpack_require__(5);
+var Toolbar = __webpack_require__(6);
 
 __webpack_require__(60);
 
@@ -2737,7 +2788,7 @@ module.exports = TextPart;
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
-var Toolbar = __webpack_require__(5);
+var Toolbar = __webpack_require__(6);
 
 __webpack_require__(62);
 
@@ -2886,9 +2937,9 @@ module.exports = EditHistory;
 /***/ (function(module, exports, __webpack_require__) {
 
 var ctx = __webpack_require__(3);
-var Toolbar = __webpack_require__(5);
+var Toolbar = __webpack_require__(6);
 var Part = __webpack_require__(4);
-var Items = __webpack_require__(6);
+var Items = __webpack_require__(5);
 
 __webpack_require__(23);
 
@@ -2937,6 +2988,21 @@ ctx.type('link', LinkPart);
     else readyfn = fn;
   };
 })();
+
+ctx.fonts([
+  {id: 'default', text:'Default'},
+  {id: 'helvetica', text:'<span style="font-family: Helvetica;">Helvetica</span>', font: 'Helvetica'},
+  {id: 'times', text:'<span style="font-family: Times New Roman;">Times New Roman</span>', font: 'Times New Roman'},
+  {id: 'courier', text:'<span style="font-family: Courier New;">Courier New</span>', font: 'Courier New'}
+]);
+
+ctx.colors([
+  {id: 'primary', text:'primary', color: ''},
+  {id: 'info', text:'info', font: ''},
+  {id: 'danger', text:'danger', font: ''},
+  {id: 'warning', text:'warning', font: ''},
+  {id: 'success', text:'success', font: ''}
+]);
 
 module.exports = ctx;
 
@@ -3166,14 +3232,14 @@ Toolbar.prototype = {
   show: function(b) {
     if( !this.enable() ) return this;
     
-    var el = $(this.dom()).css('opacity', 0).appendTo(doc.body).css('opacity', 1);
+    var el = $(this.dom()).appendTo(doc.body).css('opacity', 1);
     this.update();
     return this;
   },
   hide: function(force) {
     if( !force && this.always() ) return this;
     
-    $(this.dom()).remove();
+    $(this.dom()).css('opacity', null).remove();
     return this;
   },
   update: function() {
@@ -3390,7 +3456,7 @@ module.exports = DnD;
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(12);
 var toolbar = __webpack_require__(13);
-var Button = __webpack_require__(5).Button;
+var Button = __webpack_require__(6).Button;
 
 __webpack_require__(56);
 
@@ -3497,7 +3563,7 @@ module.exports = Marker;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(6);
+var Items = __webpack_require__(5);
 
 module.exports = new Items()
 .add({
@@ -3586,42 +3652,118 @@ function rangeitem(text, tooltip, selector, fn) {
 }
 
 module.exports = function(part) {
-  var dom = part.dom()
+  var dom = part.dom();
   var el = $(dom);
   
   return part.toolbar()
   .add({
     type: 'list',
     text: '<i class="fa fa-font"></i>',
+    tooltip: 'Select Font',
+    onupdate: function(btn) {
+      var range = this.range();
+      
+      range && btn.active(context.wrapped(range, 'span.f_txt_font'));
+    },
+    onselect: function(item, i, btn) {
+      var range = this.range();
+      if( !range ) {
+        dom.style.fontFamily = item.font || '';
+        return;
+      }
+      
+      context.unwrap(range, 'span.f_txt_font');
+      
+      var node = context.wrap(range, 'span.f_txt_font');
+      node.style.fontFamily = item.font || '';
+    },
+    items: function() {
+      return context.fonts();
+    }
+  })
+  .add({
+    type: 'list',
+    text: '<i class="fa fa-text-height"></i>',
+    tooltip: 'Select Font Size',
+    onupdate: function(btn) {
+      var range = this.range();
+      range && btn.active(context.wrapped(range, 'span.f_txt_fontsize'));
+    },
+    onselect: function(item, i, btn) {
+      var range = this.range();
+      if( !range ) {
+        dom.style.fontSize = item.size || '';
+        return;
+      }
+      
+      context.unwrap(range, 'span.f_txt_fontsize');
+      
+      var node = context.wrap(range, 'span.f_txt_fontsize');
+      node.style.fontSize = item.size || '';
+    },
+    items: [
+      { text: 'Default' },
+      { text: '<span style="font-size:11px;">11px</span>', size: '11px' },
+      { text: '<span style="font-size:12px;">12px</span>', size: '12px' },
+      { text: '<span style="font-size:14px;">14px</span>', size: '14px' },
+      { text: '<span style="font-size:16px;">16px</span>', size: '16px' },
+      { text: '<span style="font-size:18px;">18px</span>', size: '18px' },
+      { text: '<span style="font-size:20px;">20px</span>', size: '20px' }
+    ]
+  })
+  .add({
+    type: 'color',
+    text: '<i class="fa fa-square"></i>',
+    tooltip: 'Select Color',
+    onupdate: function(btn) {
+      var range = this.range();
+      range && btn.active(context.wrapped(range, 'span.f_txt_color'));
+    },
+    onselect: function(item, i, btn) {
+      var range = this.range();
+      if( !range ) {
+        dom.style.color = item.color || '';
+        return;
+      }
+      
+      context.unwrap(range, '.f_txt_color');
+      context.wrap(range, item.tag + '.f_txt_color');
+      node.style.color = item.color || '';
+    },
+    items: function() {
+      return context.colors();
+    }
+  })
+  .add('-')
+  .add({
+    type: 'list',
+    text: '<i class="fa fa-header"></i>',
+    tooltip: 'Select Heading',
     onupdate: function(btn) {
       var range = this.range();
       if( !range ) return btn.enable(false);
       
       btn.enable(true);
-      btn.active(context.wrapped(range, 'span.f_txt_font'));
+      
+      range && btn.active(context.wrapped(range, '.f_txt_heading'));
     },
     onselect: function(item, i, btn) {
       var range = this.range();
       if( !range ) return;
       
-      context.unwrap(range, 'span.f_txt_font');
-      
-      if( item.id == 'default' ) return;
-      var node = context.wrap(range, 'span.f_txt_font');
-      node.style.fontFamily = item.font || item;
+      context.unwrap(range, '.f_txt_heading');
+      item.tag && context.wrap(range, item.tag + '.f_txt_heading');
     },
     items: [
-      {id: 'default', text:'기본폰트'},
-      {id: 'helvetica', text:'<span style="font-family: Helvetica;">Helvetica</span>', font: 'Helvetica'},
-      {id: 'times', text:'<span style="font-family: Times New Roman;">Times New Roman</span>', font: 'Times New Roman'},
-      {id: 'courier', text:'<span style="font-family: Courier New;">Courier New</span>', font: 'Courier New'},
-      {id: 'notosans', text:'<span style="font-family: NotoSansKR;">Noto Sans</span>', font: 'NotoSansKR'},
-      {id: 'nanumghothic', text:'<span style="font-family: NanumGhothic;">나눔고딕</span>', font: 'NanumGhothic'},
-      {id: 'nanumbarungothic', text:'<span style="font-family: NanumBarunGothic;">나눔바른고딕</span>', font: 'NanumBarunGothic'},
-      {id: 'nanummyungjo', text:'<span style="font-family: NanumMyungjo;">나눔명조</span>', font: 'NanumMyungjo'}
+      { text: 'Default' },
+      { text: '<h1>Heading</h1>', tag: 'h1' },
+      { text: '<h2>Heading</h2>', tag: 'h2' },
+      { text: '<h3>Heading</h3>', tag: 'h3' },
+      { text: '<h4>Heading</h4>', tag: 'h4' },
+      { text: '<h5>Heading</h5>', tag: 'h5' },
+      { text: '<h6>Heading</h6>', tag: 'h6' }
     ]
   })
-  .add('-')
   .add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
   .add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'u'))
   .add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
@@ -3681,7 +3823,7 @@ module.exports = function(part) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(6);
+var Items = __webpack_require__(5);
 
 module.exports = new Items()
 .add({
@@ -3713,7 +3855,7 @@ module.exports = new Items()
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(6);
+var Items = __webpack_require__(5);
 
 module.exports = new Items()
 .add({
@@ -3758,7 +3900,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  background-color: rgba(0, 0, 0, 0.8);\n  z-index: 110;\n  transition: opacity 0.35s ease-in-out;\n  box-sizing: border-box;\n  user-select: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n  -moz-user-select: none;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n  background-color: rgba(0, 0, 0, 0.8);\n  z-index: 110;\n  opacity: 0;\n  transition: opacity .35s;\n  user-select: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n  -moz-user-select: none;\n}\n", ""]);
 
 // exports
 
@@ -3772,7 +3914,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: pointer;\n  font-size: 14px;\n  vertical-align: middle;\n  line-height: 18px;\n  background-color: transparent;\n  color: white;\n  padding: 12px 12px;\n  text-decoration: none;\n  user-select: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n  -moz-user-select: none;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  font-size: 14px;\n  min-width: 16px;\n  text-align: center;\n}\n.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: pointer;\n  font-size: 14px;\n  vertical-align: middle;\n  line-height: 20px;\n  background-color: transparent;\n  color: white;\n  padding: 15px 15px;\n  text-decoration: none;\n  user-select: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n  -moz-user-select: none;\n  position: relative;\n}\n.ff-toolbar-btn:hover,\n.ff-toolbar-btn.ff-toolbar-btn-active {\n  color: #2796DD;\n  background-color: rgba(255, 255, 255, 0.1);\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled {\n  color: #777;\n  background-color: transparent;\n}\n.ff-toolbar-btn.ff-toolbar-btn-disabled:hover {\n  color: #777;\n}\n.ff-toolbar-btn i {\n  font-size: 14px;\n  min-width: 16px;\n  text-align: center;\n}\n.ff-toolbar-vertical .ff-toolbar-btn {\n  display: block;\n}\n", ""]);
 
 // exports
 
@@ -3786,7 +3928,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  display: none;\n  position: absolute;\n  top: 42px;\n  left: 0;\n  margin: 0;\n  padding: 0;\n  border: 1px solid #eee;\n  background-color: #fff;\n  color: #333;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li {\n  list-style: none;\n  padding: 8px 15px;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li:hover {\n  background-color: #efefef;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown.open {\n  display: block;\n}\n", ""]);
+exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  display: none;\n  position: absolute;\n  top: 42px;\n  left: 0;\n  margin: 0;\n  padding: 0;\n  border: 1px solid #eee;\n  background-color: #fff;\n  color: #333;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li {\n  list-style: none;\n  padding: 8px 15px;\n  margin: 0;\n  white-space: nowrap;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h1,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h2,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h3,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h4,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h5,\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li h6 {\n  margin: 3px 0;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown > li:hover {\n  background-color: #efefef;\n}\n.ff-toolbar-list-btn .ff-toolbar-list-dropdown.open {\n  display: block;\n}\n", ""]);
 
 // exports
 
