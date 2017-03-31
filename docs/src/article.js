@@ -111,7 +111,9 @@ ff.ready(function() {
   };
   
   window.load = function() {
-    ff.data(JSON.parse(localStorage.getItem('article') || '{}')).editmode(false);
+    var saved = JSON.parse(localStorage.getItem('article') || '{}');
+    if( saved && saved.title && saved.title.html )$('[ff-id="title"]').html(saved.title.html);
+    if( saved && saved.content && saved.content.html )$('[ff-id="content"]').html(saved.content.html);
   };
   
   window.save = function() {

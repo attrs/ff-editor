@@ -2656,7 +2656,7 @@ fieldset[disabled] .btn-danger.active {
   margin: 0 auto;
   padding-bottom: 60px;
 }
-.content .f_article_view {
+.content {
   min-height: 500px;
 }
 header.topbar {

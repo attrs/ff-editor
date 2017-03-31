@@ -476,8 +476,8 @@ var context = {
   },
   scan: function() {
     [].slice.call(document.querySelectorAll('[ff], [ff-type]')).reverse().forEach(function(el) {
-      var id = el.getAttribute('ff-id') || el.id;
-      var type = el.getAttribute('ff-type') || 'default';
+      var id = el.getAttribute('ff-id');
+      var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
       var part = el.__ff__;
       
       if( !part ) {
@@ -499,11 +499,10 @@ var context = {
     this.scan();
     
     parts.forEach(function(part) {
-      part.data(data && data[part.id]);
+      if( part.id ) part.data(data && data[part.id]);
     });
     
-    dispatcher.fire('reset');
-    
+    dispatcher.fire('reset', {data:data});
     return this;
   },
   data: function(data) {
@@ -940,7 +939,10 @@ function Part(arg) {
   this._e = dispatcher;
   
   if( dom !== arg ) this.removable(true);
-  if( el.attr('ff-toolbar') === 'false' ) this.toolbar().enable(false);
+  
+  var toolbarposition = el.attr('ff-toolbar');
+  if( toolbarposition === 'false' ) this.toolbar().enable(false);
+  else if( toolbarposition ) this.toolbar().position(toolbarposition);
   
   dispatcher.fire('init');
   if( context.editmode() ) self.editmode(true);
@@ -2027,10 +2029,11 @@ proto.createToolbar = function() {
 
 proto.oninit = function(e) {
   var part = this;
-  $(part.dom()).ac('ff-article')
+  var dom = this.dom();
+  $(dom).ac('ff-article')
   .on('click', function(e) {
     var target = e.target || e.srcElement;
-    if( part.editmode() && target === part.viewport() ) {
+    if( part.editmode() && target === part.dom() ) {
       part.validate();
       
       var children = part.children();
@@ -2041,37 +2044,52 @@ proto.oninit = function(e) {
     }
   });
   
+  if( window.MutationObserver ) {
+    var observer = this._observer = new MutationObserver(function() {
+      part.scan();
+    });
+    
+    observer.observe(dom, {
+      childList: true
+    });
+  } else {
+    dom.addEventListener('DOMNodeInserted', function() {
+      console.log('DOMNodeInserted');
+      part.scan();
+    });
+  }
+  
   this.scan();
 };
 
 proto.scan = function() {
-  var viewport = $(this.viewport());
+  var dom = $(this.dom());
   var editmode = this.editmode();
   
   context.scan();
   
-  viewport.find('img').each(function() {
+  dom.find('img').each(function() {
     if( $(this).hc('ff-acc') ) return;
     if( !this.__ff__) new context.Image(this);
   });
   
-  viewport.find('h1 h2 h3 h4 h5 h6 blockquote').each(function() {
+  dom.find('h1 h2 h3 h4 h5 h6 blockquote').each(function() {
     if( $(this).hc('ff-acc') ) return;
     if( !this.__ff__) new context.Paragraph(this);
   });
   
-  viewport.find('hr').each(function() {
+  dom.find('hr').each(function() {
     if( $(this).hc('ff-acc') ) return;
     if( !this.__ff__) new context.Separator(this);
   });
   
-  viewport.children().each(function() {
+  dom.children().each(function() {
     if( $(this).hc('ff-acc') ) return;
     if( !this.__ff__ ) new context.Paragraph(this);
   });
   
   var placeholder = $(this.dom()).attr('placeholder');
-  viewport.find('.ff').each(function() {
+  dom.find('.ff').each(function() {
     var part = Part(this);
     if( part ) {
       part.removable(true);
@@ -2087,41 +2105,19 @@ proto.validate = function() {
   var editmode = this.editmode();
   
   if( this.editmode() ) {
-    var marker = this.marker();
-    var viewport = el.children('.f_article_view');
-    if( !viewport.length ) {
-      viewport = $('<div class="f_article_view"/>');
-      
-      el.nodes().each(function() {
-        viewport.append(this);
-      });
-    
-      el.append(viewport);
-      this._viewport = viewport[0];
-      
-      if( this._mk ) this._mk.destroy();
-      if( this._dnd ) this._dnd.destroy();
-      this._mk = Marker(this, viewport[0]);
-      this._dnd = DnD(this, viewport[0]);
-    }
+    if( this._mk ) this._mk.destroy();
+    if( this._dnd ) this._dnd.destroy();
+    this._mk = Marker(this, dom);
+    this._dnd = DnD(this, dom);
     
     if( !this.children().length ) {
       this.insert(new context.Paragraph());
     }
   } else {
-    var viewport = el.children('.f_article_view');
-    if( viewport.length ) {
-      el.empty();
-      $(this._viewport).nodes().each(function() {
-        el.append(this);
-      });
-    }
-    
     this._mk && this._mk.destroy();
     this._dnd && this._dnd.destroy();
     delete this._mk;
     delete this._dnd;
-    delete this._viewport;
   }
   
   this.scan();
@@ -2142,7 +2138,7 @@ proto.oninsert = function() {
 };
 
 proto.clear = function() {
-  this.viewport().innerHTML = '';
+  this.dom().innerHTML = '';
   return this;
 };
 
@@ -2157,17 +2153,13 @@ proto.find = function(selector) {
 proto.indexOf = function(node) {
   if( !node ) return -1;
   node = node.dom() || node;
-  return $(this.viewport()).indexOf(node);
+  return $(this.dom()).indexOf(node);
 };
 
 proto.children = function() {
-  return $(this.viewport()).children().filter(function() {
+  return $(this.dom()).children().filter(function() {
     return !($(this).hc('ff-acc'));
   });
-};
-
-proto.viewport = function() {
-  return this._viewport || this.dom();
 };
 
 proto.html = function(html) {
@@ -2188,7 +2180,7 @@ proto.html = function(html) {
     return tmp.html();
   }
   
-  this.viewport().innerHTML = html || '';
+  this.dom().innerHTML = html || '';
   this.validate();
   return this;
 };
@@ -2196,7 +2188,7 @@ proto.html = function(html) {
 proto.insert = function(node, ref) {
   var context = this.context();
   var part = this;
-  var target = $(this.viewport());
+  var target = $(this.dom());
   var marker = this.marker();
   var children = this.children();
   
@@ -2543,7 +2535,7 @@ proto.oninit = function() {
 proto.oneditmode = function() {
   if( window.MutationObserver ) {
     var part = this;
-    var observer = this._observer = new MutationObserver(function(mutations){
+    var observer = this._observer = new MutationObserver(function(){
       part.validate();
     });
     
