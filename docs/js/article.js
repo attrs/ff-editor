@@ -780,7 +780,7 @@ dispatcher.scope(context);
     var target = e.target || e.srcElement;
     var part = context.get(target);
     
-    if( !part ) return;
+    if( !part ) return context.focused && context.focused.blur();
     
     var focused = context.focused;
     if( part ) part.focus();
@@ -8243,7 +8243,7 @@ proto.oninit = function(e) {
   
   if( window.MutationObserver ) {
     var observer = this._observer = new MutationObserver(function() {
-      part.scan();
+      part.validate();
     });
     
     observer.observe(dom, {
@@ -8251,7 +8251,7 @@ proto.oninit = function(e) {
     });
   } else {
     dom.addEventListener('DOMNodeInserted', function() {
-      part.scan();
+      part.validate();
     });
   }
   
@@ -8335,6 +8335,7 @@ proto.oninsert = function() {
 
 proto.clear = function() {
   this.dom().innerHTML = '';
+  this.validate();
   return this;
 };
 
