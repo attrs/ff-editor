@@ -8691,12 +8691,6 @@ proto.oninit = function() {
       src: dom.src,
       part: self
     });
-  })
-  .on('dragend', function(e) {
-    self.floating(false);
-  })
-  .on('drop', function(e) {
-    //console.log('drop', e);
   });
 };
 
