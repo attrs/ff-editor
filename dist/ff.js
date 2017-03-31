@@ -2054,7 +2054,6 @@ proto.oninit = function(e) {
     });
   } else {
     dom.addEventListener('DOMNodeInserted', function() {
-      console.log('DOMNodeInserted');
       part.scan();
     });
   }
@@ -2070,17 +2069,17 @@ proto.scan = function() {
   
   dom.find('img').each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__) new context.Image(this);
+    if( !this.__ff__ ) new context.Image(this);
   });
   
   dom.find('h1 h2 h3 h4 h5 h6 blockquote').each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__) new context.Paragraph(this);
+    if( !this.__ff__ ) new context.Paragraph(this);
   });
   
   dom.find('hr').each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__) new context.Separator(this);
+    if( !this.__ff__ ) new context.Separator(this);
   });
   
   dom.children().each(function() {
