@@ -117,7 +117,20 @@ ff.ready(function() {
   };
   
   window.save = function() {
+    var data = ff.data();
+    
     localStorage.setItem('article', JSON.stringify(ff.data()));
+    
+    var html = data && data.content && data.content.html;
+    
+    var el = $('<div style="max-height:300px;overflow:auto;text-align:left;font-size:12px;border:1px solid #eee;">').text(html);
+    
+    swal({
+      title: 'Saved!',
+      text: el.outer(),
+      html: true,
+      type: 'success'
+    });
   };
   
   window.preset = function(name) {

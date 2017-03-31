@@ -963,6 +963,28 @@ Part.prototype = {
   create: function(arg) {
     return $('<div/>').html(arg)[0];
   },
+  html: function(html) {
+    var dom = this.dom();
+    if( !arguments.length ) {
+      var editmode = this.editmode();
+      this.editmode(false);
+      var html = dom.innerHTML;
+      this.editmode(editmode);
+      var tmp = $('<div/>').html(html);
+      tmp
+      .find('.ff, .ff-edit-state, .ff-enter-state, .ff-focus-state, .ff-dragging, [draggable], [contenteditable]')
+      .rc('ff ff-edit-state ff-enter-state ff-focus-state ff-dragging')
+      .attr('draggable', null)
+      .attr('contenteditable', null);
+      
+      tmp.find('.ff-acc').remove();
+      
+      return tmp.html();
+    }
+    
+    dom.innerHTML = html || '';
+    return this;
+  },
   remove: function() {
     this.blur();
     this.toolbar().hide();
@@ -2102,20 +2124,6 @@ proto.text = function(text) {
   }
   
   el.text($('<div/>').html(text).text());
-  return this;
-};
-
-proto.html = function(html) {
-  var el = $(this.dom());
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var html = el.html();
-    this.editmode(editmode);
-    return html;
-  }
-  
-  el.html(html);
   return this;
 };
 
@@ -7761,7 +7769,20 @@ ff.ready(function() {
   };
   
   window.save = function() {
+    var data = ff.data();
+    
     localStorage.setItem('article', JSON.stringify(ff.data()));
+    
+    var html = data && data.content && data.content.html;
+    
+    var el = $('<div style="max-height:300px;overflow:auto;text-align:left;font-size:12px;border:1px solid #eee;">').text(html);
+    
+    swal({
+      title: 'Saved!',
+      text: el.outer(),
+      html: true,
+      type: 'success'
+    });
   };
   
   window.preset = function(name) {
@@ -8337,29 +8358,6 @@ proto.children = function() {
   });
 };
 
-proto.html = function(html) {
-  if( !arguments.length ) {
-    var editmode = this.editmode();
-    this.editmode(false);
-    var html = this.dom().innerHTML;
-    this.editmode(editmode);
-    var tmp = $('<div/>').html(html);
-    tmp
-    .find('.ff, .ff-edit-state, .ff-enter-state, .ff-focus-state, .ff-dragging, [draggable], [contenteditable]')
-    .rc('ff ff-edit-state ff-enter-state ff-focus-state ff-dragging')
-    .attr('draggable', null)
-    .attr('contenteditable', null);
-    
-    tmp.find('.ff-acc').remove();
-    
-    return tmp.html();
-  }
-  
-  this.dom().innerHTML = html || '';
-  this.validate();
-  return this;
-};
-
 proto.insert = function(node, ref) {
   var context = this.context();
   var part = this;
@@ -8412,7 +8410,7 @@ proto.insert = function(node, ref) {
         arr.forEach(function(image) {
           row.add(image);
         });
-        part.insert(row);
+        insert(row.dom(), ref);
       });
     }
     
@@ -11343,6 +11341,14 @@ module.exports = function(ctx) {
     
     return this.each(function() {
       this.innerHTML = html || '';
+    });
+  };
+  
+  fn.outer = function(html) {
+    if( !arguments.length ) return this[0] && this[0].outerHTML;
+    
+    return this.each(function() {
+      this.outerHTML = html || '';
     });
   };
   
