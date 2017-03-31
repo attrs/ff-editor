@@ -81,16 +81,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 26);
+/******/ 	return __webpack_require__(__webpack_require__.s = 24);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(63);
+var Context = __webpack_require__(61);
 
-__webpack_require__(64)(Context);
+__webpack_require__(62)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -419,20 +419,19 @@ function updateLink(linkElement, obj) {
 /* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Events = __webpack_require__(14);
 var $ = __webpack_require__(0);
-var EditHistory = __webpack_require__(25);
+var EditHistory = __webpack_require__(23);
 var types = __webpack_require__(11);
 var Items = __webpack_require__(5);
-var connector = __webpack_require__(24);
 
-var parts = [];
-var data = {};
-var editmode = false;
-var dispatcher = Events();
-var uploader;
-var fonts = new Items();
-var colors = new Items();
+var win = window,
+    doc = document,
+    editmode = false,
+    data = {},
+    uploader,
+    fonts = new Items(),
+    colors = new Items(),
+    history = new EditHistory(this);
 
 function nextnode(node, skip){
   if( node.firstChild && !skip ) return node.firstChild;
@@ -456,109 +455,126 @@ function rangelist(range){
 }
 
 var context = {
-  connector: function() {
-    return connector;
+  scan: function(fn, all) {
+    context.parts.apply(context, arguments);
+    return context;
   },
-  types: function() {
-    return types;
-  },
-  parts: function() {
-    return parts.slice();
-  },
-  part: function(id) {
-    return parts[id];
-  },
-  clear: function(id) {
-    parts.forEach(function(part) {
-      part.data(null);
-    });
-    return this;
-  },
-  scan: function() {
-    [].slice.call(document.querySelectorAll('[ff], [ff-type]')).reverse().forEach(function(el) {
+  parts: function(fn, all) {
+    if( fn === true ) all = fn;
+    
+    return $(all ? '.ff' : '[ff-id], [ff], [ff-type]').reverse().each(function(i, el) {
       var id = el.getAttribute('ff-id');
       var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
-      var part = el.__ff__;
+      var part = el._ff;
       
       if( !part ) {
         var Type = types.get(type);
         if( !Type ) return console.warn('[ff] not found type: ' + type);
-        part = el.__ff__ = new Type(el);
+        part = el._ff = new Type(el);
+        id && part.data(data[id]);
       }
       
-      if( !~parts.indexOf(part) ) {
-        parts.push(part);
-        if( id ) part.id = id, parts[id] = part;
-      }
-    });
+      part.id = id;
+      typeof fn == 'function' && fn.call(context, part);
+    }).slice();
   },
-  reset: function(d) {
-    if( !arguments.length ) d = data;
-    
-    data = d;
-    this.scan();
-    
-    parts.forEach(function(part) {
-      if( part.id ) part.data(data && data[part.id]);
-    });
-    
-    dispatcher.fire('reset', {data:data});
-    return this;
-  },
-  data: function(data) {
+  data: function(newdata) {
     if( !arguments.length ) {
-      data = {};
-      parts.forEach(function(part) {
-        if( part.id ) data[part.id] = part.data();
+      newdata = {};
+      context.parts(function(part) {
+        if( part.id ) newdata[part.id] = part.data();
       });
-      
-      return data;
+      return newdata;
     }
     
-    this.reset(data);
-    return this;
+    data = newdata || {};
+    context.parts(function(part) {
+      part.id && part.data(data[part.id]);
+    });
+    
+    context.fire('ff-data', {
+      data: newdata
+    });
+    
+    return context;
+  },
+  part: function(id) {
+    var el = $('[ff-id="' + id + '"]');
+    return el[0] && el[0]._ff;
+  },
+  partof: function(node) {
+    var found = $(node).parent(function() {
+      return this._ff;
+    }, true)[0];
+    return found && found._ff;
   },
   editmode: function(b) {
     if( !arguments.length ) return editmode;
+    if( editmode === !!b ) return context;
     
     editmode = !!b;
-    parts.forEach(function(part) {
-      part.editmode(!!b);
-    });
     
-    dispatcher.fire('modechange', {
+    context.parts(function(part) {
+      part.editmode(editmode);
+    }, true);
+    
+    context.fire('ff-modechange', {
       editmode: editmode
     });
     
-    return this;
+    return context;
+  },
+  
+  // event
+  fire: function(type, detail, cancellable, bubble) {
+    return !!$(doc).fire(type, detail, cancellable, bubble)[0];
   },
   on: function(type, fn) {
-    dispatcher.on(type, fn);
+    fn._wrapper = function() {
+      return fn.apply(context, arguments);
+    };
+    
+    $(doc).on(type, fn._wrapper);
     return this;
   },
   once: function(type, fn) {
-    dispatcher.once(type, fn);
+    fn._wrapper = function() {
+      return fn.apply(context, arguments);
+    };
+    
+    $(doc).once(type, fn._wrapper);
     return this;
   },
   off: function(type, fn) {
-    dispatcher.off(type, fn);
+    $(doc).off(type, fn._wrapper || fn);
     return this;
   },
-  fire: function() {
-    return dispatcher.fire.apply(dispatcher, arguments);
+  
+  // part type
+  types: function() {
+    return types;
   },
+  type: function(name, cls) {
+    if( arguments.length <= 1 ) return types.get(name);
+    types.define(name, cls);
+    
+    return context;
+  },
+  
+  // uploader
   uploader: function(fn) {
     if( !fn || typeof fn !== 'function' ) throw new TypeError('uploader must be a function');
     uploader = fn;
-    return this;
+    
+    return context;
   },
   upload: function(file, done) {
     if( uploader ) {
-      uploader.apply(this, arguments);
-      return this;
+      uploader.apply(context, arguments);
+      return context;
     }
-  
-    if( !window.FileReader ) return done(new Error('not found FileReader'));
+    
+    if( !win.FileReader ) return done(new Error('use context.uploader(fn) to set up your custom uploader'));
     var reader = new FileReader(); // NOTE: IE10+
     reader.onload = function(e) {
       done(null, {
@@ -570,8 +586,8 @@ var context = {
       done(err);
     };
     reader.readAsDataURL(file);
-  
-    return this;
+    
+    return context;
   },
   selectFiles: function(done) {
     $('<input type="file" multiple>').on('change', function() {
@@ -587,31 +603,20 @@ var context = {
         done(null, srcs);
       });
     }).click();
-  
-    return this;
+    
+    return context;
   },
   selectFile: function(done) {
     $('<input type="file">').on('change', function() {
       context.upload(this.files[0], done);
     }).click();
     
-    return this;
-  },
-  get: function(node) {
-    var node = $(node).parent(function() {
-      return this.__ff__;
-    }, true)[0];
-    return node && node.__ff__;
-  },
-  type: function(name, cls) {
-    if( arguments.length <= 1 ) return types.get(name);
-    types.define(name, cls);
-    return this;
+    return context;
   },
   
   // range
   ranges: function(node, collapsed) {
-    var selection = window.getSelection();
+    var selection = win.getSelection();
     var ranges = [];
     if( selection.rangeCount ) {
       for(var i=0; i < selection.rangeCount; i++)
@@ -657,25 +662,25 @@ var context = {
       range.insertNode(this);
     });
     
-    range = document.createRange();
+    range = doc.createRange();
     range.selectNodeContents(start);
     var startoffset = range.startOffset;
     
-    range = document.createRange();
+    range = doc.createRange();
     range.selectNodeContents(end);
     var endoffset = range.endOffset;
     
-    range = document.createRange();
+    range = doc.createRange();
     range.setStart(start, startoffset);
     range.setEnd(end, endoffset);
     
-    var selection = window.getSelection();
+    var selection = win.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
     
     start.parentNode.normalize();
     
-    return this;
+    return context;
   },
   wrap: function(range, selector) {
     if( !range ) return null;
@@ -683,7 +688,7 @@ var context = {
     
     var node = range.cloneContents();
     var asm = $.util.assemble(selector);
-    var wrapper = document.createElement(asm.tag);
+    var wrapper = doc.createElement(asm.tag);
     if( asm.id ) wrapper.id = id;
     if( asm.classes ) wrapper.className = asm.classes;
     
@@ -693,9 +698,9 @@ var context = {
     range.insertNode(wrapper);
     
     // select new node
-    var range = document.createRange();
+    var range = doc.createRange();
     range.selectNodeContents(wrapper);
-    var selection = window.getSelection();
+    var selection = win.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
     
@@ -717,86 +722,89 @@ var context = {
     if( !range ) return this;
     if( this.wrapped(range, selector) ) this.unwrap(range, selector);
     else this.wrap(range, selector);
-    return this;
+    
+    return context;
   },
   
   // alert
   prompt: function(message, callback, options) {
-    if( dispatcher.fire('prompt', {
+    if( context.fire('ff-prompt', {
       message: message,
       callback: callback,
       options: options
     }, true) ) {
-      callback && callback.call(this, prompt(message));
+      callback && callback.call(context, prompt(message));
     }
     
-    return this;
+    return context;
   },
   confirm: function(message, callback, options) {
-    if( dispatcher.fire('prompt', {
+    if( context.fire('ff-prompt', {
       message: message,
       callback: callback,
       options: options
     }, true) ) {
-      callback && callback.call(this, confirm(message));
+      callback && callback.call(context, confirm(message));
     }
     
-    return this;
+    return context;
   },
   alert: function(message, callback, options) {
-    if( dispatcher.fire('alert', {
+    if( context.fire('ff-alert', {
       message: message,
       callback: callback,
       options: options
     }, true) ) {
-      callback && callback.call(this);
+      callback && callback.call(context);
       alert(message);
     }
     
-    return this;
+    return context;
   },
   error: function(error, callback, options) {
     if( typeof error == 'string' ) error = new Error(error);
     
-    if( dispatcher.fire('error', {
+    if( context.fire('ff-error', {
       error: error,
       message: error.message,
       callback: callback,
       options: options
     }, true) ) {
-      callback && callback.call(this);
+      callback && callback.call(context);
       console.error(error);
       alert(error.message);
     }
     
-    return this;
+    return context;
   },
+  
+  // defaults
   fonts: function(arr) {
     if( !arguments.length ) return fonts;
     fonts = new Items(arr);
-    return this;
+    return context;
   },
   colors: function(arr) {
     if( !arguments.length ) return colors;
     colors = new Items(arr);
-    return this;
+    return context;
   },
   
   // history
   history: function() {
-    return this._history = this._history || new EditHistory(this);
+    return history;
   }
 };
 
-dispatcher.scope(context);
-
 (function() {
-  var platform = window.navigator.platform;
+  var platform = win.navigator.platform;
   var mac = !!~platform.toLowerCase().indexOf('mac');
   
-  $(document).on('mousedown', function(e) {
+  $(doc).on('mousedown', function(e) {
+    if( !editmode ) return;
+    
     var target = e.target || e.srcElement;
-    var part = context.get(target);
+    var part = context.partof(target);
     
     if( !part ) return context.focused && context.focused.blur();
     
@@ -825,7 +833,6 @@ module.exports = context;
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Events = __webpack_require__(14);
 var Types = __webpack_require__(11);
 var Toolbar = __webpack_require__(6);
 var $ = __webpack_require__(0);
@@ -833,122 +840,110 @@ var context = __webpack_require__(3);
 
 function Part(arg) {
   var dom = arg;
-  if( dom && dom.__ff__ ) return dom.__ff__;
+  if( dom && dom._ff ) return dom._ff;
   if( !(this instanceof Part) ) return null;
   
   if( !dom || !$.util.isElement(dom) ) dom = this.create.apply(this, arguments);
   if( !$.util.isElement(dom) ) throw new TypeError('illegal arguments: dom');
   
-  var el = $(dom).ac('ff');
-  var self = dom.__ff__ = this;
+  var self = dom._ff = this;
+  var el = $(self._n = dom).ac('ff')
+  .on('ff-focus ff-blur ff-modechange mouseenter mouseleave mouseup mousedown dragstart dragend', self);
   
-  var dispatcher = Events(this)
-  .on('focus', function(e) {
-    if( e.defaultPrevented || !this.editmode() ) return;
+  // regist event in prototypes
+  (function() {
+    var o = self, prototypes = [];
+    do {
+      if( o === Part.prototype ) break;
+      prototypes.push(o);
+    } while(o = Object.getPrototypeOf(o));
     
-    if( this.editmode() ) el.attr('draggable', true);
-    this.toolbar().show();
-  })
-  .on('blur', function(e) {
-    if( e.defaultPrevented || !this.editmode() ) return;
-    
-    el.attr('draggable', null);
-    this.toolbar().hide();
-  })
-  .on('data', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    dispatcher.fire('render', {
-      type: 'data',
-      originalEvent: e
+    prototypes.reverse().forEach(function(o) {
+      Object.getOwnPropertyNames(o).forEach(function(name) {
+        if( !~['on', 'once'].indexOf(name) && name.startsWith('on') )
+          self.on('ff-' + name.substring(2), self[name]);
+      });
     });
-  })
-  .on('modechange', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    var toolbar = this.toolbar();
-    if( this.editmode() ) {
-      if( toolbar.always() ) toolbar.show();
-      el.ac('ff-edit-state');
-      dispatcher.fire('editmode');
-    } else {
-      toolbar.hide(true);
-      el.rc('ff-edit-state').rc('ff-focus-state').rc('ff-enter-state').rc('ff-dragging');
-      dispatcher.fire('viewmode');
-      self.blur();
-    }
-    
-    dispatcher.fire('render', {
-      type: 'modechange',
-      originalEvent: e
-    });
-  })
-  .on('*', function(e) {
-    if( e.defaultPrevented ) return;
-    
-    var type = e.type;
-    var name = 'on' + type;
-    
-    if( typeof this.handleEvent == 'function' ) this.handleEvent(e);
-    if( typeof this[name] == 'function' ) this[name](e);
-  });
+  })();
   
-  el
-  .on('mouseenter', function(e) {
-    if( !self.editmode() ) return;
-    
-    self.toolbar().update();
-    el.ac('ff-enter-state');
-  })
-  .on('mousedown mouseup', function(e) {
-    if( !self.editmode() ) return;
-    setTimeout(function() {
-      self.toolbar().update();
-    }, 0);
-  })
-  .on('mouseleave', function(e) {
-    if( !self.editmode() ) return;
-    
-    el.removeClass('ff-enter-state');
-  })
-  .on('dragstart', function(e) {
-    if( !self.editmode() ) return;
-    
-    var target = e.target || e.srcElement;
-    if( target === dom ) {
-      self.toolbar().hide();
-      context.dragging = dom;
-      e.dataTransfer.setDragImage(el[0], 0, 0);
-      e.dataTransfer.setData('text', target.outerHTML);
-      el.ac('ff-dragging');
-    }
-  })
-  .on('dragend', function(e) {
-    if( !self.editmode() ) return;
-    
-    var target = e.target || e.srcElement;
-    if( target === dom ) {
-      self.toolbar().show();
-      context.dragging = null;
-      el.rc('ff-dragging');
-    }
-  });
-  
-  this._d = null;
-  this._n = dom;
-  this._e = dispatcher;
-  
-  if( dom !== arg ) this.removable(true);
+  if( dom !== arg ) self.removable(true);
   
   var toolbarposition = el.attr('ff-toolbar');
-  if( toolbarposition === 'false' ) this.toolbar().enable(false);
-  else if( toolbarposition ) this.toolbar().position(toolbarposition);
+  if( toolbarposition === 'false' ) self.toolbar().enable(false);
+  else if( toolbarposition ) self.toolbar().position(toolbarposition);
   
-  dispatcher.fire('init');
+  self.fire('ff-init');
   if( context.editmode() ) self.editmode(true);
 }
 
 Part.prototype = {
+  handleEvent: function(e) {
+    if( e.defaultPrevented ) return;
+    
+    var type = e.type;
+    var self = this;
+    var editmode = self.editmode();
+    var toolbar = self.toolbar();
+    var target = e.target || e.srcElement;
+    var dom = self.dom();
+    var el = $(dom);
+    
+    if( type == 'ff-data' ) {
+      self.fire('ff-render', {
+        type: 'data',
+        originalEvent: e
+      });
+    } else if( type == 'ff-modechange' ) {
+      if( editmode ) {
+        if( toolbar.always() ) toolbar.show();
+        el.ac('ff-edit-state');
+        self.fire('ff-editmode');
+      } else {
+        toolbar.hide(true);
+        el.rc('ff-edit-state').rc('ff-focus-state').rc('ff-enter-state').rc('ff-dragging');
+        self.fire('ff-viewmode');
+        self.blur();
+      }
+      
+      self.fire('ff-render', {
+        type: 'modechange',
+        originalEvent: e
+      });
+    } 
+    
+    if( editmode ) {
+      if( type == 'ff-focus' ) {
+        el.attr('draggable', true);
+        toolbar.show();
+      } else if( type == 'ff-blur' ) {
+        el.attr('draggable', null);
+        toolbar.hide();
+      } else if( type == 'mouseenter' ) {
+        toolbar.update();
+        el.ac('ff-enter-state');
+      } else if( ~['mousedown', 'mouseup'].indexOf(type) ) {
+        setTimeout(function() {
+          toolbar.update();
+        }, 0);
+      } else if( type == 'mouseleave' ) {
+        el.rc('ff-enter-state');
+      } else if( type == 'dragstart' ) {
+        if( target === dom ) {
+          toolbar.hide();
+          context.dragging = dom;
+          e.dataTransfer.setDragImage(el[0], 0, 0);
+          e.dataTransfer.setData('text', target.outerHTML);
+          el.ac('ff-dragging');
+        }
+      } else if( type == 'dragend' ) {
+        if( target === dom ) {
+          toolbar.show();
+          context.dragging = null;
+          el.rc('ff-dragging');
+        }
+      }
+    }
+  },
   context: function() {
     return context;
   },
@@ -1006,7 +1001,7 @@ Part.prototype = {
   remove: function() {
     this.blur();
     this.toolbar().hide();
-    this.fire('remove');
+    this.fire('ff-remove');
     $(this.dom()).remove();
     return this;
   },
@@ -1015,40 +1010,48 @@ Part.prototype = {
     var prev = this._md;
     var editmode = this._md = !!b;
   
-    if( editmode !== prev ) this.fire('modechange', {editmode: editmode});
+    if( editmode !== prev ) this.fire('ff-modechange', {editmode: editmode});
     return this;
   },
   data: function(data) {
     if( !arguments.length ) {
       if( this.getData ) return this.getData();
-      return this._d;
+      return this._d || null;
     }
     
     if( this.setData ) this.setData(data);
     else this._d = data;
     
-    this.fire('data', {old: this._d, data: data});
+    this.fire('ff-data', {old: this._d, data: data});
     return this;
   },
-  fire: function() {
-    this._e.fire.apply(this._e, arguments);
-    return this;
+  fire: function(type, detail, cancellable, bubble) {
+    return !!$(this.dom()).fire(type, detail, cancellable, bubble)[0];
   },
   on: function(type, fn) {
-    this._e.on(type, fn);
+    var self = this;
+    fn._wrapper = function() {
+      return fn.apply(self, arguments);
+    };
+    
+    $(this.dom()).on(type, fn._wrapper);
     return this;
   },
   once: function(type, fn) {
-    this._e.once(type, fn);
+    var self = this;
+    fn._wrapper = function() {
+      return fn.apply(self, arguments);
+    };
+    
+    $(this.dom()).once(type, fn._wrapper);
     return this;
   },
   off: function(type, fn) {
-    this._e.off(type, fn);
+    $(this.dom()).off(type, fn._wrapper || fn);
     return this;
   },
   clear: function() {
-    this.data(null);
-    this.fire('clear');
+    this.data(null).fire('ff-clear');
     return this;
   },
   click: function() {
@@ -1059,7 +1062,7 @@ Part.prototype = {
     if( this.editmode() && this !== context.focused ) {
       if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
       $(this.dom()).ac('ff-focus-state');
-      this.fire('focus');
+      this.fire('ff-focus');
       context.focused = this;
     }
     return this;
@@ -1067,7 +1070,7 @@ Part.prototype = {
   blur: function() {
     if( this.editmode() && this === context.focused ) {
       $(this.dom()).rc('ff-focus-state');
-      this.fire('blur');
+      this.fire('ff-blur');
       context.focused = null;
     }
     return this;
@@ -1141,7 +1144,7 @@ module.exports = Items;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(28);
+var Toolbar = __webpack_require__(26);
 
 Toolbar.Button = __webpack_require__(7);
 Toolbar.Separator = __webpack_require__(10);
@@ -1155,7 +1158,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(51);
+__webpack_require__(49);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1265,9 +1268,9 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(33);
+var buildtoolbar = __webpack_require__(31);
 
-__webpack_require__(59);
+__webpack_require__(57);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -1460,7 +1463,7 @@ module.exports = ParagraphPart;
 var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
-__webpack_require__(52);
+__webpack_require__(50);
 
 function ListButton(options) {
   Button.apply(this, arguments);
@@ -1547,7 +1550,7 @@ module.exports = ListButton;
 var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
-__webpack_require__(53);
+__webpack_require__(51);
 
 function Separator() {
   Button.apply(this, arguments);
@@ -1680,153 +1683,6 @@ module.exports = new Items()
 
 /***/ }),
 /* 14 */
-/***/ (function(module, exports) {
-
-function EventObject(type, detail, target, cancelable) {
-  this.type = type;
-  this.detail = detail || {};
-  this.target = this.currentTarget = target;
-  this.cancelable = cancelable === true ? true : false;
-  this.defaultPrevented = false;
-  this.stopped = false;
-  this.stoppedImmediate = false;
-  this.timeStamp = new Date().getTime();
-}
-
-EventObject.prototype = {
-  preventDefault: function() {
-    if( this.cancelable ) this.defaultPrevented = true;
-  },
-  stopPropagation: function() {
-    this.stopped = true;
-  },
-  stopImmediatePropagation: function() {
-    this.stoppedImmediate = true;
-    this.stopped = true;
-  }
-};
-
-EventObject.createEvent = function(type, detail, target, cancelable) {
-  return new EventObject(type, detail, target, cancelable);
-};
-
-
-module.exports = function(scope) {
-  var listeners = {}, paused = false;
-  
-  var on = function(type, fn) {
-    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
-    if( typeof fn !== 'function' ) return console.error('listener must be a function');
-    
-    var types = type.split(' ');
-    types.forEach(function(type) {
-      listeners[type] = listeners[type] || [];
-      listeners[type].push(fn);
-    });
-    
-    return this;
-  };
-  
-  var once = function(type, fn) {
-    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
-    if( typeof fn !== 'function' ) return console.error('listener must be a function');
-    
-    var types = type.split(' ');
-    types.forEach(function(type) {
-      if( !type ) return;
-      
-      var wrap = function(e) {
-        off(type, wrap);
-        return fn.call(this, e);
-      };
-      on(type, wrap);
-    });
-    
-    return this;
-  };
-  
-  var off = function(type, fn) {
-    if( !type || typeof type !== 'string' ) return console.error('type must be a string');
-    if( typeof fn !== 'function' ) return console.error('listener must be a function');
-    
-    var types = type.split(' ');
-    types.forEach(function(type) {
-      var fns = listeners[type];
-      if( fns ) for(var i;~(i = fns.indexOf(fn));) fns.splice(i, 1);
-    });
-    
-    return this;
-  };
-  
-  var has = function(type) {
-    if( typeof type === 'function' ) {
-      var found = false;
-      listeners.forEach(function(fn) {
-        if( found ) return;
-        if( fn === type ) found = true;
-      });
-      return found;
-    }
-    return listeners[type] && listeners[type].length ? true : false;
-  };
-  
-  var fire = function(type, detail, cancellable) {
-    if( paused ) return false;
-    
-    var event;
-    if( typeof type === 'string' ) {
-      event = EventObject.createEvent(type, detail, scope, cancellable);
-    } else if( type instanceof window.Event ) {
-      event = type;
-    } else if( type instanceof EventObject ) {
-      event = type;
-    } else {
-      return console.error('type must be a string or Event but,', type);
-    }
-    event.currentTarget = scope;
-    
-    var stopped = false;
-    var action = function(listener) {
-      if( stopped || event.stoppedImmediate ) return stopped = true;
-      if( listener.call(scope, event) === false ) event.preventDefault();
-    };
-    
-    (listeners['*'] || []).slice().reverse().forEach(action);
-    (listeners[event.type] || []).slice().reverse().forEach(action);
-    
-    return !event.defaultPrevented;
-  };
-  
-  return {
-    handleEvent: function(e) {
-      return fire(e);
-    },
-    scope: function(o) {
-      if( !arguments.length ) return scope;
-      scope = o;
-    },
-    on: on,
-    once: once,
-    off: off,
-    fire: fire,
-    has: has,
-    destroy: function() {
-      listeners = null;
-      return this;
-    },
-    pause: function() {
-      paused = true;
-      return this;
-    },
-    resume: function() {
-      paused = false;
-      return this;
-    }
-  };
-};
-
-/***/ }),
-/* 15 */
 /***/ (function(module, exports) {
 
 var matches = Element.prototype.matches || 
@@ -2002,17 +1858,17 @@ var lib = module.exports = {
 };
 
 /***/ }),
-/* 16 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(31);
-var DnD = __webpack_require__(30);
+var Marker = __webpack_require__(29);
+var DnD = __webpack_require__(28);
 
-__webpack_require__(54);
+__webpack_require__(52);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -2077,22 +1933,22 @@ proto.scan = function() {
   
   dom.find('img').each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__ ) new context.Image(this);
+    if( !this._ff ) new context.Image(this);
   });
   
   dom.find('h1 h2 h3 h4 h5 h6 blockquote').each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__ ) new context.Paragraph(this);
+    if( !this._ff ) new context.Paragraph(this);
   });
   
   dom.find('hr').each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__ ) new context.Separator(this);
+    if( !this._ff ) new context.Separator(this);
   });
   
   dom.children().each(function() {
     if( $(this).hc('ff-acc') ) return;
-    if( !this.__ff__ ) new context.Paragraph(this);
+    if( !this._ff ) new context.Paragraph(this);
   });
   
   var placeholder = $(this.dom()).attr('placeholder');
@@ -2114,14 +1970,13 @@ proto.validate = function() {
   var dom = this.dom();
   var el = $(dom);
   var editmode = this.editmode();
-
-  if( this._mk ) this._mk.destroy();
-  if( this._dnd ) this._dnd.destroy();
   
   if( this.editmode() ) {
-    this._mk = Marker(this, dom);
-    this._dnd = DnD(this, dom);
+    if( !this._mk ) this._mk = Marker(this, dom);
+    if( !this._dnd ) this._dnd = DnD(this, dom);
   } else {
+    if( this._mk ) this._mk.destroy();
+    if( this._dnd ) this._dnd.destroy();
     delete this._mk;
     delete this._dnd;
   }
@@ -2225,7 +2080,7 @@ proto.insert = function(node, ref) {
       });
     }
     
-    part.fire('insert', {
+    part.fire('ff-insert', {
       node: node,
       ref: ref,
       target: target
@@ -2253,7 +2108,7 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 17 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2261,7 +2116,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(6);
 
-__webpack_require__(57);
+__webpack_require__(55);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2279,7 +2134,7 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(32);
+var items = ImagePart.toolbar = __webpack_require__(30);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2291,7 +2146,7 @@ proto.oninit = function() {
   var dom = this.dom();
   var el = $(dom)
   .on('click', function(e) {
-    if( !self.editmode() ) context.fire('imageshow', {
+    if( !self.editmode() ) context.fire('ff-imageshow', {
       originalEvent: e,
       image: dom,
       src: dom.src,
@@ -2363,13 +2218,13 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(58);
+__webpack_require__(56);
 
 function Link() {
   Part.apply(this, arguments);
@@ -2435,7 +2290,7 @@ Link.defaultLabel = 'Download';
 module.exports = Link;
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2443,13 +2298,13 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(6);
 
-__webpack_require__(60);
+__webpack_require__(58);
 
 function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(34);
+var items = RowPart.toolbar = __webpack_require__(32);
 var proto = RowPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2627,13 +2482,13 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(61);
+__webpack_require__(59);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2714,7 +2569,7 @@ proto.shape = function(shape) {
 module.exports = Separator;
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2742,7 +2597,7 @@ proto.multiline = function() {
 module.exports = TextPart;
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2750,7 +2605,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(6);
 
-__webpack_require__(62);
+__webpack_require__(60);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -2776,7 +2631,7 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(35);
+var items = VideoPart.toolbar = __webpack_require__(33);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2818,13 +2673,13 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(36);
+var content = __webpack_require__(34);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2844,22 +2699,7 @@ if(false) {
 }
 
 /***/ }),
-/* 24 */
-/***/ (function(module, exports) {
-
-var endpoint;
-
-module.exports = {
-  endpoint: function(url) {
-    endpoint = url;
-  },
-  load: function(url, done) {
-    done();
-  }
-}
-
-/***/ }),
-/* 25 */
+/* 23 */
 /***/ (function(module, exports) {
 
 function EditHistory(part) {
@@ -2893,7 +2733,7 @@ function EditHistory(part) {
 module.exports = EditHistory;
 
 /***/ }),
-/* 26 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ctx = __webpack_require__(3);
@@ -2901,20 +2741,20 @@ var Toolbar = __webpack_require__(6);
 var Part = __webpack_require__(4);
 var Items = __webpack_require__(5);
 
-__webpack_require__(23);
+__webpack_require__(22);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(16);
+var ArticlePart = __webpack_require__(15);
 var ParagraphPart = __webpack_require__(8);
-var SeparatorPart = __webpack_require__(20);
-var ImagePart = __webpack_require__(17);
-var VideoPart = __webpack_require__(22);
-var RowPart = __webpack_require__(19);
-var LinkPart = __webpack_require__(18);
-var TextPart = __webpack_require__(21);
+var SeparatorPart = __webpack_require__(19);
+var ImagePart = __webpack_require__(16);
+var VideoPart = __webpack_require__(21);
+var RowPart = __webpack_require__(18);
+var LinkPart = __webpack_require__(17);
+var TextPart = __webpack_require__(20);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
@@ -2972,11 +2812,11 @@ module.exports = ctx;
 
 
 /***/ }),
-/* 27 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(29);
+var Button = __webpack_require__(27);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -3084,14 +2924,14 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 28 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Buttons = __webpack_require__(27);
+var Buttons = __webpack_require__(25);
 var doc = document;
 
-__webpack_require__(50);
+__webpack_require__(48);
 
 function clone(o) {
   var result = {};
@@ -3296,7 +3136,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 29 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(7);
@@ -3319,13 +3159,13 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 30 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var getOffsetTop = __webpack_require__(12);
 
-__webpack_require__(55);
+__webpack_require__(53);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3414,7 +3254,7 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 31 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3422,7 +3262,7 @@ var getOffsetTop = __webpack_require__(12);
 var toolbar = __webpack_require__(13);
 var Button = __webpack_require__(6).Button;
 
-__webpack_require__(56);
+__webpack_require__(54);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3522,7 +3362,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 32 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3591,7 +3431,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 33 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3797,7 +3637,7 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 34 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3829,7 +3669,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 35 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3857,7 +3697,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 36 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3871,7 +3711,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 37 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3885,7 +3725,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 38 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3899,7 +3739,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: po
 
 
 /***/ }),
-/* 39 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3913,7 +3753,7 @@ exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  dis
 
 
 /***/ }),
-/* 40 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3927,7 +3767,7 @@ exports.push([module.i, ".ff-toolbar-separator-btn {\n  letter-spacing: -99999;\
 
 
 /***/ }),
-/* 41 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3941,7 +3781,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 42 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3955,7 +3795,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 43 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3969,7 +3809,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 44 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3983,7 +3823,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 
 
 /***/ }),
-/* 45 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3997,7 +3837,7 @@ exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  displ
 
 
 /***/ }),
-/* 46 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4011,7 +3851,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 47 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4025,7 +3865,7 @@ exports.push([module.i, ".f_row {\n  display: table;\n  width: 100%;\n  table-la
 
 
 /***/ }),
-/* 48 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4039,7 +3879,7 @@ exports.push([module.i, ".f_sep {\n  display: block;\n  margin: 0 !important;\n 
 
 
 /***/ }),
-/* 49 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -4051,6 +3891,58 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 // exports
 
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(35);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(36);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
 
 /***/ }),
 /* 50 */
@@ -4068,8 +3960,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4094,8 +3986,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4120,8 +4012,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4146,8 +4038,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4172,8 +4064,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4198,8 +4090,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4224,8 +4116,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4250,8 +4142,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4276,8 +4168,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4302,8 +4194,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4328,8 +4220,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4342,64 +4234,12 @@ if(false) {
 /* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(48);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 62 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(49);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 63 */
-/***/ (function(module, exports, __webpack_require__) {
-
 var win = window;
 var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(15);
+var util = __webpack_require__(14);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -4467,10 +4307,26 @@ Context.each = each;
 module.exports = Context;
 
 /***/ }),
-/* 64 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(15);
+var util = __webpack_require__(14);
+var win = window;
+var doc = document;
+
+(function () {
+  if ( typeof win.CustomEvent === "function" ) return false;
+  
+  function CustomEvent ( event, params ) {
+    params = params || { bubbles: false, cancelable: false, detail: undefined };
+    var evt = doc.createEvent('CustomEvent');
+    evt.initCustomEvent( event, params.bubbles, params.cancelable, params.detail );
+    return evt;
+  }
+  
+  CustomEvent.prototype = win.Event.prototype;
+  win.CustomEvent = CustomEvent;
+})();
 
 module.exports = function(ctx) {
   var fn = ctx.fn;
@@ -4732,14 +4588,14 @@ module.exports = function(ctx) {
       
       if( ref && ref.nextSibling && el.insertBefore ) {
         [].forEach.call(node, function(node) {
-          if( typeof node == 'string' ) node = document.createTextNode(node);
+          if( typeof node == 'string' ) node = doc.createTextNode(node);
           if( !isNode(node) ) return;
           el.insertBefore(node, ref.nextSibling);
           ref = node;
         });
       } else if( el.appendChild ) {
         [].forEach.call(node, function(node) {
-          if( typeof node == 'string' ) node = document.createTextNode(node);
+          if( typeof node == 'string' ) node = doc.createTextNode(node);
           if( !isNode(node) ) return;
           el.appendChild(node);
         });
@@ -4838,8 +4694,7 @@ module.exports = function(ctx) {
     if( typeof type !== 'string' ) return this;
     type = type.split(' ');
     
-    return this.each(function() {
-      var el = this;
+    return this.each(function(i, el) {
       el.addEventListener && type.forEach(function(type) {
         el.addEventListener(type, fn, bubble || false);
       });
@@ -4847,41 +4702,75 @@ module.exports = function(ctx) {
   };
   
   fn.once = function(type, fn, bubble) {
-    return this.on(type, function(e) {
-      this.removeEventListener(e.type, fn, bubble || false);
+    var wrapper = function(e) {
+      this.removeEventListener(type, wrapper, bubble || false);
       fn.call(this, e);
-    }, bubble);
+    };
+    
+    return this.on(type, wrapper, bubble);
   };
   
   fn.off = function(type, fn, bubble) {
     if( typeof type !== 'string' ) return this;
     type = type.split(' ');
     
-    return this.each(function() {
-      var el = this;
+    return this.each(function(i, el) {
       el.removeEventListener && type.forEach(function(type) {
         el.removeEventListener(type, fn, bubble || false);
       });
     });
   };
   
+  fn.fire = function(type, detail, cancellable, bubbles) {
+    if( !(type instanceof Event) ) {
+      type = new CustomEvent(type, {
+        detail: detail,
+        bubbles: !!bubbles,
+        cancelable: !!cancellable
+      });
+    }
+    
+    var passed = this.$();
+    this.each(function(i,el) {
+      if( !el.dispatchEvent ) return;
+      if( el.dispatchEvent(type) ) passed.push(el);
+    });
+    
+    return passed;
+  };
+  
   fn.click = function(fn) {
     var isclick;
     if( !arguments.length ) isclick = true;
     
-    return this.each(function() {
-      if( isElement(this) ) {
-        if( isclick ) this.click();
-        else this.onclick = fn;
+    return this.each(function(i,el) {
+      if( isElement(el) ) {
+        if( isclick ) el.click();
+        else el.onclick = fn;
       }
     });
   };
   
-  fn.data = function(data) {
+  fn.data = function(key, value) {
     if( !arguments.length ) return this[0]._data;
     
-    return this.each(function() {
-      this._data = data;
+    var data = {};
+    if( key && typeof key == 'object' ) data = key;
+    else if( key === false ) data = false;
+    else if( typeof key != 'string' ) return this;
+    else data[key] = value;
+    
+    return this.each(function(i, el) {
+      if( !isNode(el) ) return;
+      if( data === false ) {
+        delete el._data;
+        return;
+      }
+      
+      el._data = el._data || {};
+      for( var k in data ) {
+        el._data[k] = data[k];
+      }
     });
   };
   

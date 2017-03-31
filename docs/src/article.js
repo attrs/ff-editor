@@ -4,6 +4,8 @@ var Part = ff.Part;
 var CustomPart = require('./custom/index.es6.js').default;
 var tpls = require('./tpls/');
 
+ff.data(tpls['spongebob']);
+
 // override alert/prompt/imageshow action
 (function() {
   var PhotoSwipe = require('photoswipe');
@@ -15,15 +17,15 @@ var tpls = require('./tpls/');
   var swal = require('sweetalert');
   require('sweetalert/dist/sweetalert.css');
   
-  ff.on('alert', function(e) {
+  ff.on('ff-alert', function(e) {
     e.preventDefault();
     swal(e.detail.message);
   })
-  .on('error', function(e) {
+  .on('ff-error', function(e) {
     e.preventDefault();
     swal('Error', e.detail.error.message, 'error');
   })
-  .on('prompt', function(e) {
+  .on('ff-prompt', function(e) {
     e.preventDefault();
     swal({
       title: e.detail.message,
@@ -35,7 +37,7 @@ var tpls = require('./tpls/');
       e.detail.callback(value);
     });
   })
-  .on('imageshow', function(e) {
+  .on('ff-imageshow', function(e) {
     e.preventDefault();
     
     var image = e.detail.image;
@@ -98,7 +100,7 @@ $(document).ready(function($) {
 // ready
 ff.ready(function() {
   // change button label when modechange
-  ff.on('modechange', function(e) {
+  ff.on('ff-modechange', function(e) {
     $('#modebtn').html(e.detail.editmode ? 'View Mode' : 'Edit Mode');
   });
   
@@ -112,17 +114,16 @@ ff.ready(function() {
   
   window.load = function() {
     var saved = JSON.parse(localStorage.getItem('article') || '{}');
-    if( saved && saved.title && saved.title.html ) $('#title').html(saved.title.html);
-    if( saved && saved.content && saved.content.html ) $('#content').html(saved.content.html);
+    $('#title').html(saved && saved.title && saved.title.html);
+    $('#content').html(saved && saved.content && saved.content.html);
   };
   
   window.save = function() {
     var data = ff.data();
     
-    localStorage.setItem('article', JSON.stringify(ff.data()));
+    localStorage.setItem('article', JSON.stringify(data));
     
     var html = data && data.content && data.content.html;
-    
     var el = $('<div style="max-height:300px;overflow:auto;text-align:left;font-size:12px;border:1px solid #eee;">').text(html);
     
     swal({
@@ -138,5 +139,4 @@ ff.ready(function() {
   };
   
   if( localStorage.getItem('article') ) window.load();
-  else window.preset('spongebob');
 });
