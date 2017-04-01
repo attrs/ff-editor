@@ -2327,6 +2327,25 @@ function isedge(dom, y) {
   return false;
 }
 
+function getcellindex(dom, target, x) {
+  if( !dom.contains(target) ) return -1;
+  var cells = $(dom).children('.f_row_cell').each(function(i, el) {
+    el.style.borderLeft = el.style.borderRight = null;
+  });
+  var cell = $(target).parent('.f_row_cell')[0];
+  var index = cells.indexOf(cell);
+  
+  if( !~index ) return index;
+  if( x > $.util.offset(cell, true).left + (cell.offsetWidth / 2) ) {
+    index = index + 1;
+    cell.style.borderRight = '2px solid #2796DD';
+  } else {
+    cell.style.borderLeft = '2px solid #2796DD';
+  }
+  
+  return index;
+}
+
 function RowPart(el) {
   Part.call(this, el);
 }
@@ -2338,29 +2357,32 @@ proto.createToolbar = function() {
   return new Toolbar(this).position(items.position).add(items);
 };
 
-proto.create = function(arg) {
-  var el = $('<div ff-type="row" />')[0];
-  this.add(arg);
-  return el;
-};
-
 proto.oninit = function() {
   var part = this;
   var dom = part.dom();
-  $(dom)
+  
+  var release = function() {
+    //dom.style.opacity = null;
+    el.children('.f_row_cell').each(function(i, el) {
+      el.style.borderLeft = el.style.borderRight = null;
+    });
+  };
+  
+  var el = $(dom)
   .ac('f_row')
+  .on('mouseleave dragend', function() {
+    release();
+  })
   .on('dragover', function(e) {
     if( !part.editmode() ) return;
+    if( isedge(dom, e.pageY) ) return release();
+    //else dom.style.opacity = 0.9;
     
     var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
+    var cellindex = getcellindex(dom, target, e.pageX);
     
-    if( isedge(dom, e.pageY) ) return dom.style.opacity = null;
-    else dom.style.opacity = 0.5;
-    
-    if( dragging && dragging.tagName == 'IMG' ) {
-      if( target === dragging || dragging.contains(target) ) return;
-      
+    if( dragging ) {
       e.stopPropagation();
       e.preventDefault();
     } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
@@ -2368,25 +2390,22 @@ proto.oninit = function() {
       e.preventDefault();
     }
   })
-  .on('click dragend', function(e) {
-    if( !part.editmode() ) return;
-    dom.style.opacity = null;
-  })
   .on('drop', function(e) {
     if( !part.editmode() ) return;
+    if( isedge(dom, e.pageY) ) return;
     
     var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
-    var ref; // TODO
+    var cellindex = getcellindex(dom, target, e.pageX);
     
-    if( isedge(dom, e.pageY) ) return dom.style.opacity = null;
-    else dom.style.opacity = 0.5;
+    release();
     
-    if( dragging && dragging.tagName == 'IMG' ) {
-      if( target === dragging || dragging.contains(target) ) return;
+    if( dragging ) {
       e.stopPropagation();
       e.preventDefault();
-      part.add(dragging, ref);
+      
+      if( dragging.tagName != 'IMG' || target === dragging || dragging.contains(target) ) return;
+      part.add(dragging, cellindex);
     } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
       e.stopPropagation();
       e.preventDefault();
@@ -2396,7 +2415,7 @@ proto.oninit = function() {
         if( type ) {
           context.upload(this, function(err, result) {
             if( type.indexOf('image/') === 0 ) {
-              part.add(new context.Image(result), ref);
+              part.add(new context.Image(result), cellindex);
               part.validate();
             }
           });
@@ -2426,6 +2445,12 @@ proto.onviewmode = function() {
     observer.disconnect();
     delete this._observer;
   }
+};
+
+proto.create = function(arg) {
+  var el = $('<div ff-type="row" />')[0];
+  this.add(arg);
+  return el;
 };
 
 proto.cols = function(cols) {
@@ -2484,17 +2509,22 @@ proto.validate = function() {
   return this;
 };
 
-proto.add = function(arg, ref) {
+proto.add = function(arg, index) {
   var dom = this.dom();
+  var cells = $(dom).children('.f_row_cell');
   
   $(arg).each(function(i, item) {
     var cell = $('<div class="f_row_cell" />')
     .append(function() {
       return (item && item.dom && item.dom()) || item;
-    })
+    });
     
-    if( ref ) cell.insertBefore(ref);
-    else cell.appendTo(dom);
+    if( ~index ) {
+      var ref = cells[index++];
+      if( ref ) return cell.insertBefore(ref);
+    }
+    
+    cell.appendTo(dom);
   });
   
   this.validate();
