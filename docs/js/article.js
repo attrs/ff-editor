@@ -940,6 +940,11 @@ Part.prototype = {
             save();
           }, 250);
         } else {
+          if( part._kdi ) {
+            part._kdi = null;
+            window.clearTimeout(part._kdi);
+            save();
+          }
           save();
         }
       }
@@ -7630,8 +7635,8 @@ function redo() {
   if( action ) {
     list.push(action);
     if( current === action ) return redo.call(scope);
-    action.call(context);
     current = action;
+    action.call(context);
   }
   return scope;
 }
@@ -7641,8 +7646,8 @@ function undo() {
   if( action ) {
     redos.unshift(action);
     if( current === action ) return undo.call(scope);
-    action.call(context);
     current = action;
+    action.call(context);
   }
   return scope;
 }
@@ -7654,7 +7659,10 @@ function add(action) {
   current = action;
   
   if( list.length > size )
-    list = list.slice(list.length - size);}
+    list = list.slice(list.length - size);
+  
+  //console.log('add', list.length);
+}
 
 function list() {
   return list;
@@ -9046,6 +9054,7 @@ module.exports = function(part) {
       var range = this.range();
       if( !range ) {
         dom.style.fontSize = item.size || '';
+        part.history().save();
         return;
       }
       
