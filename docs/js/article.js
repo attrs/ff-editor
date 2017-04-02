@@ -792,12 +792,13 @@ Part.prototype = {
     return $('<div/>').html(arg)[0];
   },
   html: function(html) {
-    var dom = this.dom();
+    var part = this;
+    var dom = part.dom();
     if( !arguments.length ) {
-      var editmode = this.editmode();
-      this.editmode(false);
+      var editmode = part.editmode();
+      part.editmode(false);
       var html = dom.innerHTML;
-      this.editmode(editmode);
+      part.editmode(editmode);
       var tmp = $('<div/>').html(html);
       tmp
       .find('.ff, .ff-edit-state, .ff-enter-state, .ff-focus-state, .ff-dragging, [draggable], [contenteditable]')
@@ -811,51 +812,55 @@ Part.prototype = {
     }
     
     dom.innerHTML = html || '';
-    return this;
+    part.history().init();
+    return part;
   },
   remove: function() {
-    this.blur();
-    this.toolbar().hide();
-    this.fire('ff-remove');
-    $(this.dom()).remove();
-    return this;
+    var part = this;
+    part.blur();
+    part.toolbar().hide();
+    part.fire('ff-remove');
+    $(part.dom()).remove();
+    return part;
   },
   editmode: function(b) {
-    if( !arguments.length ) return !!this._md;
-    var prev = this._md;
-    var editmode = this._md = !!b;
+    var part = this;
+    if( !arguments.length ) return !!part._md;
+    var prev = part._md;
+    var editmode = part._md = !!b;
   
-    if( editmode !== prev ) this.fire('ff-modechange', {editmode: editmode});
-    return this;
+    if( editmode !== prev ) part.fire('ff-modechange', {editmode: editmode});
+    return part;
   },
   data: function(data) {
+    var part = this;
     if( !arguments.length ) {
-      if( this.getData ) return this.getData();
-      return this._d || null;
+      if( part.getData ) return part.getData();
+      return part._d || null;
     }
     
-    if( this.setData ) this.setData(data);
-    else this._d = data;
+    if( part.setData ) part.setData(data);
+    else part._d = data;
     
-    this.fire('ff-data', {old: this._d, data: data});
-    return this;
+    part.fire('ff-data', {old: part._d, data: data});
+    return part;
   },
   fire: function(type, detail, cancellable, bubble) {
     return !!$(this.dom()).fire(type, detail, cancellable, bubble)[0];
   },
   on: function(type, fn) {
-    var self = this;
+    var part = this;
     fn._wrapper = function() {
-      return fn.apply(self, arguments);
+      return fn.apply(part, arguments);
     };
     
     $(this.dom()).on(type, fn._wrapper);
     return this;
   },
   once: function(type, fn) {
-    var self = this;
+    var part = this;
     fn._wrapper = function() {
-      return fn.apply(self, arguments);
+      return fn.apply(part, arguments);
     };
     
     $(this.dom()).once(type, fn._wrapper);
@@ -924,8 +929,9 @@ Part.prototype = {
     }
     
     return part._history = part._history || {
-      init: function() {
-        def = part.createHistory();
+      init: function(b) {
+        if( b === false ) def = null;
+        else def = part.createHistory();
       },
       save: function(threshold) {
         if( threshold ) {
@@ -7623,22 +7629,22 @@ function redo() {
   var action = redos.shift();
   if( action ) {
     list.push(action);
-    if( current === action ) return redo.call(this);
+    if( current === action ) return redo.call(scope);
     action.call(context);
     current = action;
   }
-  return this;
+  return scope;
 }
 
 function undo() {
   var action = list.pop();
   if( action ) {
     redos.unshift(action);
-    if( current === action ) return undo.call(this);
+    if( current === action ) return undo.call(scope);
     action.call(context);
     current = action;
   }
-  return this;
+  return scope;
 }
 
 function add(action) {
@@ -7657,15 +7663,22 @@ function list() {
 function size(size) {
   if( !arguments.length ) return size;
   size = Math.abs(+size) || 50;
-  return this;
+  return scope;
 }
 
-module.exports = {
+function clear() {
+  list = [];
+  redos = [];
+  current = null;
+}
+
+var scope = module.exports = {
   size: size,
   add: add,
   undo: undo,
   redo: redo,
-  list:  list
+  list:  list,
+  clear: clear
 };
 
 // add keydown listener to document
@@ -8192,6 +8205,7 @@ __webpack_require__(75);
 
 function ArticlePart() {
   Part.apply(this, arguments);
+  this.history().init(false);
 }
 
 var items = ArticlePart.toolbar = __webpack_require__(15);
@@ -8405,6 +8419,8 @@ proto.insert = function(node, ref) {
       ref: ref,
       target: target
     });
+    
+    part.history().save();
   });
   
   return this;
@@ -8419,6 +8435,21 @@ proto.getData = function() {
 proto.setData = function(data) {
   this.html(data && data.html);
   return this;
+};
+
+proto.createHistory = function() {
+  var part = this;
+  var dom = part.dom();
+  var children = part.children().slice();
+  
+  return (function(children, cls, css) {
+    return function() {
+      $(dom).empty().append(children);
+      dom.className = cls || '';
+      dom.style.cssText = css || '';
+      part.focus();
+    };
+  })(children, dom.className, dom.style.cssText);
 };
 
 
@@ -8827,8 +8858,17 @@ __webpack_require__(79);
 
 function Link() {
   Part.apply(this, arguments);
-  
-  var el = $(this.dom()).ac('ff-link');
+}
+
+var proto = Link.prototype = Object.create(Part.prototype);
+
+proto.oninit = function() {
+  var part = this;
+  var dom = this.dom();
+  var el = $(dom).ac('f_link')
+  .on('keydown', function(e) {
+    if( part.editmode() && !e.metaKey && !e.ctrKey && e.target.tagName == 'A' ) part.history().save(true);
+  });
   
   this.toolbar()
   .add({
@@ -8854,6 +8894,8 @@ function Link() {
         el.css('text-align', 'center');
         btn.align = 'center';
       }
+      
+      part.history().save();
     }
   })
   .add({
@@ -8864,12 +8906,10 @@ function Link() {
       else btn.active(false);
     },
     fn: function() {
-      this.target(!this.target() ? '_blank' : null);
+      part.target(!part.target() ? '_blank' : null);
     }
   });
 }
-
-var proto = Link.prototype = Object.create(Part.prototype);
 
 proto.create = function(arg) {
   var def = Link.defaultLabel;
@@ -8884,7 +8924,8 @@ proto.create = function(arg) {
 };
 
 proto.label = function(label) {
-  $(this.dom()).find('a').html(label || Link.defaultLabel);
+  $(this.dom()).children('a').html(label || Link.defaultLabel);
+  this.history().save();
   return this;
 };
 
@@ -8892,6 +8933,7 @@ proto.target = function(target) {
   var el = $(this.dom());
   if( !arguments.length ) return el.find('a').attr('target');
   el.find('a').attr('target', target);
+  this.history().save();
   return this;
 };
 
@@ -8899,15 +8941,30 @@ proto.href = function(href) {
   var el = $(this.dom());
   if( !arguments.length ) return el.find('a').attr('href');
   el.find('a').attr('href', href);
+  this.history().save();
   return this;
 };
 
 proto.oneditmode = function() {
-  $(this.dom()).find('a').attr('contenteditable', true);
+  $(this.dom()).children('a').attr('contenteditable', true);
 };
 
 proto.onviewmode = function() {
-  $(this.dom()).find('a').attr('contenteditable', null);
+  $(this.dom()).children('a').attr('contenteditable', null);
+};
+
+proto.createHistory = function() {
+  var part = this;
+  var dom = part.dom();
+  
+  return (function(html, cls, css) {
+    return function() {
+      dom.innerHTML = html || '';
+      dom.className = cls || '';
+      dom.style.cssText = css || '';
+      part.focus();
+    };
+  })(dom.innerHTML, dom.className, dom.style.cssText);
 };
 
 Link.defaultLabel = 'Link';
@@ -8927,7 +8984,6 @@ module.exports = function(part) {
   var dom = part.dom();
   var el = $(dom);
   
-  
   function rangeitem(text, tooltip, selector, fn) {
     return {
       text: text,
@@ -8943,7 +8999,6 @@ module.exports = function(part) {
         var range = this.range();
         if( !range ) return;
         
-        part.history().save();
         range.togglewrap(selector);
         part.history().save();
       }
@@ -9276,9 +9331,7 @@ proto.onviewmode = function() {
 };
 
 proto.create = function(arg) {
-  var el = $('<div ff-type="row" />')[0];
-  this.add(arg);
-  return el;
+  return $('<div ff-type="row" />')[0];
 };
 
 proto.cols = function(cols) {
@@ -9356,6 +9409,7 @@ proto.add = function(arg, index) {
   });
   
   this.validate();
+  this.history().save();
   
   return this;
 };
@@ -9372,8 +9426,25 @@ proto.valign = function(align) {
   else if( align == 'justify' ) el.ac('f_row_justify');
   
   this.validate();
+  this.history().save();
   
   return this;
+};
+
+proto.createHistory = function() {
+  var part = this;
+  var dom = part.dom();
+  console.log('dom', self);
+  var children = [].slice.call(dom.children);
+  
+  return (function(children, cls, css) {
+    return function() {
+      $(dom).empty().append(children);
+      dom.className = cls || '';
+      dom.style.cssText = css || '';
+      part.focus();
+    };
+  })(children, dom.className, dom.style.cssText);
 };
 
 module.exports = RowPart;
@@ -9409,6 +9480,7 @@ module.exports = new Items()
     else if( valign == 'bottom' ) part.valign('justify');
     else if( valign == 'justify' ) part.valign(false);
     else part.valign('middle');
+    part.history().save();
   }
 });
 
@@ -9769,7 +9841,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.ff-link a:hover,\n.ff-link a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n", ""]);
+exports.push([module.i, ".f_link {\n  margin: 15px 0;\n}\n.f_link a {\n  display: inline-block;\n  cursor: pointer;\n  color: #53abe4;\n  border: 1px solid #53abe4;\n  text-decoration: none;\n  padding: 6px 20px;\n  border-radius: 34px;\n  font-size: 14px;\n  line-height: 1.42857143;\n  text-align: center;\n  vertical-align: middle;\n}\n.f_link a:hover,\n.f_link a:active {\n  color: #2796DD;\n  border-color: #2796DD;\n  outline: 0;\n  text-decoration: none;\n}\n", ""]);
 
 // exports
 
