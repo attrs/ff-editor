@@ -81,16 +81,16 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 23);
+/******/ 	return __webpack_require__(__webpack_require__.s = 24);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(60);
+var Context = __webpack_require__(61);
 
-__webpack_require__(61)(Context);
+__webpack_require__(62)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -420,7 +420,6 @@ function updateLink(linkElement, obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var EditHistory = __webpack_require__(22);
 var types = __webpack_require__(11);
 var Items = __webpack_require__(5);
 
@@ -430,29 +429,7 @@ var win = window,
     data = {},
     uploader,
     fonts = new Items(),
-    colors = new Items(),
-    history = new EditHistory(this);
-
-function nextnode(node, skip){
-  if( node.firstChild && !skip ) return node.firstChild;
-  if( !node.parentNode ) return null;
-  
-  return node.nextSibling || nextnode(node.parentNode, true);
-}
-
-function rangelist(range){
-  var start = range.startContainer.childNodes[range.startOffset] || range.startContainer;
-  var end = range.endContainer.childNodes[range.endOffset] || range.endContainer;
-  
-  if( start === end ) return [start];
-  
-  var nodes = [], current = start;
-  do {
-    nodes.push(current);
-  } while ((current = nextnode(current)) && (current != end));
-  
-  return nodes;
-}
+    colors = new Items();
 
 var context = {
   scan: function(fn, all) {
@@ -602,118 +579,6 @@ var context = {
     return context;
   },
   
-  // range
-  ranges: function(node, collapsed) {
-    var selection = win.getSelection();
-    var ranges = [];
-    if( selection.rangeCount ) {
-      for(var i=0; i < selection.rangeCount; i++)
-        ranges.push(selection.getRangeAt(i));
-    }
-    
-    if( !arguments.length ) return ranges;
-    
-    return ranges.filter(function(range) {
-      if( !collapsed && range.collapsed ) return;
-      return range && node.contains(range.startContainer) && node.contains(range.endContainer);
-    });
-  },
-  range: function(node, collapsed) {
-    var ranges = this.ranges(node, collapsed);
-    return ranges && ranges.length && ranges[ranges.length - 1];
-  },
-  unwrap: function(range, selector) {
-    if( !range || !selector ) return this;
-    
-    var common = $(range.commonAncestorContainer);
-    var node = range.cloneContents();
-    var tmp = $('<div/>').append(node);
-    
-    //console.log('tmp', tmp.html());
-    tmp.nodes().each(function() {
-      var el = $(this);
-      
-      el.find(selector).nodes().unwrap();
-      if( el.is(selector) ) el.nodes().unwrap();
-    });
-    
-    var nodes = tmp.normalize().nodes();
-    //console.log('nodes', tmp.html());
-    if( !nodes.length ) return this;
-    
-    var start = nodes[0];
-    var end = nodes[nodes.length - 1];
-    
-    range.deleteContents();
-    
-    nodes.reverse().each(function() {
-      range.insertNode(this);
-    });
-    
-    range = doc.createRange();
-    range.selectNodeContents(start);
-    var startoffset = range.startOffset;
-    
-    range = doc.createRange();
-    range.selectNodeContents(end);
-    var endoffset = range.endOffset;
-    
-    range = doc.createRange();
-    range.setStart(start, startoffset);
-    range.setEnd(end, endoffset);
-    
-    var selection = win.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    
-    start.parentNode.normalize();
-    
-    return context;
-  },
-  wrap: function(range, selector) {
-    if( !range ) return null;
-    if( typeof selector != 'string' || !selector ) selector = 'div';
-    
-    var node = range.cloneContents();
-    var asm = $.util.assemble(selector);
-    var wrapper = doc.createElement(asm.tag);
-    if( asm.id ) wrapper.id = id;
-    if( asm.classes ) wrapper.className = asm.classes;
-    
-    wrapper.appendChild(node);
-    wrapper.normalize();
-    range.deleteContents();
-    range.insertNode(wrapper);
-    
-    // select new node
-    var range = doc.createRange();
-    range.selectNodeContents(wrapper);
-    var selection = win.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    
-    return wrapper;
-  },
-  wrapped: function(range, selector) {
-    if( !range ) return false;
-    
-    var wrapped = false;
-    $(rangelist(range)).each(function() {
-      if( wrapped ) return false;
-      var el = $(this);
-      wrapped = el.is(selector) || el.parent(selector).length || el.find(selector).length;
-    });
-    
-    return wrapped;
-  },
-  toggleWrap: function(range, selector) {
-    if( !range ) return this;
-    if( this.wrapped(range, selector) ) this.unwrap(range, selector);
-    else this.wrap(range, selector);
-    
-    return context;
-  },
-  
   // alert
   prompt: function(message, callback, options) {
     if( context.fire('ff-prompt', {
@@ -776,43 +641,19 @@ var context = {
     if( !arguments.length ) return colors;
     colors = new Items(arr);
     return context;
-  },
-  
-  // history
-  history: function() {
-    return history;
   }
 };
 
-(function() {
-  var platform = win.navigator.platform;
-  var mac = !!~platform.toLowerCase().indexOf('mac');
+$(doc).on('mousedown', function(e) {
+  if( !editmode ) return;
   
-  $(doc).on('mousedown', function(e) {
-    if( !editmode ) return;
-    
-    var target = e.target || e.srcElement;
-    var part = context.partof(target);
-    
-    if( !part ) return context.focused && context.focused.blur();
-    
-    var focused = context.focused;
-    if( part ) part.focus();
-    else if( focused && typeof focused.blur == 'function' ) focused.blur();
-  })
-  .on('keydown', function(e) {
-    if( mac ) {
-      if( e.metaKey && e.key == 'z' ) context.history().undo();
-      else if( e.metaKey && e.shiftKey && e.key == 'Z' ) context.history().redo();
-    } else {
-      if( e.ctrlKey && e.key == 'z' ) context.history().undo();
-      else if( e.ctrlKey && e.key == 'y' ) context.history().redo();
-    }
-  })
-  .on('selectionchange', function(e) {
-    //console.log('Selection changed.', e); 
-  });
-})();
+  var target = e.target || e.srcElement;
+  var part = context.partof(target);
+  var focused = context.focused;
+  
+  if( part ) part.focus();
+  else focused && focused.blur();
+});
 
 module.exports = context;
 
@@ -864,6 +705,8 @@ function Part(arg) {
   self.fire('ff-init');
   if( context.editmode() ) self.editmode(true);
   context.fire('ff-detect', {part:self});
+  
+  self.history().init();
 }
 
 Part.prototype = {
@@ -1049,27 +892,70 @@ Part.prototype = {
     return this;
   },
   focus: function() {
-    if( this.editmode() && this !== context.focused ) {
+    var part = this;
+    if( part.editmode() && part !== context.focused ) {
       if( context.focused && typeof context.focused.blur == 'function' ) context.focused.blur();
-      $(this.dom()).ac('ff-focus-state');
-      this.fire('ff-focus');
-      context.focused = this;
+      $(part.dom()).ac('ff-focus-state');
+      part.fire('ff-focus');
+      context.focused = part;
     }
-    return this;
+    return part;
   },
   blur: function() {
-    if( this.editmode() && this === context.focused ) {
-      $(this.dom()).rc('ff-focus-state');
-      this.fire('ff-blur');
+    var part = this;
+    if( part.editmode() && part === context.focused ) {
+      $(part.dom()).rc('ff-focus-state');
+      part.fire('ff-blur');
       context.focused = null;
     }
-    return this;
+    return part;
   },
   ranges: function(collapsed) {
     return context.ranges(this.dom(), collapsed);
   },
   range: function(collapsed) {
     return context.range(this.dom(), collapsed);
+  },
+  createHistory: function() {
+    var part = this;
+    var dom = part.dom();
+    
+    return (function(cls, css) {
+      return function() {
+        dom.className = cls || '';
+        dom.style.cssText = css || '';
+        part.focus();
+      };
+    })(dom.className, dom.style.cssText);
+  },
+  history: function() {
+    var part = this;
+    var history = context.history();
+    var def;
+    
+    var save = function() {
+      if( def ) {
+        history.add(def);
+        def = null;
+      }
+      history.add(part.createHistory());
+    }
+    
+    return part._history = part._history || {
+      init: function() {
+        def = part.createHistory();
+      },
+      save: function(threshold) {
+        if( threshold ) {
+          if( part._kdi ) window.clearTimeout(part._kdi);
+          part._kdi = window.setTimeout(function() {
+            save();
+          }, 250);
+        } else {
+          save();
+        }
+      }
+    };
   }
 };
 
@@ -1134,7 +1020,7 @@ module.exports = Items;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Toolbar = __webpack_require__(25);
+var Toolbar = __webpack_require__(26);
 
 Toolbar.Button = __webpack_require__(7);
 Toolbar.Separator = __webpack_require__(10);
@@ -1148,7 +1034,7 @@ module.exports = Toolbar;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(48);
+__webpack_require__(49);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1258,9 +1144,10 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
-var buildtoolbar = __webpack_require__(30);
+var context = __webpack_require__(3);
+var buildtoolbar = __webpack_require__(31);
 
-__webpack_require__(56);
+__webpack_require__(57);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
@@ -1286,17 +1173,18 @@ proto.oninit = function(e) {
       range.deleteContents();
       range.insertNode(node);
       dom.normalize();
-    
+      
       range = document.createRange();
       range.setStart(node, 0);
       range.setEnd(node, text.length);
-    
+      
       var selection = window.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
     }
   })
   .on('keydown', function(e) {
+    if( part.editmode() && !e.metaKey && !e.ctrKey ) part.history().save(true);
     if( e.keyCode === 13 && !part.multiline() ) e.preventDefault();
   })
   .on('dblclick', function(e) {
@@ -1306,7 +1194,7 @@ proto.oninit = function(e) {
     e.preventDefault();
   });
   
-  buildtoolbar(this);
+  buildtoolbar(part);
   
   var placeholder = part._placeholder = (function() {
     var node = $('<div class="ff-placeholder ff-acc"/>'), text, minWidthWrited = false;
@@ -1444,6 +1332,20 @@ proto.setData = function(data) {
   return this;
 };
 
+proto.createHistory = function() {
+  var part = this;
+  var dom = part.dom();
+  
+  return (function(html, cls, css) {
+    return function() {
+      dom.innerHTML = html || '';
+      dom.className = cls || '';
+      dom.style.cssText = css || '';
+      part.focus();
+    };
+  })(dom.innerHTML, dom.className, dom.style.cssText);
+};
+
 module.exports = ParagraphPart;
 
 
@@ -1456,7 +1358,7 @@ module.exports = ParagraphPart;
 var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
-__webpack_require__(49);
+__webpack_require__(50);
 
 function ListButton(options) {
   Button.apply(this, arguments);
@@ -1543,7 +1445,7 @@ module.exports = ListButton;
 var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
-__webpack_require__(50);
+__webpack_require__(51);
 
 function Separator() {
   Button.apply(this, arguments);
@@ -1856,12 +1758,234 @@ var lib = module.exports = {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
+var list = [];
+var redos = [];
+var size = 50;
+var current;
+
+function redo() {
+  var action = redos.shift();
+  if( action ) {
+    list.push(action);
+    if( current === action ) return redo.call(this);
+    action.call(context);
+    current = action;
+  }
+  return this;
+}
+
+function undo() {
+  var action = list.pop();
+  if( action ) {
+    redos.unshift(action);
+    if( current === action ) return undo.call(this);
+    action.call(context);
+    current = action;
+  }
+  return this;
+}
+
+function add(action) {
+  if( typeof action != 'function' ) return console.error('[ff] illegal argument, action must be a function');
+  list.push(action);
+  redos = [];
+  current = action;
+  
+  if( list.length > size )
+    list = list.slice(list.length - size);}
+
+function list() {
+  return list;
+}
+
+function size(size) {
+  if( !arguments.length ) return size;
+  size = Math.abs(+size) || 50;
+  return this;
+}
+
+module.exports = {
+  size: size,
+  add: add,
+  undo: undo,
+  redo: redo,
+  list:  list
+};
+
+// add keydown listener to document
+var platform = window.navigator.platform;
+var mac = !!~platform.toLowerCase().indexOf('mac');
+
+$(document).on('keydown', function(e) {
+  if( !context.editmode() ) return;
+  
+  if( mac ) {
+    if( e.metaKey && e.key == 'z' ) undo();
+    else if( e.metaKey && e.shiftKey && e.key == 'Z' ) redo();
+    else return;
+  } else {
+    if( e.ctrlKey && e.key == 'z' ) undo();
+    else if( e.ctrlKey && e.key == 'y' ) redo();
+    else return;
+  }
+  e.preventDefault();
+}, true);
+
+/***/ }),
+/* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var win = window;
+var doc = document;
+
+function nextnode(node, skip){
+  if( node.firstChild && !skip ) return node.firstChild;
+  if( !node.parentNode ) return null;
+  
+  return node.nextSibling || nextnode(node.parentNode, true);
+}
+
+function rangelist(range){
+  var start = range.startContainer.childNodes[range.startOffset] || range.startContainer;
+  var end = range.endContainer.childNodes[range.endOffset] || range.endContainer;
+  
+  if( start === end ) return [start];
+  
+  var nodes = [], current = start;
+  do {
+    nodes.push(current);
+  } while ((current = nextnode(current)) && (current != end));
+  
+  return nodes;
+}
+
+function wrap(range, selector) {
+  if( !range ) return null;
+  if( typeof selector != 'string' || !selector ) selector = 'div';
+  
+  var node = range.cloneContents();
+  var asm = $.util.assemble(selector);
+  var wrapper = doc.createElement(asm.tag);
+  if( asm.id ) wrapper.id = id;
+  if( asm.classes ) wrapper.className = asm.classes;
+  
+  wrapper.appendChild(node);
+  wrapper.normalize();
+  range.deleteContents();
+  range.insertNode(wrapper);
+  
+  // select new node
+  var range = doc.createRange();
+  range.selectNodeContents(wrapper);
+  var selection = win.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  return wrapper;
+};
+
+function unwrap(range, selector) {
+  if( !range || !selector ) return this;
+  
+  var common = $(range.commonAncestorContainer);
+  var node = range.cloneContents();
+  var tmp = $('<div/>').append(node);
+  
+  //console.log('tmp', tmp.html());
+  tmp.nodes().each(function() {
+    var el = $(this);
+    
+    el.find(selector).nodes().unwrap();
+    if( el.is(selector) ) el.nodes().unwrap();
+  });
+  
+  var nodes = tmp.normalize().nodes();
+  //console.log('nodes', tmp.html());
+  if( !nodes.length ) return this;
+  
+  var start = nodes[0];
+  var end = nodes[nodes.length - 1];
+  
+  range.deleteContents();
+  
+  nodes.reverse().each(function() {
+    range.insertNode(this);
+  });
+  
+  range = doc.createRange();
+  range.selectNodeContents(start);
+  var startoffset = range.startOffset;
+  
+  range = doc.createRange();
+  range.selectNodeContents(end);
+  var endoffset = range.endOffset;
+  
+  range = doc.createRange();
+  range.setStart(start, startoffset);
+  range.setEnd(end, endoffset);
+  
+  var selection = win.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  start.parentNode.normalize();
+  
+  return this;
+};
+
+function iswrapped(range, selector) {
+  if( !range ) return false;
+  
+  var wrapped = false;
+  $(rangelist(range)).each(function() {
+    if( wrapped ) return false;
+    var el = $(this);
+    wrapped = el.is(selector) || el.parent(selector).length || el.find(selector).length;
+  });
+  
+  return wrapped;
+};
+
+function togglewrap(range, selector) {
+  if( !range ) return this;
+  if( iswrapped(range, selector) ) unwrap(range, selector);
+  else wrap(range, selector);
+  
+  return this;
+};
+
+function RangeEditor(range) {
+  return {
+    iswrapped: function(selector) {
+      return iswrapped(range, selector);
+    },
+    togglewrap: function(selector) {
+      return togglewrap(range, selector);
+    },
+    unwrap: function(selector) {
+      return unwrap(range, selector);
+    },
+    wrap: function(selector) {
+      return wrap(range, selector);
+    }
+  };
+}
+
+module.exports = RangeEditor;
+
+/***/ }),
+/* 16 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
-var Marker = __webpack_require__(28);
-var DnD = __webpack_require__(27);
+var Marker = __webpack_require__(29);
+var DnD = __webpack_require__(28);
 
-__webpack_require__(51);
+__webpack_require__(52);
 
 function ArticlePart() {
   Part.apply(this, arguments);
@@ -2101,7 +2225,7 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 15 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2109,7 +2233,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(6);
 
-__webpack_require__(54);
+__webpack_require__(55);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2127,7 +2251,7 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
-var items = ImagePart.toolbar = __webpack_require__(29);
+var items = ImagePart.toolbar = __webpack_require__(30);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2206,18 +2330,31 @@ proto.blockmode = function(mode) {
   return this;
 };
 
+proto.createHistory = function() {
+  var part = this;
+  var dom = part.dom();
+  return (function(src, cls, css) {
+    return function() {
+      dom.src = src;
+      dom.className = cls || '';
+      dom.style.cssText = css || '';
+      part.focus();
+    };
+  })(dom.src, dom.className, dom.style.cssText);
+};
+
 module.exports = ImagePart;
 
 
 
 /***/ }),
-/* 16 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(55);
+__webpack_require__(56);
 
 function Link() {
   Part.apply(this, arguments);
@@ -2309,7 +2446,7 @@ Link.defaultLabel = 'Link';
 module.exports = Link;
 
 /***/ }),
-/* 17 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2317,7 +2454,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(6);
 
-__webpack_require__(57);
+__webpack_require__(58);
 
 function isedge(dom, y) {
   var top = $.util.offset(dom, true).top;
@@ -2350,7 +2487,7 @@ function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(31);
+var items = RowPart.toolbar = __webpack_require__(32);
 var proto = RowPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2553,13 +2690,13 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 18 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(4);
 
-__webpack_require__(58);
+__webpack_require__(59);
 
 function Separator() {
   Part.apply(this, arguments);
@@ -2588,6 +2725,7 @@ function Separator() {
       else if( shape == 'zigzag' ) part.shape('empty');
       else if( shape == 'empty' ) part.shape(false);
       else part.shape('dotted');
+      part.history().save();
     }
   })
   .add({
@@ -2600,6 +2738,7 @@ function Separator() {
     },
     fn: function(e) {
       el.tc('f_sep_narrow');
+      part.history().save();
     }
   })
   .add({
@@ -2610,6 +2749,7 @@ function Separator() {
     },
     fn: function(e) {
       el.tc('f_sep_clearfix');
+      part.history().save();
     }
   });
 }
@@ -2640,7 +2780,7 @@ proto.shape = function(shape) {
 module.exports = Separator;
 
 /***/ }),
-/* 19 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2668,7 +2808,7 @@ proto.multiline = function() {
 module.exports = TextPart;
 
 /***/ }),
-/* 20 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2676,7 +2816,7 @@ var context = __webpack_require__(3);
 var Part = __webpack_require__(4);
 var Toolbar = __webpack_require__(6);
 
-__webpack_require__(59);
+__webpack_require__(60);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -2702,7 +2842,7 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(32);
+var items = VideoPart.toolbar = __webpack_require__(33);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2744,13 +2884,13 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 21 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(33);
+var content = __webpack_require__(34);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -2770,62 +2910,31 @@ if(false) {
 }
 
 /***/ }),
-/* 22 */
-/***/ (function(module, exports) {
-
-function EditHistory(part) {
-  var list = [];
-  var index = -1;
-  
-  function redo() {
-    //TODO: console.log('redo');
-  }
-  
-  function undo() {
-    //TODO: console.log('undo');
-  }
-  
-  function save(action) {
-    list.push(action);
-    index = list.length - 1;
-  }
-  
-  return {
-    save: save,
-    undo: undo,
-    redo: redo,
-    list:  function() {
-      return list;
-    }
-  }
-}
-
-
-module.exports = EditHistory;
-
-/***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var ctx = __webpack_require__(3);
-var Toolbar = __webpack_require__(6);
-var Part = __webpack_require__(4);
-var Items = __webpack_require__(5);
 
-__webpack_require__(21);
+var win = window,
+    doc = document,
+    ctx = __webpack_require__(3),
+    Toolbar = __webpack_require__(6),
+    Part = __webpack_require__(4),
+    Items = __webpack_require__(5);
+
+__webpack_require__(23);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(14);
+var ArticlePart = __webpack_require__(16);
 var ParagraphPart = __webpack_require__(8);
-var SeparatorPart = __webpack_require__(18);
-var ImagePart = __webpack_require__(15);
-var VideoPart = __webpack_require__(20);
-var RowPart = __webpack_require__(17);
-var LinkPart = __webpack_require__(16);
-var TextPart = __webpack_require__(19);
+var SeparatorPart = __webpack_require__(20);
+var ImagePart = __webpack_require__(17);
+var VideoPart = __webpack_require__(22);
+var RowPart = __webpack_require__(19);
+var LinkPart = __webpack_require__(18);
+var TextPart = __webpack_require__(21);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
@@ -2880,10 +2989,45 @@ ctx.uploader(function(file, done) {
   reader.readAsDataURL(file);
 });
 
+
+// range
+var RangeEditor = __webpack_require__(15);
+ctx.ranges = function(node, collapsed) {
+  var selection = win.getSelection();
+  var ranges = [];
+  if( selection.rangeCount )
+    for(var i=0; i < selection.rangeCount; i++)
+      ranges.push(selection.getRangeAt(i));
+  
+  if( !arguments.length ) return ranges;
+  
+  return ranges.filter(function(range) {
+    if( !collapsed && range.collapsed ) return;
+    return range && node.contains(range.startContainer) && node.contains(range.endContainer) && RangeEditor(range);
+  });
+};
+
+ctx.range = function(node, collapsed) {
+  var ranges = ctx.ranges(node, collapsed);
+  return ranges && ranges.length && RangeEditor(ranges[ranges.length - 1]);
+};
+
+// history
+var history = __webpack_require__(14);
+ctx.history = function(fn) {
+  if( !arguments.length ) return history;
+  
+  history.add(fn);
+  return this;
+};
+
+module.exports = ctx;
+
+
 (function() {
   var readyfn;
   
-  document.addEventListener('DOMContentLoaded', function() {
+  doc.addEventListener('DOMContentLoaded', function() {
     ctx.scan();
     readyfn && readyfn();
     
@@ -2901,20 +3045,18 @@ ctx.uploader(function(file, done) {
   });
 
   ctx.ready = function(fn) {
-    if( document.body ) fn();
+    if( doc.body ) fn();
     else readyfn = fn;
   };
 })();
 
-module.exports = ctx;
-
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(26);
+var Button = __webpack_require__(27);
 
 function Buttons(toolbar) {
   this._toolbar = toolbar;
@@ -3022,14 +3164,14 @@ Buttons.prototype = {
 module.exports = Buttons;
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Buttons = __webpack_require__(24);
+var Buttons = __webpack_require__(25);
 var doc = document;
 
-__webpack_require__(47);
+__webpack_require__(48);
 
 function clone(o) {
   var result = {};
@@ -3234,7 +3376,7 @@ module.exports = Toolbar;
 
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(7);
@@ -3257,12 +3399,12 @@ Button.ListButton = ListButton;
 module.exports = Button;
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(52);
+__webpack_require__(53);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -3343,14 +3485,14 @@ function DnD(part, dom) {
 module.exports = DnD;
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var toolbar = __webpack_require__(12);
 var Button = __webpack_require__(6).Button;
 
-__webpack_require__(53);
+__webpack_require__(54);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -3450,7 +3592,7 @@ function Marker(part, dom) {
 module.exports = Marker;
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3462,14 +3604,14 @@ module.exports = new Items()
   text: '<i class="fa fa-dedent"></i>',
   tooltip: '좌측플로팅',
   fn: function(btn) {
-    this.floating('left');
+    this.floating('left').history().save();
   }
 })
 .add({
   text: '<i class="fa fa-dedent ff-flip"></i>',
   tooltip: '우측플로팅',
   fn: function(btn) {
-    this.floating('right');
+    this.floating('right').history().save();
   }
 })
 .add({
@@ -3492,6 +3634,8 @@ module.exports = new Items()
     else if( blockmode == 'medium' ) part.blockmode('full');
     else if( blockmode == 'full' ) part.blockmode(false);
     else part.blockmode('natural');
+    
+    part.history().save();
   }
 })
 .add({
@@ -3504,6 +3648,7 @@ module.exports = new Items()
       if( !file ) return;
       
       part.src(file.src).title(file.name);
+      part.history().save();
     });
   }
 })
@@ -3514,38 +3659,46 @@ module.exports = new Items()
     var part = this;
     context.prompt('Please enter the image URL.', function(src) {
       src && part.src(src).title(null);
+      part.history().save();
     });
   }
 });
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Toolbar = context.Toolbar;
 
-function rangeitem(text, tooltip, selector, fn) {
-  return {
-    text: text,
-    tooltip: tooltip,
-    onupdate: function(btn) {
-      var range = this.range();
-      if( !range ) return btn.enable(false);
-      
-      btn.enable(true);
-      btn.active(context.wrapped(range, selector));
-    },
-    fn: fn || function(btn) {
-      context.toggleWrap(this.range(), selector);
-    }
-  };
-}
+
 
 module.exports = function(part) {
   var dom = part.dom();
   var el = $(dom);
+  
+  
+  function rangeitem(text, tooltip, selector, fn) {
+    return {
+      text: text,
+      tooltip: tooltip,
+      onupdate: function(btn) {
+        var range = this.range();
+        if( !range ) return btn.enable(false);
+      
+        btn.enable(true);
+        btn.active(range.iswrapped(selector));
+      },
+      fn: fn || function(btn) {
+        var range = this.range();
+        if( !range ) return;
+        
+        part.history().save();
+        range.togglewrap(selector);
+        part.history().save();
+      }
+    };
+  }
   
   return part.toolbar()
   .add({
@@ -3555,19 +3708,22 @@ module.exports = function(part) {
     onupdate: function(btn) {
       var range = this.range();
       
-      range && btn.active(context.wrapped(range, 'span.f_txt_font'));
+      range && btn.active(range.iswrapped('span.f_txt_font'));
     },
     onselect: function(item, i, btn) {
       var range = this.range();
+      
       if( !range ) {
         dom.style.fontFamily = item.font || '';
+        part.history().save();
         return;
       }
       
-      context.unwrap(range, 'span.f_txt_font');
-      
-      var node = context.wrap(range, 'span.f_txt_font');
+      range.unwrap('span.f_txt_font');
+      var node = range.wrap('span.f_txt_font');
       node.style.fontFamily = item.font || '';
+      
+      part.history().save();
     },
     items: function() {
       return context.fonts();
@@ -3579,7 +3735,7 @@ module.exports = function(part) {
     tooltip: 'Select Font Size',
     onupdate: function(btn) {
       var range = this.range();
-      range && btn.active(context.wrapped(range, 'span.f_txt_fontsize'));
+      range && btn.active(range.iswrapped('span.f_txt_fontsize'));
     },
     onselect: function(item, i, btn) {
       var range = this.range();
@@ -3588,10 +3744,11 @@ module.exports = function(part) {
         return;
       }
       
-      context.unwrap(range, 'span.f_txt_fontsize');
-      
-      var node = context.wrap(range, 'span.f_txt_fontsize');
+      range.unwrap('span.f_txt_fontsize');
+      var node = range.wrap('span.f_txt_fontsize');
       node.style.fontSize = item.size || '';
+      
+      part.history().save();
     },
     items: [
       { text: 'Default' },
@@ -3609,18 +3766,19 @@ module.exports = function(part) {
     tooltip: 'Select Color',
     onupdate: function(btn) {
       var range = this.range();
-      range && btn.active(context.wrapped(range, 'span.f_txt_color'));
+      range && btn.active(range.iswrapped('span.f_txt_color'));
     },
     onselect: function(item, i, btn) {
       var range = this.range();
+      
       var change = function(color) {
         if( !range ) {
           dom.style.color = color || '';
           return;
         }
         
-        context.unwrap(range, 'span.f_txt_color');
-        var node = context.wrap(range, 'span.f_txt_color');
+        range.unwrap('span.f_txt_color');
+        var node = range.wrap('span.f_txt_color');
         node.style.color = color || '';
       }
       
@@ -3630,6 +3788,7 @@ module.exports = function(part) {
         }).click();
       } else {
         change(item.color);
+        part.history().save();
       }
     },
     items: function() {
@@ -3652,14 +3811,15 @@ module.exports = function(part) {
       
       btn.enable(true);
       
-      range && btn.active(context.wrapped(range, 'h1, h2, h3, h4, h5, h6'));
+      range && btn.active(range.iswrapped('h1, h2, h3, h4, h5, h6'));
     },
     onselect: function(item, i, btn) {
       var range = this.range();
       if( !range ) return;
       
-      context.unwrap(range, 'h1, h2, h3, h4, h5, h6');
-      item.tag && context.wrap(range, item.tag);
+      range.unwrap('h1, h2, h3, h4, h5, h6');
+      item.tag && range.wrap(item.tag);
+      part.history().save();
     },
     items: [
       { text: 'Default' },
@@ -3677,13 +3837,14 @@ module.exports = function(part) {
   .add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
   .add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
     var range = this.range();
-    if( !range || context.wrapped(range, 'a') ) return context.unwrap(range, 'a');
+    if( !range || range.iswrapped('a') ) return range.unwrap('a');
     
     context.prompt('Please enter the anchor URL.', function(href) {
       if( !href ) return;
-      var a = context.wrap(range, 'a');
+      var a = range.wrap('a');
       a.href = href;
       a.target = '_blank';
+      part.history().save();
     });
   }))
   .add({
@@ -3709,6 +3870,7 @@ module.exports = function(part) {
         el.css('text-align', 'center');
         btn.align = 'center';
       }
+      part.history().save();
     }
   })
   .add({
@@ -3725,7 +3887,7 @@ module.exports = function(part) {
 };
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3757,7 +3919,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 32 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3785,7 +3947,7 @@ module.exports = new Items()
 });
 
 /***/ }),
-/* 33 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3799,7 +3961,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 34 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3813,7 +3975,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 35 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3827,7 +3989,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: po
 
 
 /***/ }),
-/* 36 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3841,7 +4003,7 @@ exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  dis
 
 
 /***/ }),
-/* 37 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3855,7 +4017,7 @@ exports.push([module.i, ".ff-toolbar-separator-btn {\n  letter-spacing: -99999;\
 
 
 /***/ }),
-/* 38 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3869,7 +4031,7 @@ exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff
 
 
 /***/ }),
-/* 39 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3883,7 +4045,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 40 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3897,7 +4059,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 41 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3911,7 +4073,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 
 
 /***/ }),
-/* 42 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3925,7 +4087,7 @@ exports.push([module.i, ".ff-link {\n  margin: 15px 0;\n}\n.ff-link a {\n  displ
 
 
 /***/ }),
-/* 43 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3939,7 +4101,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 44 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3953,7 +4115,7 @@ exports.push([module.i, ".f_row {\n  display: table;\n  width: 100%;\n  table-la
 
 
 /***/ }),
-/* 45 */
+/* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3967,7 +4129,7 @@ exports.push([module.i, ".f_sep {\n  display: block;\n  margin: 0 !important;\n 
 
 
 /***/ }),
-/* 46 */
+/* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)();
@@ -3979,32 +4141,6 @@ exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n
 
 // exports
 
-
-/***/ }),
-/* 47 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(34);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
 
 /***/ }),
 /* 48 */
@@ -4022,8 +4158,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/index.js!./toolbar.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4048,8 +4184,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./button.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4074,8 +4210,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./list.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4100,8 +4236,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4126,8 +4262,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./article.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4152,8 +4288,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4178,8 +4314,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4204,8 +4340,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4230,8 +4366,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4256,8 +4392,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4282,8 +4418,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4308,6 +4444,32 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./separator.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 60 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(47);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
 		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less", function() {
 			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
@@ -4319,7 +4481,7 @@ if(false) {
 }
 
 /***/ }),
-/* 60 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -4395,7 +4557,7 @@ Context.each = each;
 module.exports = Context;
 
 /***/ }),
-/* 61 */
+/* 62 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(13);
