@@ -818,6 +818,7 @@ Part.prototype = {
           e.dataTransfer.setDragImage(el[0], 0, 0);
           e.dataTransfer.setData('text', target.outerHTML);
           el.ac('ff-dragging');
+          self.history().init();
         }
       } else if( type == 'dragend' ) {
         if( target === dom ) {
@@ -8612,6 +8613,7 @@ function DnD(part, dom) {
   
   function ondragend(e) {
     hide();
+    part.history().save();
   }
   
   function ondrop(e) {
@@ -9455,56 +9457,60 @@ proto.cols = function(cols) {
 };
 
 proto.validate = function() {
-  var el = $(this.dom())
+  var part = this;
+  var dom = part.dom();
+  var el = $(dom);
   
-  el.find('.f_row_cell').each(function() {
-    if( !this.children.length ) this.parentNode.removeChild(this);
+  el.find('.f_row_cell').each(function(i, el) {
+    var el = this;
+    if( !el.children.length ) el.parentNode.removeChild(el);
   });
   
   var cells = el.children('.f_row_cell');
-  var cols = this.cols() || cells.length;
+  var cols = part.cols() || cells.length;
   
   if( el.hc('f_row_justify') ) {
     var totalwidth = 0;
     var warr = [];
     cells
     .children(':first-child')
-    .each(function(i) {
-      var width = this.naturalWidth;
-      var height = this.naturalHeight;
+    .each(function(i, el) {
+      var width = el.naturalWidth;
+      var height = el.naturalHeight;
       
       if( width ) {
         width = 100 * (width / height);
         totalwidth += width;
         warr.push(width);
       } else {
-        this.style.width = 'auto';
-        this.style.height = '100px';
-        var width = this.offsetWidth;
+        el.style.width = 'auto';
+        el.style.height = '100px';
+        var width = el.offsetWidth;
         totalwidth += width;
         warr.push(width);
-        this.style.display = null;
-        this.style.width = null;
-        this.style.height = null;
+        el.style.display = null;
+        el.style.width = null;
+        el.style.height = null;
       }
       //console.log(i, this, width);
     });
     
-    cells.each(function(i) {
+    cells.each(function(i, el) {
       //console.log(i, this, ((warr[i] / totalwidth) * 100) + '%');
-      $(this).css('width', ((warr[i] / totalwidth) * 100) + '%');
+      $(el).css('width', ((warr[i] / totalwidth) * 100) + '%');
     });
   } else {
-    cells.each(function() {
-      $(this).css('width', (100 / cols) + '%');
+    cells.each(function(i, el) {
+      $(el).css('width', (100 / cols) + '%');
     });
   }
   
-  return this;
+  return part;
 };
 
 proto.add = function(arg, index) {
-  var dom = this.dom();
+  var part = this;
+  var dom = part.dom();
   var cells = $(dom).children('.f_row_cell');
   
   $(arg).each(function(i, item) {
@@ -9521,14 +9527,14 @@ proto.add = function(arg, index) {
     cell.appendTo(dom);
   });
   
-  this.validate();
-  this.history().save();
+  part.validate().history().save();
   
-  return this;
+  return part;
 };
 
 proto.valign = function(align) {
-  var el = $(this.dom());
+  var part = this;
+  var el = $(part.dom());
   if( !arguments.length ) return el.hc('f_row_middle') ? 'middle' : 
     el.hc('f_row_bottom') ? 'bottom' : el.hc('f_row_justify') ? 'justify' : false;
   
@@ -9538,25 +9544,24 @@ proto.valign = function(align) {
   else if( align == 'bottom' ) el.ac('f_row_bottom');
   else if( align == 'justify' ) el.ac('f_row_justify');
   
-  this.validate();
-  this.history().save();
+  part.validate().history().save();
   
-  return this;
+  return part;
 };
 
 proto.createHistory = function() {
   var part = this;
   var dom = part.dom();
-  var children = [].slice.call(dom.children);
+  var html = dom.innerHTML;
   
-  return (function(children, cls, css) {
+  return (function(html, cls, css) {
     return function() {
-      $(dom).empty().append(children);
       dom.className = cls || '';
       dom.style.cssText = css || '';
+      dom.innerHTML = html;
       part.focus();
     };
-  })(children, dom.className, dom.style.cssText);
+  })(html, dom.className, dom.style.cssText);
 };
 
 module.exports = RowPart;
