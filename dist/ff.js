@@ -2325,7 +2325,9 @@ proto.insert = function(node, ref) {
     if( images.length === 1 ) {
       insert(images[0].dom(), ref);
     } else if( images.length ) {
-      $.util.chunk(images, 5).forEach(function(arr) {
+      var chunksize = +target.attr('ff-row-chunk-size');
+      if( !chunksize || chunksize < 1 ) chunksize = 1;
+      $.util.chunk(images, chunksize).forEach(function(arr) {
         var row = new context.Row().valign('justify');
         arr.forEach(function(image) {
           row.add(image);
