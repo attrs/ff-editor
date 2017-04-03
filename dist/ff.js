@@ -2685,7 +2685,7 @@ proto.onviewmode = function() {
 };
 
 proto.create = function(arg) {
-  return $('<div ff-type="row" />')[0];
+  return $('<div ff-type="row" />').ac('f_clearfix')[0];
 };
 
 proto.cols = function(cols) {
@@ -3557,13 +3557,12 @@ function DnD(part, dom) {
     e.stopPropagation();
     e.preventDefault();
     
-    if( !dom.contains(marker[0]) ) return;
-    
     var target = e.target || e.srcElement;
     var dragging = part.context().dragging;
     var ref = marker[0].nextSibling;
     
     if( dragging ) {
+      if( !dom.contains(marker[0]) ) return;
       part.insert(dragging, ref);
     } else if( e.dataTransfer && e.dataTransfer.files ) {
       part.insert(e.dataTransfer.files, ref);
