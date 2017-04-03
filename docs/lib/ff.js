@@ -2273,7 +2273,9 @@ proto.insert = function(node, ref) {
   var insert = function(node, ref) {
     if( ref ) ref.parentNode && ref.parentNode.insertBefore(node, ref);
     else target.append(node);
-  }
+    
+    node._ff && node._ff.focus();
+  };
   
   var images = [];
   $(node).reverse().async(function(item, done) {
