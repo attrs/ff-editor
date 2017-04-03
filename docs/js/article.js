@@ -2194,7 +2194,9 @@ module.exports = new Items()
       if( files.length === 1 ) {
         part.insert(new context.Image(files[0]));
       } else {
-        $.util.chunk(files, 5).forEach(function(arr) {
+        var chunksize = +$(part.dom()).attr('ff-row-chunk-size');
+        if( !chunksize || chunksize < 1 ) chunksize = 5;
+        $.util.chunk(files, chunksize).forEach(function(arr) {
           var row = new context.Row().valign('justify');
           arr.forEach(function(file) {
             row.add(new context.Image(file));
@@ -8564,7 +8566,7 @@ proto.insert = function(node, ref) {
       insert(images[0].dom(), ref);
     } else if( images.length ) {
       var chunksize = +target.attr('ff-row-chunk-size');
-      if( !chunksize || chunksize < 1 ) chunksize = 1;
+      if( !chunksize || chunksize < 1 ) chunksize = 5;
       $.util.chunk(images, chunksize).forEach(function(arr) {
         var row = new context.Row().valign('justify');
         arr.forEach(function(image) {
