@@ -3,8 +3,12 @@ var $ = require('tinyselector');
 var Part = ff.Part;
 var CustomPart = require('./custom/index.es6.js').default;
 var tpls = require('./tpls/');
+var version = 2;
 
 ff.data(tpls['spongebob']);
+
+if( +localStorage.getItem('ff-version') !== version )
+  localStorage.removeItem('article');
 
 // override alert/prompt/imageshow action
 (function() {
@@ -122,6 +126,7 @@ ff.ready(function() {
     var data = ff.data();
     
     localStorage.setItem('article', JSON.stringify(data));
+    localStorage.setItem('ff-version', version);
     
     var html = data && data.content && data.content.html;
     var el = $('<div style="max-height:300px;overflow:auto;text-align:left;font-size:12px;border:1px solid #eee;">').text(html);

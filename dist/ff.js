@@ -421,7 +421,7 @@ function updateLink(linkElement, obj) {
 
 var $ = __webpack_require__(0);
 var types = __webpack_require__(11);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 var win = window,
     doc = document,
@@ -484,6 +484,14 @@ var context = {
       return this._ff;
     }, true)[0];
     return found && found._ff;
+  },
+  partsof: function(node) {
+    var parents = [];
+    $(node).parent(function() {
+      var part = this._ff;
+      if( part ) parents.push(part);
+    }, true);
+    return parents;
   },
   editmode: function(b) {
     if( !arguments.length ) return editmode;
@@ -662,10 +670,66 @@ module.exports = context;
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var $ = __webpack_require__(0);
+
+function Items(arr) {
+  if( $.util.isArrayLike(arr) ) {
+    var self = this;
+    [].forEach.call(arr, function(item) {
+      self.add(item);
+    });
+  }
+}
+
+var proto = Items.prototype = [];
+
+proto.push = function() {
+  var self = this;
+  [].forEach.call(arguments, function(item) {
+    if( item && item.id ) self[item.id] = item;
+  });
+  
+  return [].push.apply(this, arguments);
+};
+
+proto.add = function(item) {
+  if( $.util.isArrayLike(item) ) {
+    var self = this;
+    [].forEach.call(item, function(item) {
+      self.push(item);
+    });
+  } else {
+    this.push(item);
+  }
+  
+  return this;
+};
+
+proto.get = function(id) {
+  return this[id];
+};
+
+proto.remove = function(item) {
+  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
+  return this;
+};
+
+proto.clear = function() {
+  this.splice(0, this.length);
+  return this;
+};
+
+module.exports = Items;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
 var Types = __webpack_require__(11);
 var Toolbar = __webpack_require__(6);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
+var Items = __webpack_require__(4);
 
 function Part(arg) {
   var dom = arg;
@@ -697,10 +761,16 @@ function Part(arg) {
   
   if( dom !== arg ) self.removable(true);
   
+  
+  var toolbar = self.toolbar();
+  Part.toolbar.forEach(function(item) {
+    toolbar.last(item);
+  });
+  
   var toolbarposition = el.attr('ff-toolbar');
   if( toolbarposition === 'true' ) toolbarposition = null;
-  if( toolbarposition === 'false' ) self.toolbar().enable(false);
-  else if( toolbarposition ) self.toolbar().position(toolbarposition);
+  if( toolbarposition === 'false' ) toolbar.enable(false);
+  else if( toolbarposition ) toolbar.position(toolbarposition);
   
   self.fire('ff-init');
   if( context.editmode() ) self.editmode(true);
@@ -787,20 +857,8 @@ Part.prototype = {
     return this._t || (this._t = this.createToolbar());
   },
   removable: function(removable) {
-    var toolbar = this.toolbar();
-    var removebtn = toolbar.get('remove');
-    if( !arguments.length ) return removebtn ? true : false;
-    
-    if( !removable ) toolbar.remove('remove');
-    
-    if( !removebtn ) toolbar.last({
-      id: 'remove',
-      text: '<i class="fa fa-remove"></i>',
-      fn: function(e) {
-        this.remove();
-      }
-    });
-    
+    if( !arguments.length ) return this._rm;
+    this._rm = !!removable;
     return this;
   },
   dom: function() {
@@ -833,6 +891,14 @@ Part.prototype = {
     part.history().init();
     return part;
   },
+  parent: function() {
+    var p = this.dom().parentNode;
+    return p && context.partof(p);
+  },
+  parents: function() {
+    var p = this.dom().parentNode;
+    return p && context.partsof(p);
+  },
   remove: function() {
     var part = this;
     part.blur();
@@ -861,6 +927,7 @@ Part.prototype = {
     else part._d = data;
     
     part.fire('ff-data', {old: part._d, data: data});
+    part.history().init();
     return part;
   },
   fire: function(type, detail, cancellable, bubble) {
@@ -944,7 +1011,7 @@ Part.prototype = {
         def = null;
       }
       history.add(part.createHistory());
-    }
+    };
     
     return part._history = part._history || {
       init: function(b) {
@@ -953,14 +1020,14 @@ Part.prototype = {
       },
       save: function(threshold) {
         if( threshold ) {
-          if( part._kdi ) window.clearTimeout(part._kdi);
-          part._kdi = window.setTimeout(function() {
+          if( context._kdi ) window.clearTimeout(context._kdi);
+          context._kdi = window.setTimeout(function() {
             save();
           }, 250);
         } else {
-          if( part._kdi ) {
-            part._kdi = null;
-            window.clearTimeout(part._kdi);
+          if( context._kdi ) {
+            context._kdi = null;
+            window.clearTimeout(context._kdi);
             save();
           }
           save();
@@ -970,62 +1037,31 @@ Part.prototype = {
   }
 };
 
+Part.toolbar = new Items()
+.add({
+  text: '<i class="fa fa-asterisk"></i>',
+  tooltip: '클리어픽스',
+  onupdate: function(btn) {
+    btn.active($(this.dom()).hc('f_clearfix'));
+  },
+  fn: function() {
+    $(this.dom()).tc('f_clearfix');
+    this.history().save();
+  }
+})
+.add({
+  id: 'remove',
+  text: '<i class="fa fa-remove"></i>',
+  onupdate: function(btn) {
+    if( this.removable() ) btn.show();
+    else btn.hide();
+  },
+  fn: function() {
+    this.remove();
+  }
+});
+
 module.exports = Part;
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-
-function Items(arr) {
-  if( $.util.isArrayLike(arr) ) {
-    var self = this;
-    [].forEach.call(arr, function(item) {
-      self.add(item);
-    });
-  }
-}
-
-var proto = Items.prototype = [];
-
-proto.push = function() {
-  var self = this;
-  [].forEach.call(arguments, function(item) {
-    if( item && item.id ) self[item.id] = item;
-  });
-  
-  return [].push.apply(this, arguments);
-};
-
-proto.add = function(item) {
-  if( $.util.isArrayLike(item) ) {
-    var self = this;
-    [].forEach.call(item, function(item) {
-      self.push(item);
-    });
-  } else {
-    this.push(item);
-  }
-  
-  return this;
-};
-
-proto.get = function(id) {
-  return this[id];
-};
-
-proto.remove = function(item) {
-  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
-  return this;
-};
-
-proto.clear = function() {
-  this.splice(0, this.length);
-  return this;
-};
-
-module.exports = Items;
 
 /***/ }),
 /* 6 */
@@ -1154,7 +1190,7 @@ module.exports = Button;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var context = __webpack_require__(3);
 var buildtoolbar = __webpack_require__(31);
 
@@ -1498,7 +1534,7 @@ module.exports = {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
@@ -1770,11 +1806,10 @@ var lib = module.exports = {
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var list = [];
-var redos = [];
 var size = 50;
-var current;
+var index = -1;
 
-function redo() {
+var redo = function() {
   var action = redos.shift();
   if( action ) {
     list.push(action);
@@ -1783,9 +1818,9 @@ function redo() {
     action.call(context);
   }
   return scope;
-}
+};
 
-function undo() {
+var undo = function() {
   var action = list.pop();
   if( action ) {
     redos.unshift(action);
@@ -1794,43 +1829,44 @@ function undo() {
     action.call(context);
   }
   return scope;
-}
+};
 
-function add(action) {
+var current = function() {
+  
+};
+
+var add = function(action) {
   if( typeof action != 'function' ) return console.error('[ff] illegal argument, action must be a function');
   list.push(action);
   redos = [];
-  current = action;
+  //current = action;
   
   if( list.length > size )
     list = list.slice(list.length - size);
   
-  //console.log('add', list.length);
-}
-
-function list() {
-  return list;
-}
-
-function size(size) {
-  if( !arguments.length ) return size;
-  size = Math.abs(+size) || 50;
-  return scope;
-}
-
-function clear() {
-  list = [];
-  redos = [];
-  current = null;
-}
+  console.log('add', list.length);
+};
 
 var scope = module.exports = {
-  size: size,
   add: add,
   undo: undo,
   redo: redo,
-  list:  list,
-  clear: clear
+  size: function(size) {
+    if( !arguments.length ) return size;
+    size = Math.abs(+size) || 50;
+    return scope;
+  },
+  list:  function() {
+    return list.slice();
+  },
+  index: function() {
+    return index;
+  },
+  clear: function() {
+    list = [];
+    index = -1;
+    return this;
+  }
 };
 
 // add keydown listener to document
@@ -2010,7 +2046,6 @@ __webpack_require__(52);
 
 function ArticlePart() {
   Part.apply(this, arguments);
-  this.history().init(false);
 }
 
 var items = ArticlePart.toolbar = __webpack_require__(12);
@@ -2269,7 +2304,7 @@ module.exports = ArticlePart;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var Toolbar = __webpack_require__(6);
 
 __webpack_require__(55);
@@ -2346,11 +2381,11 @@ proto.title = function(title) {
 
 proto.floating = function(direction) {
   var el = $(this.dom());
-  if( !arguments.length ) return el.hc('f_img_left') ? 'left' : el.hc('f_img_right') ? 'right' : false;
+  if( !arguments.length ) return el.hc('f_pullleft') ? 'left' : el.hc('f_pullright') ? 'right' : false;
   
-  el.rc('f_img_left f_img_right')
-  if( direction == 'left' ) el.ac('f_img_left');
-  else if( direction == 'right') el.ac('f_img_right');
+  el.rc('f_pullleft f_pullright')
+  if( direction == 'left' ) el.ac('f_pullleft');
+  else if( direction == 'right') el.ac('f_pullright');
   
   return this;
 };
@@ -2361,7 +2396,7 @@ proto.blockmode = function(mode) {
     el.hc('f_img_full') ? 'full' : 
     el.hc('f_img_medium') ? 'medium' : false;
   
-  el.rc('f_img_left f_img_right f_img_block f_img_medium f_img_full');
+  el.rc('f_pullleft f_pullright f_img_block f_img_medium f_img_full');
   if( mode == 'natural' ) el.ac('f_img_block');
   else if( mode == 'medium') el.ac('f_img_medium');
   else if( mode == 'full') el.ac('f_img_full');
@@ -2391,7 +2426,7 @@ module.exports = ImagePart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 
 __webpack_require__(56);
 
@@ -2516,7 +2551,7 @@ module.exports = Link;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var Toolbar = __webpack_require__(6);
 
 __webpack_require__(58);
@@ -2753,7 +2788,6 @@ proto.valign = function(align) {
 proto.createHistory = function() {
   var part = this;
   var dom = part.dom();
-  console.log('dom', self);
   var children = [].slice.call(dom.children);
   
   return (function(children, cls, css) {
@@ -2775,7 +2809,7 @@ module.exports = RowPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 
 __webpack_require__(59);
 
@@ -2783,7 +2817,7 @@ function Separator() {
   Part.apply(this, arguments);
   
   var part = this;
-  var el = $(this.dom()).ac('f_sep');
+  var el = $(this.dom());
   
   this.toolbar().add({
     text: '<i class="fa fa-chevron-up"></i>',
@@ -2794,7 +2828,7 @@ function Separator() {
       if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
       else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
       else if( shape == 'zigzag' ) btn.text('<i class="fa fa-chevron-up"></i>');
-      else if( shape == 'empty' ) btn.text('<i class="fa fa-asterisk"></i>');
+      else if( shape == 'line' ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-minus"></i>');
     },
     fn: function(btn) {
@@ -2803,8 +2837,8 @@ function Separator() {
       
       if( shape == 'dotted' ) part.shape('dashed');
       else if( shape == 'dashed' ) part.shape('zigzag');
-      else if( shape == 'zigzag' ) part.shape('empty');
-      else if( shape == 'empty' ) part.shape(false);
+      else if( shape == 'zigzag' ) part.shape('line');
+      else if( shape == 'line' ) part.shape(false);
       else part.shape('dotted');
       part.history().save();
     }
@@ -2814,22 +2848,14 @@ function Separator() {
     tooltip: '너비',
     onupdate: function(btn) {
       var part = this;
+      
+      if( part.shape() === false ) return btn.hide();
+      btn.show();
       if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-arrows-h"></i>');
     },
     fn: function(e) {
       el.tc('f_sep_narrow');
-      part.history().save();
-    }
-  })
-  .add({
-    text: '<i class="fa fa-asterisk"></i>',
-    tooltip: '플로트 취소',
-    onupdate: function(btn) {
-      btn.active(el.hc('f_sep_clearfix'));
-    },
-    fn: function(e) {
-      el.tc('f_sep_clearfix');
       part.history().save();
     }
   });
@@ -2838,21 +2864,21 @@ function Separator() {
 var proto = Separator.prototype = Object.create(Part.prototype);
 
 proto.create = function(arg) {
-  return $('<hr/>')[0];
+  return $('<hr/>').ac('f_sep')[0];
 };
 
 proto.shape = function(shape) {
   var el = $(this.dom());
-  if( !arguments.length ) return el.hc('f_sep_dotted') ? 'dotted' : 
+  if( !arguments.length ) return !el.hc('f_sep') ? false : el.hc('f_sep_dotted') ? 'dotted' : 
     el.hc('f_sep_dashed') ? 'dashed' : 
-    el.hc('f_sep_zigzag') ? 'zigzag' : 
-    el.hc('f_sep_empty') ? 'empty' : false;
-
-  el.rc('f_sep_dotted f_sep_dashed f_sep_zigzag f_sep_empty');
-  if( shape == 'dotted' ) el.ac('f_sep_dotted');
+    el.hc('f_sep_zigzag') ? 'zigzag' : 'line';
+  
+  el.ac('f_sep').rc('f_sep_dotted f_sep_dashed f_sep_zigzag');
+  
+  if( shape === false ) el.rc('f_sep');
+  else if( shape == 'dotted' ) el.ac('f_sep_dotted');
   else if( shape == 'dashed') el.ac('f_sep_dashed');
   else if( shape == 'zigzag') el.ac('f_sep_zigzag');
-  else if( shape == 'empty') el.ac('f_sep_empty');
   
   return this;
 };
@@ -2894,7 +2920,7 @@ module.exports = TextPart;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var Toolbar = __webpack_require__(6);
 
 __webpack_require__(60);
@@ -2933,7 +2959,7 @@ proto.createToolbar = function() {
 proto.create = function(arg) {
   var src = translatesrc((arg && arg.src) || arg) || 'about:blank';
   
-  return $('<div ff-type="video" />').ac('f_video_16by9').html('<div class="f_video_container"><iframe src="' + src + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
+  return $('<div ff-type="video" />').ac('f_video_fit f_video_16by9').html('<div class="f_video_container"><iframe src="' + src + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
 };
 
 proto.src = function(src) {
@@ -2947,7 +2973,7 @@ proto.src = function(src) {
 };
 
 proto.oninit = function() {
-  $(this.dom()).ac('ff-video');
+  $(this.dom()).ac('f_video');
 };
 
 proto.onmodechange = function() {
@@ -2999,8 +3025,8 @@ var win = window,
     doc = document,
     ctx = __webpack_require__(3),
     Toolbar = __webpack_require__(6),
-    Part = __webpack_require__(4),
-    Items = __webpack_require__(5);
+    Part = __webpack_require__(5),
+    Items = __webpack_require__(4);
 
 __webpack_require__(23);
 
@@ -3678,7 +3704,7 @@ module.exports = Marker;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
@@ -3972,7 +3998,7 @@ module.exports = function(part) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
@@ -4005,25 +4031,22 @@ module.exports = new Items()
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
   text: '<i class="fa fa-circle-o"></i>',
-  tooltip: '작은크기',
+  tooltip: '크기변경',
+  onupdate: function(btn) {
+    var el = $(this.dom());
+    if( el.hc('f_video_fit') ) btn.text('<i class="fa fa-circle-o"></i>');
+    else btn.text('<i class="fa fa-arrows-alt"></i>');
+  },
   fn: function() {
-    $(this.dom())
-    .rc('f_video_fit')
-    .ac('f_video_narrow');
-  }
-})
-.add({
-  text: '<i class="fa fa-arrows-alt"></i>',
-  tooltip: '화면에 맞춤',
-  fn: function() {
-    $(this.dom())
-    .ac('f_video_fit')
-    .rc('f_video_narrow');
+    var el = $(this.dom());
+    
+    if( el.hc('f_video_fit') ) el.rc('f_video_fit').ac('f_video_narrow');
+    else el.rc('f_video_narrow').ac('f_video_fit');
   }
 });
 
@@ -4036,7 +4059,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  display: inline-block;\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n.ff-vert {\n  transform: rotate(90deg);\n}\n", ""]);
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  display: inline-block;\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n.ff-vert {\n  transform: rotate(90deg);\n}\n.f_clearfix {\n  clear: both;\n}\n.f_pullleft {\n  float: left;\n}\n.f_pullright {\n  float: right;\n}\n", ""]);
 
 // exports
 
@@ -4148,7 +4171,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\nimg.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\nimg.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
 
 // exports
 
@@ -4190,7 +4213,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n  padding: 15px 0;\n}\n.f_row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.f_row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.f_row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.f_row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.f_row img {\n  display: block;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_row {\n  display: table;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n  padding: 15px 0;\n}\n.f_row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.f_row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.f_row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.f_row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.f_row img {\n  display: block;\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -4204,7 +4227,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_sep {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n}\n.f_sep:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.f_sep:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.f_sep.f_sep_clearfix {\n  clear: both;\n}\n.f_sep.f_sep_empty:before {\n  border: 0;\n  padding-top: 5px;\n}\n.f_sep.f_sep_empty:after {\n  padding-bottom: 5px;\n}\n.f_sep.f_sep_narrow:before {\n  max-width: 180px;\n}\n.f_sep.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.f_sep.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.f_sep.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, "hr.ff-edit-state {\n  margin: 0;\n  padding-top: 20px;\n  padding-bottom: 20px;\n}\n.f_sep {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n  /*&.f_sep_empty {\n    &:before {\n      border: 0;\n      padding-top: 5px;\n    }\n    \n    &:after {\n      padding-bottom: 5px;\n    }\n  }*/\n}\n.f_sep:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.f_sep:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.f_sep.f_sep_narrow:before {\n  max-width: 180px;\n}\n.f_sep.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.f_sep.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.f_sep.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 
@@ -4218,7 +4241,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.ff-video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video.f_video_narrow {\n  width: 50%;\n}\n.ff-video.f_video_fit {\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_video {\n  position: relative;\n  margin: 15px auto;\n  max-width: 100%;\n}\n.f_video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.f_video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.f_video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.f_video.f_video_narrow {\n  width: 50%;\n}\n.f_video.f_video_fit {\n  width: 100%;\n}\n", ""]);
 
 // exports
 

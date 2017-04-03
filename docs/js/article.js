@@ -403,7 +403,7 @@ function updateLink(linkElement, obj) {
 
 var $ = __webpack_require__(0);
 var types = __webpack_require__(14);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 var win = window,
     doc = document,
@@ -466,6 +466,14 @@ var context = {
       return this._ff;
     }, true)[0];
     return found && found._ff;
+  },
+  partsof: function(node) {
+    var parents = [];
+    $(node).parent(function() {
+      var part = this._ff;
+      if( part ) parents.push(part);
+    }, true);
+    return parents;
   },
   editmode: function(b) {
     if( !arguments.length ) return editmode;
@@ -644,10 +652,66 @@ module.exports = context;
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var $ = __webpack_require__(0);
+
+function Items(arr) {
+  if( $.util.isArrayLike(arr) ) {
+    var self = this;
+    [].forEach.call(arr, function(item) {
+      self.add(item);
+    });
+  }
+}
+
+var proto = Items.prototype = [];
+
+proto.push = function() {
+  var self = this;
+  [].forEach.call(arguments, function(item) {
+    if( item && item.id ) self[item.id] = item;
+  });
+  
+  return [].push.apply(this, arguments);
+};
+
+proto.add = function(item) {
+  if( $.util.isArrayLike(item) ) {
+    var self = this;
+    [].forEach.call(item, function(item) {
+      self.push(item);
+    });
+  } else {
+    this.push(item);
+  }
+  
+  return this;
+};
+
+proto.get = function(id) {
+  return this[id];
+};
+
+proto.remove = function(item) {
+  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
+  return this;
+};
+
+proto.clear = function() {
+  this.splice(0, this.length);
+  return this;
+};
+
+module.exports = Items;
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
 var Types = __webpack_require__(14);
 var Toolbar = __webpack_require__(6);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
+var Items = __webpack_require__(4);
 
 function Part(arg) {
   var dom = arg;
@@ -679,10 +743,16 @@ function Part(arg) {
   
   if( dom !== arg ) self.removable(true);
   
+  
+  var toolbar = self.toolbar();
+  Part.toolbar.forEach(function(item) {
+    toolbar.last(item);
+  });
+  
   var toolbarposition = el.attr('ff-toolbar');
   if( toolbarposition === 'true' ) toolbarposition = null;
-  if( toolbarposition === 'false' ) self.toolbar().enable(false);
-  else if( toolbarposition ) self.toolbar().position(toolbarposition);
+  if( toolbarposition === 'false' ) toolbar.enable(false);
+  else if( toolbarposition ) toolbar.position(toolbarposition);
   
   self.fire('ff-init');
   if( context.editmode() ) self.editmode(true);
@@ -769,20 +839,8 @@ Part.prototype = {
     return this._t || (this._t = this.createToolbar());
   },
   removable: function(removable) {
-    var toolbar = this.toolbar();
-    var removebtn = toolbar.get('remove');
-    if( !arguments.length ) return removebtn ? true : false;
-    
-    if( !removable ) toolbar.remove('remove');
-    
-    if( !removebtn ) toolbar.last({
-      id: 'remove',
-      text: '<i class="fa fa-remove"></i>',
-      fn: function(e) {
-        this.remove();
-      }
-    });
-    
+    if( !arguments.length ) return this._rm;
+    this._rm = !!removable;
     return this;
   },
   dom: function() {
@@ -815,6 +873,14 @@ Part.prototype = {
     part.history().init();
     return part;
   },
+  parent: function() {
+    var p = this.dom().parentNode;
+    return p && context.partof(p);
+  },
+  parents: function() {
+    var p = this.dom().parentNode;
+    return p && context.partsof(p);
+  },
   remove: function() {
     var part = this;
     part.blur();
@@ -843,6 +909,7 @@ Part.prototype = {
     else part._d = data;
     
     part.fire('ff-data', {old: part._d, data: data});
+    part.history().init();
     return part;
   },
   fire: function(type, detail, cancellable, bubble) {
@@ -926,7 +993,7 @@ Part.prototype = {
         def = null;
       }
       history.add(part.createHistory());
-    }
+    };
     
     return part._history = part._history || {
       init: function(b) {
@@ -935,14 +1002,14 @@ Part.prototype = {
       },
       save: function(threshold) {
         if( threshold ) {
-          if( part._kdi ) window.clearTimeout(part._kdi);
-          part._kdi = window.setTimeout(function() {
+          if( context._kdi ) window.clearTimeout(context._kdi);
+          context._kdi = window.setTimeout(function() {
             save();
           }, 250);
         } else {
-          if( part._kdi ) {
-            part._kdi = null;
-            window.clearTimeout(part._kdi);
+          if( context._kdi ) {
+            context._kdi = null;
+            window.clearTimeout(context._kdi);
             save();
           }
           save();
@@ -952,62 +1019,31 @@ Part.prototype = {
   }
 };
 
+Part.toolbar = new Items()
+.add({
+  text: '<i class="fa fa-asterisk"></i>',
+  tooltip: '클리어픽스',
+  onupdate: function(btn) {
+    btn.active($(this.dom()).hc('f_clearfix'));
+  },
+  fn: function() {
+    $(this.dom()).tc('f_clearfix');
+    this.history().save();
+  }
+})
+.add({
+  id: 'remove',
+  text: '<i class="fa fa-remove"></i>',
+  onupdate: function(btn) {
+    if( this.removable() ) btn.show();
+    else btn.hide();
+  },
+  fn: function() {
+    this.remove();
+  }
+});
+
 module.exports = Part;
-
-/***/ }),
-/* 5 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-
-function Items(arr) {
-  if( $.util.isArrayLike(arr) ) {
-    var self = this;
-    [].forEach.call(arr, function(item) {
-      self.add(item);
-    });
-  }
-}
-
-var proto = Items.prototype = [];
-
-proto.push = function() {
-  var self = this;
-  [].forEach.call(arguments, function(item) {
-    if( item && item.id ) self[item.id] = item;
-  });
-  
-  return [].push.apply(this, arguments);
-};
-
-proto.add = function(item) {
-  if( $.util.isArrayLike(item) ) {
-    var self = this;
-    [].forEach.call(item, function(item) {
-      self.push(item);
-    });
-  } else {
-    this.push(item);
-  }
-  
-  return this;
-};
-
-proto.get = function(id) {
-  return this[id];
-};
-
-proto.remove = function(item) {
-  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
-  return this;
-};
-
-proto.clear = function() {
-  this.splice(0, this.length);
-  return this;
-};
-
-module.exports = Items;
 
 /***/ }),
 /* 6 */
@@ -1589,8 +1625,8 @@ var win = window,
     doc = document,
     ctx = __webpack_require__(3),
     Toolbar = __webpack_require__(6),
-    Part = __webpack_require__(4),
-    Items = __webpack_require__(5);
+    Part = __webpack_require__(5),
+    Items = __webpack_require__(4);
 
 __webpack_require__(70);
 
@@ -1858,7 +1894,7 @@ module.exports = {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
@@ -1952,7 +1988,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var context = __webpack_require__(3);
 var buildtoolbar = __webpack_require__(40);
 
@@ -7480,8 +7516,12 @@ var $ = __webpack_require__(0);
 var Part = ff.Part;
 var CustomPart = __webpack_require__(20).default;
 var tpls = __webpack_require__(19);
+var version = 2;
 
 ff.data(tpls['spongebob']);
+
+if( +localStorage.getItem('ff-version') !== version )
+  localStorage.removeItem('article');
 
 // override alert/prompt/imageshow action
 (function() {
@@ -7599,6 +7639,7 @@ ff.ready(function() {
     var data = ff.data();
     
     localStorage.setItem('article', JSON.stringify(data));
+    localStorage.setItem('ff-version', version);
     
     var html = data && data.content && data.content.html;
     var el = $('<div style="max-height:300px;overflow:auto;text-align:left;font-size:12px;border:1px solid #eee;">').text(html);
@@ -7626,11 +7667,10 @@ ff.ready(function() {
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
 var list = [];
-var redos = [];
 var size = 50;
-var current;
+var index = -1;
 
-function redo() {
+var redo = function() {
   var action = redos.shift();
   if( action ) {
     list.push(action);
@@ -7639,9 +7679,9 @@ function redo() {
     action.call(context);
   }
   return scope;
-}
+};
 
-function undo() {
+var undo = function() {
   var action = list.pop();
   if( action ) {
     redos.unshift(action);
@@ -7650,43 +7690,44 @@ function undo() {
     action.call(context);
   }
   return scope;
-}
+};
 
-function add(action) {
+var current = function() {
+  
+};
+
+var add = function(action) {
   if( typeof action != 'function' ) return console.error('[ff] illegal argument, action must be a function');
   list.push(action);
   redos = [];
-  current = action;
+  //current = action;
   
   if( list.length > size )
     list = list.slice(list.length - size);
   
-  //console.log('add', list.length);
-}
-
-function list() {
-  return list;
-}
-
-function size(size) {
-  if( !arguments.length ) return size;
-  size = Math.abs(+size) || 50;
-  return scope;
-}
-
-function clear() {
-  list = [];
-  redos = [];
-  current = null;
-}
+  console.log('add', list.length);
+};
 
 var scope = module.exports = {
-  size: size,
   add: add,
   undo: undo,
   redo: redo,
-  list:  list,
-  clear: clear
+  size: function(size) {
+    if( !arguments.length ) return size;
+    size = Math.abs(+size) || 50;
+    return scope;
+  },
+  list:  function() {
+    return list.slice();
+  },
+  index: function() {
+    return index;
+  },
+  clear: function() {
+    list = [];
+    index = -1;
+    return this;
+  }
 };
 
 // add keydown listener to document
@@ -8213,7 +8254,6 @@ __webpack_require__(75);
 
 function ArticlePart() {
   Part.apply(this, arguments);
-  this.history().init(false);
 }
 
 var items = ArticlePart.toolbar = __webpack_require__(15);
@@ -8665,7 +8705,7 @@ module.exports = Marker;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var Toolbar = __webpack_require__(6);
 
 __webpack_require__(78);
@@ -8742,11 +8782,11 @@ proto.title = function(title) {
 
 proto.floating = function(direction) {
   var el = $(this.dom());
-  if( !arguments.length ) return el.hc('f_img_left') ? 'left' : el.hc('f_img_right') ? 'right' : false;
+  if( !arguments.length ) return el.hc('f_pullleft') ? 'left' : el.hc('f_pullright') ? 'right' : false;
   
-  el.rc('f_img_left f_img_right')
-  if( direction == 'left' ) el.ac('f_img_left');
-  else if( direction == 'right') el.ac('f_img_right');
+  el.rc('f_pullleft f_pullright')
+  if( direction == 'left' ) el.ac('f_pullleft');
+  else if( direction == 'right') el.ac('f_pullright');
   
   return this;
 };
@@ -8757,7 +8797,7 @@ proto.blockmode = function(mode) {
     el.hc('f_img_full') ? 'full' : 
     el.hc('f_img_medium') ? 'medium' : false;
   
-  el.rc('f_img_left f_img_right f_img_block f_img_medium f_img_full');
+  el.rc('f_pullleft f_pullright f_img_block f_img_medium f_img_full');
   if( mode == 'natural' ) el.ac('f_img_block');
   else if( mode == 'medium') el.ac('f_img_medium');
   else if( mode == 'full') el.ac('f_img_full');
@@ -8788,7 +8828,7 @@ module.exports = ImagePart;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
@@ -8860,7 +8900,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 
 __webpack_require__(79);
 
@@ -9206,7 +9246,7 @@ module.exports = function(part) {
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var Toolbar = __webpack_require__(6);
 
 __webpack_require__(81);
@@ -9443,7 +9483,6 @@ proto.valign = function(align) {
 proto.createHistory = function() {
   var part = this;
   var dom = part.dom();
-  console.log('dom', self);
   var children = [].slice.call(dom.children);
   
   return (function(children, cls, css) {
@@ -9466,7 +9505,7 @@ module.exports = RowPart;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
@@ -9498,7 +9537,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 
 __webpack_require__(82);
 
@@ -9506,7 +9545,7 @@ function Separator() {
   Part.apply(this, arguments);
   
   var part = this;
-  var el = $(this.dom()).ac('f_sep');
+  var el = $(this.dom());
   
   this.toolbar().add({
     text: '<i class="fa fa-chevron-up"></i>',
@@ -9517,7 +9556,7 @@ function Separator() {
       if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
       else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
       else if( shape == 'zigzag' ) btn.text('<i class="fa fa-chevron-up"></i>');
-      else if( shape == 'empty' ) btn.text('<i class="fa fa-asterisk"></i>');
+      else if( shape == 'line' ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-minus"></i>');
     },
     fn: function(btn) {
@@ -9526,8 +9565,8 @@ function Separator() {
       
       if( shape == 'dotted' ) part.shape('dashed');
       else if( shape == 'dashed' ) part.shape('zigzag');
-      else if( shape == 'zigzag' ) part.shape('empty');
-      else if( shape == 'empty' ) part.shape(false);
+      else if( shape == 'zigzag' ) part.shape('line');
+      else if( shape == 'line' ) part.shape(false);
       else part.shape('dotted');
       part.history().save();
     }
@@ -9537,22 +9576,14 @@ function Separator() {
     tooltip: '너비',
     onupdate: function(btn) {
       var part = this;
+      
+      if( part.shape() === false ) return btn.hide();
+      btn.show();
       if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
       else btn.text('<i class="fa fa-arrows-h"></i>');
     },
     fn: function(e) {
       el.tc('f_sep_narrow');
-      part.history().save();
-    }
-  })
-  .add({
-    text: '<i class="fa fa-asterisk"></i>',
-    tooltip: '플로트 취소',
-    onupdate: function(btn) {
-      btn.active(el.hc('f_sep_clearfix'));
-    },
-    fn: function(e) {
-      el.tc('f_sep_clearfix');
       part.history().save();
     }
   });
@@ -9561,21 +9592,21 @@ function Separator() {
 var proto = Separator.prototype = Object.create(Part.prototype);
 
 proto.create = function(arg) {
-  return $('<hr/>')[0];
+  return $('<hr/>').ac('f_sep')[0];
 };
 
 proto.shape = function(shape) {
   var el = $(this.dom());
-  if( !arguments.length ) return el.hc('f_sep_dotted') ? 'dotted' : 
+  if( !arguments.length ) return !el.hc('f_sep') ? false : el.hc('f_sep_dotted') ? 'dotted' : 
     el.hc('f_sep_dashed') ? 'dashed' : 
-    el.hc('f_sep_zigzag') ? 'zigzag' : 
-    el.hc('f_sep_empty') ? 'empty' : false;
-
-  el.rc('f_sep_dotted f_sep_dashed f_sep_zigzag f_sep_empty');
-  if( shape == 'dotted' ) el.ac('f_sep_dotted');
+    el.hc('f_sep_zigzag') ? 'zigzag' : 'line';
+  
+  el.ac('f_sep').rc('f_sep_dotted f_sep_dashed f_sep_zigzag');
+  
+  if( shape === false ) el.rc('f_sep');
+  else if( shape == 'dotted' ) el.ac('f_sep_dotted');
   else if( shape == 'dashed') el.ac('f_sep_dashed');
   else if( shape == 'zigzag') el.ac('f_sep_zigzag');
-  else if( shape == 'empty') el.ac('f_sep_empty');
   
   return this;
 };
@@ -9617,25 +9648,22 @@ module.exports = TextPart;
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Items = __webpack_require__(5);
+var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
   text: '<i class="fa fa-circle-o"></i>',
-  tooltip: '작은크기',
+  tooltip: '크기변경',
+  onupdate: function(btn) {
+    var el = $(this.dom());
+    if( el.hc('f_video_fit') ) btn.text('<i class="fa fa-circle-o"></i>');
+    else btn.text('<i class="fa fa-arrows-alt"></i>');
+  },
   fn: function() {
-    $(this.dom())
-    .rc('f_video_fit')
-    .ac('f_video_narrow');
-  }
-})
-.add({
-  text: '<i class="fa fa-arrows-alt"></i>',
-  tooltip: '화면에 맞춤',
-  fn: function() {
-    $(this.dom())
-    .ac('f_video_fit')
-    .rc('f_video_narrow');
+    var el = $(this.dom());
+    
+    if( el.hc('f_video_fit') ) el.rc('f_video_fit').ac('f_video_narrow');
+    else el.rc('f_video_narrow').ac('f_video_fit');
   }
 });
 
@@ -9645,7 +9673,7 @@ module.exports = new Items()
 
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
-var Part = __webpack_require__(4);
+var Part = __webpack_require__(5);
 var Toolbar = __webpack_require__(6);
 
 __webpack_require__(83);
@@ -9684,7 +9712,7 @@ proto.createToolbar = function() {
 proto.create = function(arg) {
   var src = translatesrc((arg && arg.src) || arg) || 'about:blank';
   
-  return $('<div ff-type="video" />').ac('f_video_16by9').html('<div class="f_video_container"><iframe src="' + src + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
+  return $('<div ff-type="video" />').ac('f_video_fit f_video_16by9').html('<div class="f_video_container"><iframe src="' + src + '" frameborder="0" nwebkitallowfullscreen mozallowfullscreen allowfullscreen></iframe></div>')[0];
 };
 
 proto.src = function(src) {
@@ -9698,7 +9726,7 @@ proto.src = function(src) {
 };
 
 proto.oninit = function() {
-  $(this.dom()).ac('ff-video');
+  $(this.dom()).ac('f_video');
 };
 
 proto.onmodechange = function() {
@@ -9724,7 +9752,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  display: inline-block;\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n.ff-vert {\n  transform: rotate(90deg);\n}\n", ""]);
+exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[contenteditable] {\n  outline: none;\n}\n.ff[draggable] {\n  cursor: pointer;\n}\n.ff-placeholder {\n  display: inline-block;\n  color: #ccc;\n  font-weight: normal;\n  font-size: inherit;\n  user-select: none;\n}\n.ff-flip {\n  transform: scale(-1, 1);\n}\n.ff-vert {\n  transform: rotate(90deg);\n}\n.f_clearfix {\n  clear: both;\n}\n.f_pullleft {\n  float: left;\n}\n.f_pullright {\n  float: right;\n}\n", ""]);
 
 // exports
 
@@ -9836,7 +9864,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_left {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img_right {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\nimg.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\nimg.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
 
 // exports
 
@@ -9878,7 +9906,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_row {\n  display: table;\n  width: 100%;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n  padding: 15px 0;\n}\n.f_row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.f_row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.f_row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.f_row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.f_row img {\n  display: block;\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_row {\n  display: table;\n  table-layout: fixed;\n  border-collapse: separate;\n  border-spacing: 5px;\n  padding: 15px 0;\n}\n.f_row .f_row_cell {\n  display: table-cell;\n  vertical-align: top;\n}\n.f_row.f_row_top .f_row_cell {\n  vertical-align: top;\n}\n.f_row.f_row_middle .f_row_cell {\n  vertical-align: middle;\n}\n.f_row.f_row_bottom .f_row_cell {\n  vertical-align: bottom;\n}\n.f_row img {\n  display: block;\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -9892,7 +9920,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".f_sep {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n}\n.f_sep:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.f_sep:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.f_sep.f_sep_clearfix {\n  clear: both;\n}\n.f_sep.f_sep_empty:before {\n  border: 0;\n  padding-top: 5px;\n}\n.f_sep.f_sep_empty:after {\n  padding-bottom: 5px;\n}\n.f_sep.f_sep_narrow:before {\n  max-width: 180px;\n}\n.f_sep.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.f_sep.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.f_sep.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, "hr.ff-edit-state {\n  margin: 0;\n  padding-top: 20px;\n  padding-bottom: 20px;\n}\n.f_sep {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n  /*&.f_sep_empty {\n    &:before {\n      border: 0;\n      padding-top: 5px;\n    }\n    \n    &:after {\n      padding-bottom: 5px;\n    }\n  }*/\n}\n.f_sep:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.f_sep:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.f_sep.f_sep_narrow:before {\n  max-width: 180px;\n}\n.f_sep.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.f_sep.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.f_sep.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 
@@ -9906,7 +9934,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, ".ff-video {\n  position: relative;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.ff-video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.ff-video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.ff-video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.ff-video.f_video_narrow {\n  width: 50%;\n}\n.ff-video.f_video_fit {\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_video {\n  position: relative;\n  margin: 15px auto;\n  max-width: 100%;\n}\n.f_video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.f_video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.f_video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.f_video.f_video_narrow {\n  width: 50%;\n}\n.f_video.f_video_fit {\n  width: 100%;\n}\n", ""]);
 
 // exports
 
@@ -9969,7 +9997,7 @@ module.exports = "<img src=\"https://goo.gl/lPsJS5\" />\n\n<h2>Patrick Star</h2>
 /* 66 */
 /***/ (function(module, exports) {
 
-module.exports = "<img src=\"https://goo.gl/YUI4ll\" />\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<hr>\n\n<h2>Character</h2>\n<hr>\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren & Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3>\n<div>Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>\n\n<hr>\n\n<img src=\"https://goo.gl/BJ5U6G\">";
+module.exports = "<img src=\"https://goo.gl/YUI4ll\" class=\"f_img_medium f_pullright\">\n\n<h2>SpongeBob SquarePants</h2>\n<div>SpongeBob SquarePants is a fictional character, the protagonist of the American animated television series of the same name. He is voiced by actor and comedian Tom Kenny, and first appeared on television in the series' pilot episode on May 1, 1999.\n\nSpongeBob SquarePants was created and designed by cartoonist and marine biologist Stephen Hillenburg shortly after the cancellation of Rocko's Modern Life in 1996. Hillenburg intended to create a series about an over-optimistic sponge that annoys other characters. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. As he drew the character, he decided that a \"squeaky-clean square\" (like a kitchen sponge) fit the concept. His name is derived from \"Bob the Sponge\", the host of Hillenburg's comic strip The Intertidal Zone that he originally drew in the 1980s while teaching marine biology to visitors of the Ocean Institute. SpongeBob is a naïve and goofy sea sponge who works as a fry cook in the fictional underwater town of Bikini Bottom.\n\nThe character has received positive critical response from media critics and achieved popularity with both children and adults, though he has been involved in public controversy. SpongeBob appeared in a We Are Family Foundation video promoting tolerance, which was criticized by James Dobson of Focus on the Family because of the foundation's link to homosexuality.</div>\n\n\n\n<div ff-type=\"row\" class=\"f_row f_row_justify\">\n  <div class=\"f_row_cell\" style=\"width: 18.9567%;\">\n    <img src=\"https://goo.gl/5K0F6E\">\n  </div>\n  <div class=\"f_row_cell\" style=\"width: 27.2391%;\">\n    <img src=\"https://goo.gl/P7Xxa6\">\n  </div>\n  <div class=\"f_row_cell\" style=\"width: 24.5604%;\">\n    <img src=\"https://goo.gl/XGIU9U\">\n  </div>\n  <div class=\"f_row_cell\" style=\"width: 29.2438%;\">\n    <img src=\"https://goo.gl/Vd7Ajq\">\n  </div>\n</div>\n\n<hr>\n\n<h2>Role in SpongeBob SquarePants</h2>\n<div>SpongeBob is depicted as being an good-natured, optimistic, cheerful, naïve, enthusiastic yellow sea sponge residing in the undersea city of Bikini Bottom alongside an array of anthropomorphic aquatic creatures. He works as a fry cook at a local fast food restaurant, the Krusty Krab, to which he is obsessively attached. At work, SpongeBob answers to Eugene Krabs, a greedy, miserly crab who shows SpongeBob favor, alongside his ill-tempered, hostile, snobbish next-door neighbor Squidward Tentacles. His favorite hobbies include his occupation, jelly-fishing, karate (albeit at an elementary level, with Sandy Cheeks as his sensei), relentless fandom of superheroes Mermaid Man and Barnacle Boy, and blowing bubbles.\n\nHe is often seen hanging around with his best friend Patrick, who lives on the same street as SpongeBob two doors down. However, SpongeBob's varying intelligence, unlimited optimistic cheer, and irritating behavior often leads him to perceive the outcome of numerous endeavors and the personalities of those around him as happier and sunnier than they often actually are; for instance, he believes that Squidward enjoys his company in spite of the fact that he clearly loathes him. A recurring gag in several episodes is SpongeBob's extremely poor \"boating\" (driving) ability and his repeated failures to pass his road test at Mrs. Puff's Boating School. He lives in an iconic pineapple with his pet snail Gary.</div>\n\n<div ff-type=\"row\" class=\"f_row f_row_justify\">\n  <div class=\"f_row_cell\" style=\"width: 22.2513%;\">\n    <img src=\"https://goo.gl/j43do5\">\n  </div>\n  <div class=\"f_row_cell\" style=\"width: 31.5437%;\">\n    <img src=\"https://goo.gl/PO7lRJ\">\n  </div>\n  <div class=\"f_row_cell\" style=\"width: 23.1025%;\">\n    <img src=\"https://goo.gl/qMn9Xw\">\n  </div>\n  <div class=\"f_row_cell\" style=\"width: 23.1025%;\">\n    <img src=\"https://goo.gl/w52ocD\">\n  </div>\n</div>\n\n<hr>\n\n<h2>Character</h2>\n\n<h3>Conception</h3>\n<div>Stephen Hillenburg first became fascinated with the ocean as a child. Also at a young age, he began developing his artistic abilities. During college, he majored in marine biology and minored in art. He planned to return to college eventually to pursue a master's degree in art. After graduating in 1984, he joined the Ocean Institute, an organization in Dana Point, California, dedicated to educating the public about marine science and maritime history. While he was there, he initially had the idea that would lead to the creation of SpongeBob SquarePants: a comic book titled The Intertidal Zone. The host of the comic was \"Bob the Sponge\" who, unlike SpongeBob, resembled an actual sea sponge. In 1987, Hillenburg left the institute to pursue an animation career.\n\nA few years after studying experimental animation at the California Institute of the Arts, Hillenburg met Joe Murray, the creator of Rocko's Modern Life, at an animation festival, and was offered a job as a director of the series. While working on the series, Hillenburg met writer Martin Olson, who saw his previous comic The Intertidal Zone. Olson liked the idea and suggested Hillenburg to create a series of marine animals. Hillenburg said, \"a show ... I hadn't even thought about making a show ... and it wasn't my show\". It spurred his decision to create SpongeBob SquarePants and said, \"It was the inspiration for the show\".\n\nRocko's Modern Life ended in 1996. Shortly afterwards, Hillenburg began working on SpongeBob SquarePants. For the show characters, Hillenburg started drawing and took some of the characters from his comic—like starfish, crab, and sponge. At the time, Hillenburg knew that \"everybody was doing buddy shows\"—like The Ren &amp; Stimpy Show—and thought that \"I can't do a buddy show,\" so he decided to do a \"one character\" show instead. He conceived a sponge as the title character because, according to him, it is \"the weirdest animal.\" Hillenburg derived the character's name from Bob the Sponge, the host of his comic strip The Intertidal Zone, after changing it from SpongeBoy due to trademark issues.</div>\n\n<hr>\n\n<h3>Creation and design</h3><div style=\"text-align: left;\">Hillenburg had made several \"horrible impersonations\" before he finally conceived his character. Hillenburg compared the concept to Laurel and Hardy and Pee-wee Herman. He said \"I think SpongeBob [was] born out of my love of Laurel and Hardy shorts. You've got that kind of idiot-buddy situation – that was a huge influence. SpongeBob was inspired by that kind of character: the Innocent – a la Stan Laurel.\n\nThe first concept sketch portrayed the character as wearing a red hat with a green base and a white business shirt with a tie. SpongeBob's look gradually progressed to brown pants that was used in the final design. SpongeBob was designed to be a child-like character who was goofy and optimistic in a style similar to that made famous by Jerry Lewis.\n\nOriginally the character was to be named SpongeBoy but this name was already in use. This was discovered after voice acting for the original seven-minute pilot was recorded in 1997. The Nickelodeon legal department discovered that the name was already in use for a mop product. Upon finding this out, Hillenburg decided that the character's given name still had to contain \"Sponge\" so viewers would not mistake the character for a \"Cheese Man.\" Hillenburg decided to use the name \"SpongeBob.\" He chose \"SquarePants\" as a family name as it referred to the character's square shape and it had a \"nice ring to it\".\n\nAlthough SpongeBob's driver's license says his birthdate is July 14, 1986, Hillenburg joked that he is fifty in \"sponge years\". He explained that SpongeBob actually has no specific age, but that he is old enough to be on his own and still be going to boating school. The decision to have SpongeBob attend a boat driving school was made due to a request from Nickelodeon that the character attend a school</div>\n\n\n<img src=\"https://goo.gl/BJ5U6G\" class=\"f_img_full\">\n\n<hr class=\"f_sep f_sep_zigzag\">\n\n<div ff-type=\"link\" class=\"f_link\" style=\"text-align: center;\"><a href=\"https://goo.gl/kIXSbW\" target=\"_blank\">Spongebob-squarepants.svg</a></div>";
 
 /***/ }),
 /* 67 */
