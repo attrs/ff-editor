@@ -439,7 +439,7 @@ var context = {
   parts: function(fn, all) {
     if( fn === true ) all = fn;
     
-    return $(all ? '.ff' : '[ff-id], [ff], [ff-type]').reverse().each(function(i, el) {
+    return $(all ? '.ff [ff-id], [ff], [ff-type]' : '[ff-id], [ff], [ff-type]').reverse().each(function(i, el) {
       var id = el.getAttribute('ff-id');
       var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
       var part = el._ff;
@@ -465,8 +465,19 @@ var context = {
     }
     
     data = newdata || {};
-    context.parts(function(part) {
-      part.id && part.data(data[part.id]);
+    
+    $('[ff-id]').reverse().each(function(i, el) {
+      var id = el.getAttribute('ff-id');
+      var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
+      var part = el._ff;
+      
+      if( !part ) {
+        var Type = types.get(type);
+        if( !Type ) return console.warn('[ff] not found type: ' + type);
+        part = new Type(el);
+      }
+      
+      part.data(data[id]);
     });
     
     context.fire('ff-data', {
@@ -474,6 +485,14 @@ var context = {
     });
     
     return context;
+  },
+  reset: function() {
+    console.warn('[ff] ff.reset is deprecated, use ff.data instead');
+    return context.data.apply(context, arguments);
+  },
+  get: function() {
+    console.warn('[ff] ff.get is deprecated, use ff.partof instead');
+    return context.partof.apply(context, arguments);
   },
   part: function(id) {
     var el = $('[ff-id="' + id + '"]');
@@ -741,7 +760,7 @@ function Part(arg) {
   
   var self = dom._ff = this;
   var el = $(self._n = dom).ac('ff')
-  .on('ff-focus ff-blur ff-modechange mouseenter mouseleave mouseup mousedown dragstart dragend', self);
+  .on('ff-data ff-focus ff-blur ff-modechange mouseenter mouseleave mouseup mousedown dragstart dragend', self);
   
   // regist event in prototypes
   (function() {
@@ -912,7 +931,7 @@ Part.prototype = {
     if( !arguments.length ) return !!part._md;
     var prev = part._md;
     var editmode = part._md = !!b;
-  
+    
     if( editmode !== prev ) part.fire('ff-modechange', {editmode: editmode});
     return part;
   },
@@ -3235,11 +3254,12 @@ var $ = __webpack_require__(0);
 var Button = __webpack_require__(28);
 
 function Buttons(toolbar) {
-  this._toolbar = toolbar;
-  this._el = $(toolbar.dom());
-  this._first = [];
-  this._buttons = [];
-  this._last = [];
+  var self = this;
+  self._toolbar = toolbar;
+  self._el = $(toolbar.dom());
+  self._first = [];
+  self._buttons = [];
+  self._last = [];
 }
 
 Buttons.prototype = {
@@ -3247,10 +3267,11 @@ Buttons.prototype = {
     return this._toolbar;
   },
   update: function() {
-    var toolbar = this.toolbar();
+    var self = this;
+    var toolbar = self.toolbar();
     var scope = toolbar.scope();
-    var el = this._el.empty()[0];
-    var list = this._list = [];
+    var el = self._el.empty()[0];
+    var list = self._list = [];
     var append = function(btns) {
       btns.forEach(function(btn) {
         btn.scope(scope).toolbar(toolbar).appendTo(el).update();
@@ -3259,18 +3280,19 @@ Buttons.prototype = {
       });
     };
     
-    append(this._first);
-    append(this._buttons);
-    append(this._last);
-    return this;
+    append(self._first);
+    append(self._buttons);
+    append(self._last);
+    return self;
   },
   get: function(id) {
     return this._list && this._list[id];
   },
   add: function(btn, index) {
-    if( !btn ) return this;
+    var self = this;
+    if( !btn ) return self;
     
-    var btns = this._buttons;
+    var btns = self._buttons;
     $.each(btn, function() {
       var btn = Button.eval(this);
       if( !btn ) return;
@@ -3279,13 +3301,14 @@ Buttons.prototype = {
       else btns.push(btn);
     });
     
-    this.update();
-    return this;
+    self.update();
+    return self;
   },
   first: function(btn, index) {
+    var self = this;
     if( !btn ) return this;
     
-    var btns = this._first;
+    var btns = self._first;
     
     $.each(btn, function() {
       var btn = Button.eval(this);
@@ -3295,13 +3318,14 @@ Buttons.prototype = {
       else btns.push(btn);
     });
     
-    this.update();
-    return this;
+    self.update();
+    return self;
   },
   last: function(btn, index) {
-    if( !btn ) return this;
+    var self = this;
+    if( !btn ) return self;
     
-    var btns = this._last;
+    var btns = self._last;
     
     $.each(btn, function() {
       var btn = Button.eval(this);
@@ -3311,12 +3335,13 @@ Buttons.prototype = {
       else btns.push(btn);
     });
     
-    this.update();
-    return this;
+    self.update();
+    return self;
   },
   remove: function(target) {
-    if( ~['string', 'number'].indexOf(typeof target) ) target = this.get(target);
-    if( !target ) return this;
+    var self = this;
+    if( ~['string', 'number'].indexOf(typeof target) ) target = self.get(target);
+    if( !target ) return self;
     
     var remove = function(btns) {
       btns.forEach(function(btn) {
@@ -3324,16 +3349,20 @@ Buttons.prototype = {
       });
     };
     
-    remove(this._first);
-    remove(this._buttons);
-    remove(this._last);
+    remove(self._first);
+    remove(self._buttons);
+    remove(self._last);
     
-    this.update();
-    return this;
+    self.update();
+    return self;
   },
   clear: function() {
-    this._el.html();
-    return this;
+    var self = this;
+    self._first = [];
+    self._buttons = [];
+    self._last = [];
+    self.update();
+    return self;
   }
 };
 
@@ -4296,7 +4325,7 @@ exports = module.exports = __webpack_require__(1)();
 
 
 // module
-exports.push([module.i, "hr.ff-edit-state {\n  margin: 0;\n  padding-top: 20px;\n  padding-bottom: 20px;\n}\n.f_sep {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n  /*&.f_sep_empty {\n    &:before {\n      border: 0;\n      padding-top: 5px;\n    }\n    \n    &:after {\n      padding-bottom: 5px;\n    }\n  }*/\n}\n.f_sep:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.f_sep:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.f_sep.f_sep_narrow:before {\n  max-width: 180px;\n}\n.f_sep.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.f_sep.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.f_sep.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
+exports.push([module.i, "hr.ff-edit-state {\n  display: block;\n  min-height: 1px;\n  margin: 0;\n  padding-top: 20px;\n  padding-bottom: 20px;\n}\n.f_sep {\n  display: block;\n  margin: 0 !important;\n  padding: 0 !important;\n  height: auto !important;\n  border-top: 0 !important;\n}\n.f_sep:before {\n  content: \"\";\n  display: block;\n  border-bottom: 1px solid #ccc;\n  padding-top: 20px;\n  margin: 0 auto;\n  max-width: 100%;\n}\n.f_sep:after {\n  content: \"\";\n  display: block;\n  padding-bottom: 20px;\n}\n.f_sep.f_sep_narrow:before {\n  max-width: 180px;\n}\n.f_sep.f_sep_dashed:before {\n  border-bottom: 1px dashed #ccc;\n}\n.f_sep.f_sep_dotted:before {\n  border-bottom: 1px dotted #ccc;\n}\n.f_sep.f_sep_zigzag:before {\n  position: relative;\n  top: 5px;\n  border: 0;\n  background-image: url('data:image/false;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAAKCAYAAAC5Sw6hAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAACXBIWXMAAAsTAAALEwEAmpwYAAAB1WlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iWE1QIENvcmUgNS40LjAiPgogICA8cmRmOlJERiB4bWxuczpyZGY9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkvMDIvMjItcmRmLXN5bnRheC1ucyMiPgogICAgICA8cmRmOkRlc2NyaXB0aW9uIHJkZjphYm91dD0iIgogICAgICAgICAgICB4bWxuczp0aWZmPSJodHRwOi8vbnMuYWRvYmUuY29tL3RpZmYvMS4wLyI+CiAgICAgICAgIDx0aWZmOkNvbXByZXNzaW9uPjE8L3RpZmY6Q29tcHJlc3Npb24+CiAgICAgICAgIDx0aWZmOk9yaWVudGF0aW9uPjE8L3RpZmY6T3JpZW50YXRpb24+CiAgICAgICAgIDx0aWZmOlBob3RvbWV0cmljSW50ZXJwcmV0YXRpb24+MjwvdGlmZjpQaG90b21ldHJpY0ludGVycHJldGF0aW9uPgogICAgICA8L3JkZjpEZXNjcmlwdGlvbj4KICAgPC9yZGY6UkRGPgo8L3g6eG1wbWV0YT4KAtiABQAAAUNJREFUKBWNUj1LxEAQnegpYmWR43KTnc3Gys4i2AjCFlfbCbbaibU/wMbO3lZbWytBEMFKReEQxMrqfoLVceebvWy0iTqQzMeb93YyG6IWq6pqQSHJZMOJ3Nleb1XzWNf4T4vN0pctZ+xzKXJain1I07SvZE/U+beIZR6A/F4wbyqpENlHPlyB1SLtYs0kLNulsW95nq8ryTm3FHwuB07sEzMt12Lztf923vtwgmPZRfMrM68pGsU9zfDCmCN87j2gsEP4RixpRET2sI+hyzKHhkZEY1iyU5MgdIznRmsB0XpzksghRF663W6mYJykboxOiWGCcAHGXkUgeB0Xi3yMi2wRiRwVm9MEKzjDLi81TvCPnNA08R+T8YBGo0+Pq70lGgP7zVRoog0QOyeadhDINfJFLcLar3SG/3yHqbRQGHvxBU0KOHx07LVhAAAAAElFTkSuQmCC');\n  background-repeat: repeat no-repeat;\n  background-position: center 9px;\n}\n", ""]);
 
 // exports
 
