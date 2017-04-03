@@ -743,7 +743,6 @@ function Part(arg) {
   
   if( dom !== arg ) self.removable(true);
   
-  
   var toolbar = self.toolbar();
   Part.toolbar.forEach(function(item) {
     toolbar.last(item);
@@ -7970,7 +7969,7 @@ Buttons.prototype = {
   update: function() {
     var toolbar = this.toolbar();
     var scope = toolbar.scope();
-    var el = this._el[0];
+    var el = this._el.empty()[0];
     var list = this._list = [];
     var append = function(btns) {
       btns.forEach(function(btn) {
@@ -8045,9 +8044,9 @@ Buttons.prototype = {
       });
     };
     
-    remove(this._last);
     remove(this._first);
     remove(this._buttons);
+    remove(this._last);
     
     this.update();
     return this;
@@ -8310,7 +8309,6 @@ __webpack_require__(76);
 
 function ArticlePart() {
   Part.apply(this, arguments);
-  this.toolbar().remove('clearfix');
 }
 
 var items = ArticlePart.toolbar = __webpack_require__(16);
@@ -8333,6 +8331,9 @@ proto.createToolbar = function() {
 proto.oninit = function(e) {
   var part = this;
   var dom = this.dom();
+  
+  part.toolbar().remove('clearfix');
+  
   $(dom).ac('ff-article')
   .on('click', function(e) {
     var target = e.target || e.srcElement;
