@@ -1021,6 +1021,7 @@ Part.prototype = {
 
 Part.toolbar = new Items()
 .add({
+  id: 'clearfix',
   text: '<i class="fa fa-asterisk"></i>',
   tooltip: '클리어픽스',
   onupdate: function(btn) {
@@ -8254,6 +8255,7 @@ __webpack_require__(75);
 
 function ArticlePart() {
   Part.apply(this, arguments);
+  this.toolbar().remove('clearfix');
 }
 
 var items = ArticlePart.toolbar = __webpack_require__(15);
