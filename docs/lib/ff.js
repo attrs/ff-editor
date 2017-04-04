@@ -2781,7 +2781,7 @@ proto.oninit = function() {
       e.stopPropagation();
       e.preventDefault();
       
-      if( dragging.tagName != 'IMG' || target === dragging || dragging.contains(target) ) return;
+      if( target === dragging || dragging.contains(target) ) return;
       part.add(dragging, cellindex);
     } else if( e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length ) {
       e.stopPropagation();
@@ -4495,7 +4495,7 @@ exports = module.exports = __webpack_require__(2)();
 
 
 // module
-exports.push([module.i, ".f_video {\n  position: relative;\n  margin: 15px auto;\n  max-width: 100%;\n}\n.f_video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.f_video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.f_video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.f_video.f_video_narrow {\n  width: 50%;\n}\n.f_video.f_video_fit {\n  width: 100%;\n}\n", ""]);
+exports.push([module.i, ".f_video {\n  position: relative;\n  margin: 15px auto;\n  min-width: 150px;\n  max-width: 100%;\n}\n.f_video .ff-mask {\n  display: none;\n  position: absolute;\n  top: 0;\n  bottom: 0;\n  left: 0;\n  right: 0;\n}\n.f_video.f_video_16by9 .f_video_container {\n  display: block;\n  height: 0;\n  padding: 0;\n  overflow: hidden;\n  padding-bottom: 56.25%;\n}\n.f_video.f_video_16by9 .f_video_container iframe {\n  position: absolute;\n  top: 0;\n  left: 0;\n  bottom: 0;\n  height: 100%;\n  width: 100%;\n  border: 0;\n}\n.f_video.f_video_narrow {\n  width: 50%;\n}\n.f_video.f_video_fit {\n  width: 100%;\n}\n", ""]);
 
 // exports
 
