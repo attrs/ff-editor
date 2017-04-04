@@ -430,7 +430,7 @@ var context = {
         var Type = types.get(type);
         if( !Type ) return console.warn('[ff] not found type: ' + type);
         part = el._ff = new Type(el);
-        id && part.data(data[id]);
+        id && data[id] && part.data(data[id]);
       }
       
       part.id = id;
@@ -459,7 +459,7 @@ var context = {
         part = new Type(el);
       }
       
-      part.data(data[id]);
+      data[id] && part.data(data[id]);
     });
     
     context.fire('ff-data', {
@@ -1960,6 +1960,7 @@ ctx.uploader(function(file, done) {
   reader.readAsDataURL(file);
 });
 
+ctx.placeholder = 'Please enter the text.';
 
 // range
 var RangeEditor = __webpack_require__(31);
