@@ -563,10 +563,33 @@ var context = {
     });
     return context;
   },
-  selectFiles: function(done) {
-    $('<input type="file" multiple>').on('change', function() {
+  selectFiles: function(done, options) {
+    options = options || {};
+    if( typeof options == 'boolean'  ) options = {upload:options};
+    if( typeof options == 'string'  ) options = {type:options};
+    if( typeof options == 'number'  ) options = {limit:options};
+    
+    var type = options.type;
+    var upload = options.upload === false ? false : true;
+    var limit = options.limit;
+    
+    $('<input type="file">').attr('multiple', limit === 1 ? null : '').on('change', function() {
+      var files = [].slice.call(this.files);
+      
+      if( limit && files.length ) files = files.slice(0, limit);
+      
+      if( type ) {
+        var tmp = [];
+        files.forEach(function(file) {
+          if( file.type && !file.type.indexOf(type) ) tmp.push(file);
+        });
+        files = tmp;
+      }
+      
+      if( !upload ) return done(null, files);
+      
       var srcs = [];
-      $(this.files).async(function(file, done) {
+      $(files).async(function(file, done) {
         context.upload(file, function(err, src) {
           if( err ) return done(err);
           srcs.push(src);
@@ -580,12 +603,13 @@ var context = {
     
     return context;
   },
-  selectFile: function(done) {
-    $('<input type="file">').on('change', function() {
-      context.upload(this.files[0], done);
-    }).click();
-    
-    return context;
+  selectFile: function(done, options) {
+    options = options || {};
+    options.limit = 1;
+    return context.selectFiles(function(err, arr) {
+      if( err ) return done(err);
+      done(null, arr && arr[0]);
+    }, options);
   },
   
   // alert
@@ -2191,19 +2215,10 @@ module.exports = new Items()
       if( err ) return context.error(err);
       if( !files.length ) return;
       
-      if( files.length === 1 ) {
-        part.insert(new context.Image(files[0]));
-      } else {
-        var chunksize = +$(part.dom()).attr('ff-row-chunk-size');
-        if( !chunksize || chunksize < 1 ) chunksize = 5;
-        $.util.chunk(files, chunksize).forEach(function(arr) {
-          var row = new context.Row().valign('justify');
-          arr.forEach(function(file) {
-            row.add(new context.Image(file));
-          });
-          part.insert(row);
-        });
-      }
+      part.insert(files);
+    }, {
+      upload: false,
+      type: 'image'
     });
   }
 })
