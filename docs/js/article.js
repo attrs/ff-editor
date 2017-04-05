@@ -411,7 +411,9 @@ var win = window,
     data = {},
     uploader,
     fonts = new Items(),
-    colors = new Items();
+    colors = new Items(),
+    fileinput = $('<input type="file">'),
+    filechangeevent;
 
 var context = {
   scan: function(fn, all) {
@@ -572,8 +574,9 @@ var context = {
     var type = options.type;
     var upload = options.upload === false ? false : true;
     var limit = options.limit;
+    var prevfilechangeevent = filechangeevent
     
-    $('<input type="file">').attr('multiple', limit === 1 ? null : '').on('change', function() {
+    filechangeevent = function() {
       var files = [].slice.call(this.files);
       
       if( limit && files.length ) files = files.slice(0, limit);
@@ -583,6 +586,7 @@ var context = {
         files.forEach(function(file) {
           if( file.type && !file.type.indexOf(type) ) tmp.push(file);
         });
+        //console.log('files', files, tmp);
         files = tmp;
       }
       
@@ -599,7 +603,11 @@ var context = {
         if( err ) return done(err);
         done(null, srcs);
       });
-    }).click();
+    };
+    
+    fileinput.value('').attr('multiple', limit === 1 ? null : '')
+    .off('change', prevfilechangeevent)
+    .on('change', filechangeevent).click();
     
     return context;
   },
@@ -8556,20 +8564,21 @@ proto.insert = function(node, ref) {
   var images = [];
   $(node).reverse().async(function(item, done) {
     var el = (item.dom && item.dom()) || item;
-      
+    
     if( window.File && item instanceof File ) {
-      var type = item.type;
-      
-      return context.upload(item, function(err, result) {
-        if( err ) return done(err);
+      return (function(type) {
+        context.upload(item, function(err, result) {
+          if( err ) return done(err);
+          
+          if( type.indexOf('image/') !== 0 ) {
+            insert(new context.Link(result).dom(), ref);
+          } else {
+            images.push(new context.Image(result));
+          }
         
-        if( type.indexOf('image/') === 0 )
-          images.push(new context.Image(result));
-        else
-          insert(new context.Link(result).dom(), ref);
-        
-        done();
-      });
+          done();
+        });
+      })(item.type);
     } else {
       insert(el, ref);
     }
@@ -12088,7 +12097,7 @@ module.exports = function(ctx) {
   };
   
   fn.on = function(type, fn, bubble) {
-    if( typeof type !== 'string' ) return this;
+    if( typeof type !== 'string' || !fn ) return this;
     type = type.split(' ');
     
     return this.each(function(i, el) {
@@ -12108,7 +12117,7 @@ module.exports = function(ctx) {
   };
   
   fn.off = function(type, fn, bubble) {
-    if( typeof type !== 'string' ) return this;
+    if( typeof type !== 'string' || !fn ) return this;
     type = type.split(' ');
     
     return this.each(function(i, el) {
@@ -12145,6 +12154,14 @@ module.exports = function(ctx) {
         if( isclick ) el.click();
         else el.onclick = fn;
       }
+    });
+  };
+  
+  fn.value = function(value) {
+    if( !arguments.length ) return this[0].value;
+    
+    return this.each(function(i,el) {
+      if( isNode(el) ) el.value = value;
     });
   };
   
