@@ -109,7 +109,7 @@ ff.ready(function() {
   });
   
   window.create = function() {
-    ff.data(null).editmode(true);
+    ff.clear().editmode(true);
   };
   
   window.toggleMode = function() {

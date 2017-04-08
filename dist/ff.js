@@ -149,7 +149,7 @@ var context = {
       typeof fn == 'function' && fn.call(context, part);
     }).slice();
   },
-  data: function(newdata) {
+  data: function(newdata, all) {
     if( !arguments.length ) {
       newdata = {};
       context.parts(function(part) {
@@ -171,13 +171,18 @@ var context = {
         part = new Type(el);
       }
       
-      data[id] && part.data(data[id]);
+      if( data[id] ) part.data(data[id]);
+      else if( all === true ) part.data(null);
     });
     
     context.fire('ff-data', {
       data: newdata
     });
     
+    return context;
+  },
+  clear: function() {
+    context.data(null, true).fire('clear');
     return context;
   },
   reset: function() {
