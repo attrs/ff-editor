@@ -109,313 +109,6 @@ lib.create = Context.create;
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var types = __webpack_require__(12);
-var Items = __webpack_require__(4);
-
-var win = window,
-    doc = document,
-    editmode = false,
-    data = {},
-    uploader,
-    fonts = new Items(),
-    colors = new Items(),
-    fileinput = $('<input type="file">'),
-    filechangeevent;
-
-var context = {
-  scan: function(fn, all) {
-    context.parts.apply(context, arguments);
-    return context;
-  },
-  parts: function(fn, all) {
-    if( fn === true ) all = fn;
-    
-    return $(all ? '.ff [ff-id], [ff], [ff-type]' : '[ff-id], [ff], [ff-type]').reverse().each(function(i, el) {
-      var id = el.getAttribute('ff-id');
-      var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
-      var part = el._ff;
-      
-      if( !part ) {
-        var Type = types.get(type);
-        if( !Type ) return console.warn('[ff] not found type: ' + type);
-        part = el._ff = new Type(el);
-        id && data[id] && part.data(data[id]);
-      }
-      
-      part.id = id;
-      typeof fn == 'function' && fn.call(context, part);
-    }).slice();
-  },
-  data: function(newdata, all) {
-    if( !arguments.length ) {
-      newdata = {};
-      context.parts(function(part) {
-        if( part.id ) newdata[part.id] = part.data();
-      });
-      return newdata;
-    }
-    
-    data = newdata || {};
-    
-    $('[ff-id]').reverse().each(function(i, el) {
-      var id = el.getAttribute('ff-id');
-      var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
-      var part = el._ff;
-      
-      if( !part ) {
-        var Type = types.get(type);
-        if( !Type ) return console.warn('[ff] not found type: ' + type);
-        part = new Type(el);
-      }
-      
-      if( data[id] ) part.data(data[id]);
-      else if( all === true ) part.data(null);
-    });
-    
-    context.fire('ff-data', {
-      data: newdata
-    });
-    
-    return context;
-  },
-  clear: function() {
-    context.data(null, true).fire('clear');
-    return context;
-  },
-  reset: function() {
-    console.warn('[ff] ff.reset is deprecated, use ff.data instead');
-    return context.data.apply(context, arguments);
-  },
-  get: function() {
-    console.warn('[ff] ff.get is deprecated, use ff.partof instead');
-    return context.partof.apply(context, arguments);
-  },
-  part: function(id) {
-    var el = $('[ff-id="' + id + '"]');
-    return el[0] && el[0]._ff;
-  },
-  partof: function(node) {
-    var found = $(node).parent(function() {
-      return this._ff;
-    }, true)[0];
-    return found && found._ff;
-  },
-  partsof: function(node) {
-    var parents = [];
-    $(node).parent(function() {
-      var part = this._ff;
-      if( part ) parents.push(part);
-    }, true);
-    return parents;
-  },
-  editmode: function(b) {
-    if( !arguments.length ) return editmode;
-    if( editmode === !!b ) return context;
-    
-    editmode = !!b;
-    
-    context.parts(function(part) {
-      part.editmode(editmode);
-    }, true);
-    
-    context.fire('ff-modechange', {
-      editmode: editmode
-    });
-    
-    return context;
-  },
-  
-  // event
-  fire: function(type, detail, cancellable, bubble) {
-    return !!$(doc).fire(type, detail, cancellable, bubble)[0];
-  },
-  on: function(type, fn) {
-    fn._wrapper = function() {
-      return fn.apply(context, arguments);
-    };
-    
-    $(doc).on(type, fn._wrapper);
-    return this;
-  },
-  once: function(type, fn) {
-    fn._wrapper = function() {
-      return fn.apply(context, arguments);
-    };
-    
-    $(doc).once(type, fn._wrapper);
-    return this;
-  },
-  off: function(type, fn) {
-    $(doc).off(type, fn._wrapper || fn);
-    return this;
-  },
-  
-  // part type
-  types: function() {
-    return types;
-  },
-  type: function(name, cls) {
-    if( arguments.length <= 1 ) return types.get(name);
-    types.define(name, cls);
-    
-    return context;
-  },
-  
-  // uploader
-  uploader: function(fn) {
-    if( !fn || typeof fn !== 'function' ) throw new TypeError('uploader must be a function');
-    uploader = fn;
-    return context;
-  },
-  upload: function(file, done) {
-    uploader.call(context, file, function(err, result) {
-      if( err ) context.fire('ff-upload-error', {error: err});
-      if( err ) return done && done(err);
-      
-      context.fire('ff-upload', {result:result});
-      done && done(null, result);
-    });
-    return context;
-  },
-  selectFiles: function(done, options) {
-    options = options || {};
-    if( typeof options == 'boolean'  ) options = {upload:options};
-    if( typeof options == 'string'  ) options = {type:options};
-    if( typeof options == 'number'  ) options = {limit:options};
-    
-    var type = options.type;
-    var upload = options.upload === false ? false : true;
-    var limit = options.limit;
-    var prevfilechangeevent = filechangeevent
-    
-    filechangeevent = function() {
-      var files = [].slice.call(this.files);
-      
-      if( limit && files.length ) files = files.slice(0, limit);
-      
-      if( type ) {
-        var tmp = [];
-        files.forEach(function(file) {
-          if( file.type && !file.type.indexOf(type) ) tmp.push(file);
-        });
-        //console.log('files', files, tmp);
-        files = tmp;
-      }
-      
-      if( !upload ) return done(null, files);
-      
-      var srcs = [];
-      $(files).async(function(file, done) {
-        context.upload(file, function(err, src) {
-          if( err ) return done(err);
-          srcs.push(src);
-          done();
-        });
-      }, function(err) {
-        if( err ) return done(err);
-        done(null, srcs);
-      });
-    };
-    
-    fileinput.value('').attr('multiple', limit === 1 ? null : '')
-    .off('change', prevfilechangeevent)
-    .on('change', filechangeevent).click();
-    
-    return context;
-  },
-  selectFile: function(done, options) {
-    options = options || {};
-    options.limit = 1;
-    return context.selectFiles(function(err, arr) {
-      if( err ) return done(err);
-      done(null, arr && arr[0]);
-    }, options);
-  },
-  
-  // alert
-  prompt: function(message, callback, options) {
-    if( context.fire('ff-prompt', {
-      message: message,
-      callback: callback,
-      options: options
-    }, true) ) {
-      callback && callback.call(context, prompt(message));
-    }
-    
-    return context;
-  },
-  confirm: function(message, callback, options) {
-    if( context.fire('ff-prompt', {
-      message: message,
-      callback: callback,
-      options: options
-    }, true) ) {
-      callback && callback.call(context, confirm(message));
-    }
-    
-    return context;
-  },
-  alert: function(message, callback, options) {
-    if( context.fire('ff-alert', {
-      message: message,
-      callback: callback,
-      options: options
-    }, true) ) {
-      callback && callback.call(context);
-      alert(message);
-    }
-    
-    return context;
-  },
-  error: function(error, callback, options) {
-    if( typeof error == 'string' ) error = new Error(error);
-    
-    if( context.fire('ff-error', {
-      error: error,
-      message: error.message,
-      callback: callback,
-      options: options
-    }, true) ) {
-      callback && callback.call(context);
-      console.error(error);
-      alert(error.message);
-    }
-    
-    return context;
-  },
-  
-  // defaults
-  fonts: function(arr) {
-    if( !arguments.length ) return fonts;
-    fonts = new Items(arr);
-    return context;
-  },
-  colors: function(arr) {
-    if( !arguments.length ) return colors;
-    colors = new Items(arr);
-    return context;
-  }
-};
-
-$(doc).on('mousedown', function(e) {
-  if( !editmode ) return;
-  
-  var target = e.target || e.srcElement;
-  var part = context.partof(target);
-  var focused = context.focused;
-  
-  if( part ) part.focus();
-  else focused && focused.blur();
-});
-
-module.exports = context;
-
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports) {
 
 /*
@@ -496,7 +189,7 @@ function toComment(sourceMap) {
 
 
 /***/ }),
-/* 3 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -792,6 +485,344 @@ function updateLink(linkElement, options, obj) {
 
 
 /***/ }),
+/* 3 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var types = __webpack_require__(13);
+var Items = __webpack_require__(4);
+var RangeEditor = __webpack_require__(10);
+var history = __webpack_require__(25);
+var RangeEditor = __webpack_require__(10);
+
+var win = window,
+    doc = document,
+    editmode = false,
+    data = {},
+    uploader,
+    fonts = new Items(),
+    colors = new Items(),
+    fileinput = $('<input type="file">'),
+    filechangeevent;
+
+var context = {
+  scan: function(fn, all) {
+    context.parts.apply(context, arguments);
+    return context;
+  },
+  parts: function(fn, all) {
+    if( fn === true ) all = fn;
+    
+    return $(all ? '.ff [ff-id], [ff], [ff-type]' : '[ff-id], [ff], [ff-type]').reverse().each(function(i, el) {
+      var id = el.getAttribute('ff-id');
+      var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
+      var part = el._ff;
+      
+      if( !part ) {
+        var Type = types.get(type);
+        if( !Type ) return console.warn('[ff] not found type: ' + type);
+        part = el._ff = new Type(el);
+        id && data[id] && part.data(data[id]);
+      }
+      
+      part.id = id;
+      typeof fn == 'function' && fn.call(context, part);
+    }).slice();
+  },
+  data: function(newdata, all) {
+    if( !arguments.length ) {
+      newdata = {};
+      context.parts(function(part) {
+        if( part.id ) newdata[part.id] = part.data();
+      });
+      return newdata;
+    }
+    
+    data = newdata || {};
+    
+    $('[ff-id]').reverse().each(function(i, el) {
+      var id = el.getAttribute('ff-id');
+      var type = el.getAttribute('ff-type') || el.getAttribute('ff') || 'default';
+      var part = el._ff;
+      
+      if( !part ) {
+        var Type = types.get(type);
+        if( !Type ) return console.warn('[ff] not found type: ' + type);
+        part = new Type(el);
+      }
+      
+      if( data[id] ) part.data(data[id]);
+      else if( all === true ) part.data(null);
+    });
+    
+    context.fire('ff-data', {
+      data: newdata
+    });
+    
+    return context;
+  },
+  clear: function() {
+    context.data(null, true).fire('clear');
+    return context;
+  },
+  reset: function() {
+    console.warn('[ff] ff.reset is deprecated, use ff.data instead');
+    return context.data.apply(context, arguments);
+  },
+  get: function() {
+    console.warn('[ff] ff.get is deprecated, use ff.partof instead');
+    return context.partof.apply(context, arguments);
+  },
+  part: function(id) {
+    var el = $('[ff-id="' + id + '"]');
+    return el[0] && el[0]._ff;
+  },
+  partof: function(node) {
+    var found = $(node).parent(function() {
+      return this._ff;
+    }, true)[0];
+    return found && found._ff;
+  },
+  partsof: function(node) {
+    var parents = [];
+    $(node).parent(function() {
+      var part = this._ff;
+      if( part ) parents.push(part);
+    }, true);
+    return parents;
+  },
+  editmode: function(b) {
+    if( !arguments.length ) return editmode;
+    if( editmode === !!b ) return context;
+    
+    editmode = !!b;
+    
+    context.parts(function(part) {
+      part.editmode(editmode);
+    }, true);
+    
+    context.fire('ff-modechange', {
+      editmode: editmode
+    });
+    
+    return context;
+  },
+  
+  // event
+  fire: function(type, detail, cancellable, bubble) {
+    return !!$(doc).fire(type, detail, cancellable, bubble)[0];
+  },
+  on: function(type, fn) {
+    fn._wrapper = function() {
+      return fn.apply(context, arguments);
+    };
+    
+    $(doc).on(type, fn._wrapper);
+    return this;
+  },
+  once: function(type, fn) {
+    fn._wrapper = function() {
+      return fn.apply(context, arguments);
+    };
+    
+    $(doc).once(type, fn._wrapper);
+    return this;
+  },
+  off: function(type, fn) {
+    $(doc).off(type, fn._wrapper || fn);
+    return this;
+  },
+  
+  // part type
+  types: function() {
+    return types;
+  },
+  type: function(name, cls) {
+    if( arguments.length <= 1 ) return types.get(name);
+    types.define(name, cls);
+    
+    return context;
+  },
+  
+  // uploader
+  uploader: function(fn) {
+    if( !fn || typeof fn !== 'function' ) throw new TypeError('uploader must be a function');
+    uploader = fn;
+    return context;
+  },
+  upload: function(file, done) {
+    uploader.call(context, file, function(err, result) {
+      if( err ) context.fire('ff-upload-error', {error: err});
+      if( err ) return done && done(err);
+      
+      context.fire('ff-upload', {result:result});
+      done && done(null, result);
+    });
+    return context;
+  },
+  selectFiles: function(done, options) {
+    options = options || {};
+    if( typeof options == 'boolean'  ) options = {upload:options};
+    if( typeof options == 'string'  ) options = {type:options};
+    if( typeof options == 'number'  ) options = {limit:options};
+    
+    var type = options.type;
+    var upload = options.upload === false ? false : true;
+    var limit = options.limit;
+    var prevfilechangeevent = filechangeevent
+    
+    filechangeevent = function() {
+      var files = [].slice.call(this.files);
+      
+      if( limit && files.length ) files = files.slice(0, limit);
+      
+      if( type ) {
+        var tmp = [];
+        files.forEach(function(file) {
+          if( file.type && !file.type.indexOf(type) ) tmp.push(file);
+        });
+        //console.log('files', files, tmp);
+        files = tmp;
+      }
+      
+      if( !upload ) return done(null, files);
+      
+      var srcs = [];
+      $(files).async(function(file, done) {
+        context.upload(file, function(err, src) {
+          if( err ) return done(err);
+          srcs.push(src);
+          done();
+        });
+      }, function(err) {
+        if( err ) return done(err);
+        done(null, srcs);
+      });
+    };
+    
+    fileinput.value('').attr('multiple', limit === 1 ? null : '')
+    .off('change', prevfilechangeevent)
+    .on('change', filechangeevent).click();
+    
+    return context;
+  },
+  selectFile: function(done, options) {
+    options = options || {};
+    options.limit = 1;
+    return context.selectFiles(function(err, arr) {
+      if( err ) return done(err);
+      done(null, arr && arr[0]);
+    }, options);
+  },
+  
+  // alert
+  prompt: function(message, callback, options) {
+    if( context.fire('ff-prompt', {
+      message: message,
+      callback: callback,
+      options: options
+    }, true) ) {
+      callback && callback.call(context, prompt(message));
+    }
+    
+    return context;
+  },
+  confirm: function(message, callback, options) {
+    if( context.fire('ff-prompt', {
+      message: message,
+      callback: callback,
+      options: options
+    }, true) ) {
+      callback && callback.call(context, confirm(message));
+    }
+    
+    return context;
+  },
+  alert: function(message, callback, options) {
+    if( context.fire('ff-alert', {
+      message: message,
+      callback: callback,
+      options: options
+    }, true) ) {
+      callback && callback.call(context);
+      alert(message);
+    }
+    
+    return context;
+  },
+  error: function(error, callback, options) {
+    if( typeof error == 'string' ) error = new Error(error);
+    
+    if( context.fire('ff-error', {
+      error: error,
+      message: error.message,
+      callback: callback,
+      options: options
+    }, true) ) {
+      callback && callback.call(context);
+      console.error(error);
+      alert(error.message);
+    }
+    
+    return context;
+  },
+  
+  // undo/redo
+  history: function(fn) {
+    if( !arguments.length ) return history;
+    
+    history.add(fn);
+    return this;
+  },
+
+  // range
+  ranges: function(node, collapsed) {
+    var selection = win.getSelection();
+    var ranges = [];
+    if( selection.rangeCount )
+      for(var i=0; i < selection.rangeCount; i++)
+        ranges.push(selection.getRangeAt(i));
+  
+    if( !arguments.length ) return ranges;
+  
+    return ranges.filter(function(range) {
+      if( !collapsed && range.collapsed ) return;
+      return range && node.contains(range.startContainer) && node.contains(range.endContainer) && RangeEditor(range);
+    });
+  },
+  range: function(node, collapsed) {
+    var ranges = context.ranges(node, collapsed);
+    return ranges && ranges.length && RangeEditor(ranges[ranges.length - 1]);
+  },
+  
+  // defaults
+  fonts: function(arr) {
+    if( !arguments.length ) return fonts;
+    fonts = new Items(arr);
+    return context;
+  },
+  colors: function(arr) {
+    if( !arguments.length ) return colors;
+    colors = new Items(arr);
+    return context;
+  }
+};
+
+$(doc).on('mousedown', function(e) {
+  if( !editmode ) return;
+  
+  var target = e.target || e.srcElement;
+  var part = context.partof(target);
+  var focused = context.focused;
+  
+  if( part ) part.focus();
+  else focused && focused.blur();
+});
+
+module.exports = context;
+
+
+/***/ }),
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -853,8 +884,8 @@ module.exports = Items;
 var Toolbar = __webpack_require__(28);
 
 Toolbar.Button = __webpack_require__(7);
-Toolbar.Separator = __webpack_require__(11);
-Toolbar.ListButton = __webpack_require__(10);
+Toolbar.Separator = __webpack_require__(12);
+Toolbar.ListButton = __webpack_require__(11);
 
 module.exports = Toolbar;
 
@@ -862,10 +893,10 @@ module.exports = Toolbar;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Types = __webpack_require__(12);
+var Types = __webpack_require__(13);
 var Toolbar = __webpack_require__(5);
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 function Part(arg) {
@@ -1315,8 +1346,10 @@ module.exports = Button;
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(6);
 var Toolbar = __webpack_require__(5);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var autoflush = __webpack_require__(9);
+var win = window;
+var doc = document;
 
 __webpack_require__(61);
 
@@ -1340,26 +1373,26 @@ proto.oninit = function(e) {
   
   var el = $(dom)
   .on('paste', function(e) {
-    if( part.multiline() ) return;
+    //if( part.multiline() ) return;
     
     e.preventDefault();
     
-    var range = part.range(true);
-    var clipboard = e.clipboardData || window.clipboardData;
+    var selection = win.getSelection();
+    var range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    var clipboard = e.clipboardData || win.clipboardData;
     var text = clipboard.getData('Text');
+    
     if( text && range ) {
-      var node = document.createTextNode(text);
+      var node = doc.createTextNode(text);
       range.deleteContents();
       range.insertNode(node);
-      dom.normalize();
       
-      range = document.createRange();
-      range.setStart(node, 0);
-      range.setEnd(node, text.length);
+      var newrange = doc.createRange();
+      newrange.selectNode(node);
       
-      var selection = window.getSelection();
       selection.removeAllRanges();
-      selection.addRange(range);
+      selection.addRange(newrange);
+      dom.normalize();
     }
   })
   .on('keydown', function(e) {
@@ -1562,6 +1595,152 @@ module.exports = function(flushfn, timeout) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
+var win = window;
+var doc = document;
+
+function nextnode(node, skip){
+  if( node.firstChild && !skip ) return node.firstChild;
+  if( !node.parentNode ) return null;
+  
+  return node.nextSibling || nextnode(node.parentNode, true);
+}
+
+function rangelist(range){
+  var start = range.startContainer.childNodes[range.startOffset] || range.startContainer;
+  var end = range.endContainer.childNodes[range.endOffset] || range.endContainer;
+  
+  if( start === end ) return [start];
+  
+  var nodes = [], current = start;
+  do {
+    nodes.push(current);
+  } while ((current = nextnode(current)) && (current != end));
+  
+  return nodes;
+}
+
+function wrap(range, selector) {
+  if( !range ) return null;
+  if( typeof selector != 'string' || !selector ) selector = 'div';
+  
+  var node = range.cloneContents();
+  var asm = $.util.assemble(selector);
+  var wrapper = doc.createElement(asm.tag);
+  if( asm.id ) wrapper.id = id;
+  if( asm.classes ) wrapper.className = asm.classes;
+  
+  wrapper.appendChild(node);
+  wrapper.normalize();
+  range.deleteContents();
+  range.insertNode(wrapper);
+  
+  // select new node
+  var range = doc.createRange();
+  range.selectNodeContents(wrapper);
+  var selection = win.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  return wrapper;
+};
+
+function unwrap(range, selector) {
+  if( !range || !selector ) return this;
+  
+  var common = $(range.commonAncestorContainer);
+  var node = range.cloneContents();
+  var tmp = $('<div/>').append(node);
+  
+  //console.log('tmp', tmp.html());
+  tmp.nodes().each(function() {
+    var el = $(this);
+    
+    el.find(selector).nodes().unwrap();
+    if( el.is(selector) ) el.nodes().unwrap();
+  });
+  
+  var nodes = tmp.normalize().nodes();
+  //console.log('nodes', tmp.html());
+  if( !nodes.length ) return this;
+  
+  var start = nodes[0];
+  var end = nodes[nodes.length - 1];
+  
+  range.deleteContents();
+  
+  nodes.reverse().each(function() {
+    range.insertNode(this);
+  });
+  
+  range = doc.createRange();
+  range.selectNodeContents(start);
+  var startoffset = range.startOffset;
+  
+  range = doc.createRange();
+  range.selectNodeContents(end);
+  var endoffset = range.endOffset;
+  
+  range = doc.createRange();
+  range.setStart(start, startoffset);
+  range.setEnd(end, endoffset);
+  
+  var selection = win.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  start.parentNode.normalize();
+  
+  return this;
+};
+
+function iswrapped(range, selector) {
+  if( !range ) return false;
+  
+  var wrapped = false;
+  $(rangelist(range)).each(function() {
+    if( wrapped ) return false;
+    var el = $(this);
+    wrapped = el.is(selector) || el.parent(selector).length || el.find(selector).length;
+  });
+  
+  return wrapped;
+};
+
+function togglewrap(range, selector) {
+  if( !range ) return this;
+  if( iswrapped(range, selector) ) unwrap(range, selector);
+  else wrap(range, selector);
+  
+  return this;
+};
+
+function RangeEditor(range) {
+  return {
+    range: function() {
+      return range;
+    },
+    iswrapped: function(selector) {
+      return iswrapped(range, selector);
+    },
+    togglewrap: function(selector) {
+      return togglewrap(range, selector);
+    },
+    unwrap: function(selector) {
+      return unwrap(range, selector);
+    },
+    wrap: function(selector) {
+      return wrap(range, selector);
+    }
+  };
+}
+
+module.exports = RangeEditor;
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
 var Button = __webpack_require__(7);
 
 __webpack_require__(54);
@@ -1645,7 +1824,7 @@ $(document).ready(function() {
 module.exports = ListButton;
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1665,7 +1844,7 @@ proto.handleEvent = function(e) {};
 module.exports = Separator;
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports) {
 
 var types = {};
@@ -1688,11 +1867,11 @@ module.exports = {
 };
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 module.exports = new Items()
@@ -1784,7 +1963,7 @@ module.exports = new Items()
 
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports) {
 
 var matches = Element.prototype.matches || 
@@ -1961,268 +2140,11 @@ var lib = module.exports = {
 };
 
 /***/ }),
-/* 15 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
-
-var win = window;
-var timeoutid, timeoutfn;
-var list = [];
-var size = 50;
-var index = -1;
-var processing = false;
-
-var redo = function() {
-  processing = true;
-  var action =  next();
-  if( action ) {
-    //console.log('redo', index);
-    action.call(context, redo);
-  }
-  processing = false;
-  return scope;
-};
-
-var undo = function() {
-  processing = true;
-  var action =  prev();
-  if( action ) {
-    //console.log('undo', index);
-    action.call(context, undo);
-  }
-  processing = false;
-  return scope;
-};
-
-var prev = function() {
-  index = index - 1;
-  if( index < 0 ) index = -1;
-  return list[index];
-};
-
-var next = function() {
-  index = index + 1;
-  if( index > list.length ) index = list.length;
-  return list[index];
-};
-
-var add = function(action) {
-  if( typeof action != 'function' ) return console.error('[ff] illegal argument, action must be a function');
-  
-  if( processing ) return;
-  
-  list.push(action);
-  if( list.length > size )
-    list = list.slice(list.length - size);
-  
-  index = list.length;
-  //console.error('add', list.length);
-  
-  return scope;
-};
-
-var remove = function(action) {
-  if( typeof action === 'number' ) action = list[action];
-  for(var index;(index = list.indexOf(action)) >= 0;)
-    list.splice(index, 1);
-  
-  return scope;
-};
-
-var scope = module.exports = {
-  add: add,
-  remove: remove,
-  undo: undo,
-  redo: redo,
-  size: function(size) {
-    if( !arguments.length ) return size;
-    size = Math.abs(+size) || 50;
-    return scope;
-  },
-  list:  function() {
-    return list;
-  },
-  index: function() {
-    return index;
-  },
-  clear: function() {
-    list = [];
-    index = -1;
-    return this;
-  }
-};
-
-// add keydown listener to document
-var platform = win.navigator.platform;
-var mac = !!~platform.toLowerCase().indexOf('mac');
-
-$(win).on('keydown', function(e) {
-  if( !context.editmode() ) return;
-  
-  if( mac ) {
-    if( e.metaKey && e.key == 'z' ) undo();
-    else if( e.metaKey && e.shiftKey && e.key == 'Z' ) redo();
-    else return;
-  } else {
-    if( e.ctrlKey && e.key == 'z' ) undo();
-    else if( e.ctrlKey && e.key == 'y' ) redo();
-    else return;
-  }
-  
-  e.preventDefault();
-}, true);
-
-/***/ }),
 /* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var win = window;
-var doc = document;
-
-function nextnode(node, skip){
-  if( node.firstChild && !skip ) return node.firstChild;
-  if( !node.parentNode ) return null;
-  
-  return node.nextSibling || nextnode(node.parentNode, true);
-}
-
-function rangelist(range){
-  var start = range.startContainer.childNodes[range.startOffset] || range.startContainer;
-  var end = range.endContainer.childNodes[range.endOffset] || range.endContainer;
-  
-  if( start === end ) return [start];
-  
-  var nodes = [], current = start;
-  do {
-    nodes.push(current);
-  } while ((current = nextnode(current)) && (current != end));
-  
-  return nodes;
-}
-
-function wrap(range, selector) {
-  if( !range ) return null;
-  if( typeof selector != 'string' || !selector ) selector = 'div';
-  
-  var node = range.cloneContents();
-  var asm = $.util.assemble(selector);
-  var wrapper = doc.createElement(asm.tag);
-  if( asm.id ) wrapper.id = id;
-  if( asm.classes ) wrapper.className = asm.classes;
-  
-  wrapper.appendChild(node);
-  wrapper.normalize();
-  range.deleteContents();
-  range.insertNode(wrapper);
-  
-  // select new node
-  var range = doc.createRange();
-  range.selectNodeContents(wrapper);
-  var selection = win.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  return wrapper;
-};
-
-function unwrap(range, selector) {
-  if( !range || !selector ) return this;
-  
-  var common = $(range.commonAncestorContainer);
-  var node = range.cloneContents();
-  var tmp = $('<div/>').append(node);
-  
-  //console.log('tmp', tmp.html());
-  tmp.nodes().each(function() {
-    var el = $(this);
-    
-    el.find(selector).nodes().unwrap();
-    if( el.is(selector) ) el.nodes().unwrap();
-  });
-  
-  var nodes = tmp.normalize().nodes();
-  //console.log('nodes', tmp.html());
-  if( !nodes.length ) return this;
-  
-  var start = nodes[0];
-  var end = nodes[nodes.length - 1];
-  
-  range.deleteContents();
-  
-  nodes.reverse().each(function() {
-    range.insertNode(this);
-  });
-  
-  range = doc.createRange();
-  range.selectNodeContents(start);
-  var startoffset = range.startOffset;
-  
-  range = doc.createRange();
-  range.selectNodeContents(end);
-  var endoffset = range.endOffset;
-  
-  range = doc.createRange();
-  range.setStart(start, startoffset);
-  range.setEnd(end, endoffset);
-  
-  var selection = win.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  start.parentNode.normalize();
-  
-  return this;
-};
-
-function iswrapped(range, selector) {
-  if( !range ) return false;
-  
-  var wrapped = false;
-  $(rangelist(range)).each(function() {
-    if( wrapped ) return false;
-    var el = $(this);
-    wrapped = el.is(selector) || el.parent(selector).length || el.find(selector).length;
-  });
-  
-  return wrapped;
-};
-
-function togglewrap(range, selector) {
-  if( !range ) return this;
-  if( iswrapped(range, selector) ) unwrap(range, selector);
-  else wrap(range, selector);
-  
-  return this;
-};
-
-function RangeEditor(range) {
-  return {
-    iswrapped: function(selector) {
-      return iswrapped(range, selector);
-    },
-    togglewrap: function(selector) {
-      return togglewrap(range, selector);
-    },
-    unwrap: function(selector) {
-      return unwrap(range, selector);
-    },
-    wrap: function(selector) {
-      return wrap(range, selector);
-    }
-  };
-}
-
-module.exports = RangeEditor;
-
-/***/ }),
-/* 17 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
 var Marker = __webpack_require__(31);
@@ -2234,7 +2156,7 @@ function ArticlePart() {
   Part.apply(this, arguments);
 }
 
-var items = ArticlePart.toolbar = __webpack_require__(13);
+var items = ArticlePart.toolbar = __webpack_require__(14);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -2499,7 +2421,7 @@ ArticlePart.DnD = DnD;
 module.exports = ArticlePart;
 
 /***/ }),
-/* 18 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2532,11 +2454,11 @@ proto.create = function(arg) {
 module.exports = HeadingPart;
 
 /***/ }),
-/* 19 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Part = __webpack_require__(6);
 var Toolbar = __webpack_require__(5);
 
@@ -2655,7 +2577,7 @@ module.exports = ImagePart;
 
 
 /***/ }),
-/* 20 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2785,11 +2707,11 @@ Link.defaultLabel = 'Link';
 module.exports = Link;
 
 /***/ }),
-/* 21 */
+/* 20 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Part = __webpack_require__(6);
 var Toolbar = __webpack_require__(5);
 
@@ -3047,7 +2969,7 @@ module.exports = RowPart;
 
 
 /***/ }),
-/* 22 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3129,7 +3051,7 @@ proto.shape = function(shape) {
 module.exports = Separator;
 
 /***/ }),
-/* 23 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -3157,11 +3079,11 @@ proto.multiline = function() {
 module.exports = TextPart;
 
 /***/ }),
-/* 24 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Part = __webpack_require__(6);
 var Toolbar = __webpack_require__(5);
 
@@ -3233,7 +3155,7 @@ module.exports = VideoPart;
 
 
 /***/ }),
-/* 25 */
+/* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
@@ -3242,7 +3164,7 @@ module.exports = VideoPart;
 var content = __webpack_require__(37);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -3259,32 +3181,125 @@ if(false) {
 }
 
 /***/ }),
+/* 25 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+
+var win = window;
+var timeoutid, timeoutfn;
+var list = [];
+var size = 50;
+var index = -1;
+var processing = false;
+
+var redo = function() {
+  processing = true;
+  var action =  next();
+  if( action ) {
+    //console.log('redo', index);
+    action.call(scope, redo);
+  }
+  processing = false;
+  return scope;
+};
+
+var undo = function() {
+  processing = true;
+  var action =  prev();
+  if( action ) {
+    //console.log('undo', index);
+    action.call(scope, undo);
+  }
+  processing = false;
+  return scope;
+};
+
+var prev = function() {
+  index = index - 1;
+  if( index < 0 ) index = -1;
+  return list[index];
+};
+
+var next = function() {
+  index = index + 1;
+  if( index > list.length ) index = list.length;
+  return list[index];
+};
+
+var add = function(action) {
+  if( typeof action != 'function' ) return console.error('[ff] illegal argument, action must be a function');
+  
+  if( processing ) return;
+  
+  list.push(action);
+  if( list.length > size )
+    list = list.slice(list.length - size);
+  
+  index = list.length;
+  //console.error('add', list.length);
+  
+  return scope;
+};
+
+var remove = function(action) {
+  if( typeof action === 'number' ) action = list[action];
+  for(var index;(index = list.indexOf(action)) >= 0;)
+    list.splice(index, 1);
+  
+  return scope;
+};
+
+var scope = module.exports = {
+  add: add,
+  remove: remove,
+  undo: undo,
+  redo: redo,
+  size: function(size) {
+    if( !arguments.length ) return size;
+    size = Math.abs(+size) || 50;
+    return scope;
+  },
+  list:  function() {
+    return list;
+  },
+  index: function() {
+    return index;
+  },
+  clear: function() {
+    list = [];
+    index = -1;
+    return this;
+  }
+};
+
+/***/ }),
 /* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
-
 var win = window,
     doc = document,
-    ctx = __webpack_require__(1),
+    ctx = __webpack_require__(3),
     Toolbar = __webpack_require__(5),
     Part = __webpack_require__(6),
-    Items = __webpack_require__(4);
+    Items = __webpack_require__(4)
+    $ = __webpack_require__(0);
 
-__webpack_require__(25);
+__webpack_require__(24);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
 
-var ArticlePart = __webpack_require__(17);
+var ArticlePart = __webpack_require__(16);
 var ParagraphPart = __webpack_require__(8);
-var SeparatorPart = __webpack_require__(22);
-var ImagePart = __webpack_require__(19);
-var VideoPart = __webpack_require__(24);
-var RowPart = __webpack_require__(21);
-var LinkPart = __webpack_require__(20);
-var TextPart = __webpack_require__(23);
-var HeadingPart = __webpack_require__(18);
+var SeparatorPart = __webpack_require__(21);
+var ImagePart = __webpack_require__(18);
+var VideoPart = __webpack_require__(23);
+var RowPart = __webpack_require__(20);
+var LinkPart = __webpack_require__(19);
+var TextPart = __webpack_require__(22);
+var HeadingPart = __webpack_require__(17);
 
 ctx.Article = ArticlePart;
 ctx.Paragraph = ParagraphPart;
@@ -3343,37 +3358,6 @@ ctx.uploader(function(file, done) {
 
 ctx.placeholder = 'Please enter the text.';
 
-// range
-var RangeEditor = __webpack_require__(16);
-ctx.ranges = function(node, collapsed) {
-  var selection = win.getSelection();
-  var ranges = [];
-  if( selection.rangeCount )
-    for(var i=0; i < selection.rangeCount; i++)
-      ranges.push(selection.getRangeAt(i));
-  
-  if( !arguments.length ) return ranges;
-  
-  return ranges.filter(function(range) {
-    if( !collapsed && range.collapsed ) return;
-    return range && node.contains(range.startContainer) && node.contains(range.endContainer) && RangeEditor(range);
-  });
-};
-
-ctx.range = function(node, collapsed) {
-  var ranges = ctx.ranges(node, collapsed);
-  return ranges && ranges.length && RangeEditor(ranges[ranges.length - 1]);
-};
-
-// history
-var history = __webpack_require__(15);
-ctx.history = function(fn) {
-  if( !arguments.length ) return history;
-  
-  history.add(fn);
-  return this;
-};
-
 module.exports = ctx;
 
 
@@ -3401,6 +3385,27 @@ module.exports = ctx;
     if( doc.body ) fn();
     else readyfn = fn;
   };
+  
+  // bind undo/redo shortcut listener
+  var platform = win.navigator.platform;
+  var mac = !!~platform.toLowerCase().indexOf('mac');
+  var history = ctx.history();
+  
+  $(win).on('keydown', function(e) {
+    if( !ctx.editmode() ) return;
+  
+    if( mac ) {
+      if( e.metaKey && e.key == 'z' ) history.undo();
+      else if( e.metaKey && e.shiftKey && e.key == 'Z' ) history.redo();
+      else return;
+    } else {
+      if( e.ctrlKey && e.key == 'z' ) history.undo();
+      else if( e.ctrlKey && e.key == 'y' ) history.redo();
+      else return;
+    }
+  
+    e.preventDefault();
+  }, true);
 })();
 
 
@@ -3754,8 +3759,8 @@ module.exports = Toolbar;
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(7);
-var Separator = __webpack_require__(11);
-var ListButton = __webpack_require__(10);
+var Separator = __webpack_require__(12);
+var ListButton = __webpack_require__(11);
 
 Button.eval = function(o) {
   if( !o ) return null;
@@ -3863,7 +3868,7 @@ module.exports = DnD;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var toolbar = __webpack_require__(13);
+var toolbar = __webpack_require__(14);
 var Button = __webpack_require__(5).Button;
 
 __webpack_require__(58);
@@ -3970,7 +3975,7 @@ module.exports = Marker;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 
@@ -4057,7 +4062,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 module.exports = new Items()
@@ -4130,7 +4135,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 function rangeitem(text, tooltip, selector, fn) {
@@ -4362,7 +4367,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 module.exports = new Items()
@@ -4395,7 +4400,7 @@ module.exports = new Items()
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(1);
+var context = __webpack_require__(3);
 var Items = __webpack_require__(4);
 
 module.exports = new Items()
@@ -4419,7 +4424,7 @@ module.exports = new Items()
 /* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4433,7 +4438,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 /* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4447,7 +4452,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 /* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4461,7 +4466,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: po
 /* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4475,7 +4480,7 @@ exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  dis
 /* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4489,7 +4494,7 @@ exports.push([module.i, ".ff-toolbar-separator-btn {\n  letter-spacing: -99999;\
 /* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4503,7 +4508,7 @@ exports.push([module.i, ".ff-article.ff-focus-state {\n  background-color: initi
 /* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4517,7 +4522,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 /* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4531,7 +4536,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 /* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4545,7 +4550,7 @@ exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n
 /* 46 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4559,7 +4564,7 @@ exports.push([module.i, ".f_link {\n  margin: 15px 0;\n}\n.f_link a {\n  display
 /* 47 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4573,7 +4578,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 /* 48 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4587,7 +4592,7 @@ exports.push([module.i, ".f_row {\n  display: table;\n  table-layout: fixed;\n  
 /* 49 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4601,7 +4606,7 @@ exports.push([module.i, "hr.ff-edit-state {\n  display: block;\n  min-height: 1p
 /* 50 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(2)(undefined);
+exports = module.exports = __webpack_require__(1)(undefined);
 // imports
 
 
@@ -4716,7 +4721,7 @@ module.exports = function (css) {
 var content = __webpack_require__(38);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4742,7 +4747,7 @@ if(false) {
 var content = __webpack_require__(39);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4768,7 +4773,7 @@ if(false) {
 var content = __webpack_require__(40);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4794,7 +4799,7 @@ if(false) {
 var content = __webpack_require__(41);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4820,7 +4825,7 @@ if(false) {
 var content = __webpack_require__(42);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4846,7 +4851,7 @@ if(false) {
 var content = __webpack_require__(43);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4872,7 +4877,7 @@ if(false) {
 var content = __webpack_require__(44);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4898,7 +4903,7 @@ if(false) {
 var content = __webpack_require__(45);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4924,7 +4929,7 @@ if(false) {
 var content = __webpack_require__(46);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4950,7 +4955,7 @@ if(false) {
 var content = __webpack_require__(47);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4976,7 +4981,7 @@ if(false) {
 var content = __webpack_require__(48);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5002,7 +5007,7 @@ if(false) {
 var content = __webpack_require__(49);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5028,7 +5033,7 @@ if(false) {
 var content = __webpack_require__(50);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
-var update = __webpack_require__(3)(content, {});
+var update = __webpack_require__(2)(content, {});
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5053,7 +5058,7 @@ var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(14);
+var util = __webpack_require__(15);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -5124,7 +5129,7 @@ module.exports = Context;
 /* 66 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(14);
+var util = __webpack_require__(15);
 var win = window;
 var doc = document;
 

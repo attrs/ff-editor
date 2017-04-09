@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 30);
+/******/ 	return __webpack_require__(__webpack_require__.s = 31);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -472,8 +472,11 @@ function updateLink(linkElement, options, obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var types = __webpack_require__(16);
+var types = __webpack_require__(17);
 var Items = __webpack_require__(4);
+var RangeEditor = __webpack_require__(14);
+var history = __webpack_require__(32);
+var RangeEditor = __webpack_require__(14);
 
 var win = window,
     doc = document,
@@ -747,6 +750,34 @@ var context = {
     return context;
   },
   
+  // undo/redo
+  history: function(fn) {
+    if( !arguments.length ) return history;
+    
+    history.add(fn);
+    return this;
+  },
+
+  // range
+  ranges: function(node, collapsed) {
+    var selection = win.getSelection();
+    var ranges = [];
+    if( selection.rangeCount )
+      for(var i=0; i < selection.rangeCount; i++)
+        ranges.push(selection.getRangeAt(i));
+  
+    if( !arguments.length ) return ranges;
+  
+    return ranges.filter(function(range) {
+      if( !collapsed && range.collapsed ) return;
+      return range && node.contains(range.startContainer) && node.contains(range.endContainer) && RangeEditor(range);
+    });
+  },
+  range: function(node, collapsed) {
+    var ranges = context.ranges(node, collapsed);
+    return ranges && ranges.length && RangeEditor(ranges[ranges.length - 1]);
+  },
+  
   // defaults
   fonts: function(arr) {
     if( !arguments.length ) return fonts;
@@ -836,8 +867,8 @@ module.exports = Items;
 var Toolbar = __webpack_require__(34);
 
 Toolbar.Button = __webpack_require__(8);
-Toolbar.Separator = __webpack_require__(15);
-Toolbar.ListButton = __webpack_require__(14);
+Toolbar.Separator = __webpack_require__(16);
+Toolbar.ListButton = __webpack_require__(15);
 
 module.exports = Toolbar;
 
@@ -845,7 +876,7 @@ module.exports = Toolbar;
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Types = __webpack_require__(16);
+var Types = __webpack_require__(17);
 var Toolbar = __webpack_require__(5);
 var $ = __webpack_require__(0);
 var context = __webpack_require__(3);
@@ -1505,7 +1536,7 @@ var _hexToRgb = __webpack_require__(10);
 
 var _removeClass$getTopMargin$fadeIn$show$addClass = __webpack_require__(7);
 
-var _defaultParams = __webpack_require__(18);
+var _defaultParams = __webpack_require__(19);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
@@ -1749,6 +1780,8 @@ var Part = __webpack_require__(6);
 var Toolbar = __webpack_require__(5);
 var context = __webpack_require__(3);
 var autoflush = __webpack_require__(13);
+var win = window;
+var doc = document;
 
 __webpack_require__(89);
 
@@ -1772,26 +1805,26 @@ proto.oninit = function(e) {
   
   var el = $(dom)
   .on('paste', function(e) {
-    if( part.multiline() ) return;
+    //if( part.multiline() ) return;
     
     e.preventDefault();
     
-    var range = part.range(true);
-    var clipboard = e.clipboardData || window.clipboardData;
+    var selection = win.getSelection();
+    var range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    var clipboard = e.clipboardData || win.clipboardData;
     var text = clipboard.getData('Text');
+    
     if( text && range ) {
-      var node = document.createTextNode(text);
+      var node = doc.createTextNode(text);
       range.deleteContents();
       range.insertNode(node);
-      dom.normalize();
       
-      range = document.createRange();
-      range.setStart(node, 0);
-      range.setEnd(node, text.length);
+      var newrange = doc.createRange();
+      newrange.selectNode(node);
       
-      var selection = window.getSelection();
       selection.removeAllRanges();
-      selection.addRange(range);
+      selection.addRange(newrange);
+      dom.normalize();
     }
   })
   .on('keydown', function(e) {
@@ -1964,13 +1997,13 @@ module.exports = ParagraphPart;
 /* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
-
 var win = window,
     doc = document,
     ctx = __webpack_require__(3),
     Toolbar = __webpack_require__(5),
     Part = __webpack_require__(6),
-    Items = __webpack_require__(4);
+    Items = __webpack_require__(4)
+    $ = __webpack_require__(0);
 
 __webpack_require__(79);
 
@@ -2045,37 +2078,6 @@ ctx.uploader(function(file, done) {
 
 ctx.placeholder = 'Please enter the text.';
 
-// range
-var RangeEditor = __webpack_require__(32);
-ctx.ranges = function(node, collapsed) {
-  var selection = win.getSelection();
-  var ranges = [];
-  if( selection.rangeCount )
-    for(var i=0; i < selection.rangeCount; i++)
-      ranges.push(selection.getRangeAt(i));
-  
-  if( !arguments.length ) return ranges;
-  
-  return ranges.filter(function(range) {
-    if( !collapsed && range.collapsed ) return;
-    return range && node.contains(range.startContainer) && node.contains(range.endContainer) && RangeEditor(range);
-  });
-};
-
-ctx.range = function(node, collapsed) {
-  var ranges = ctx.ranges(node, collapsed);
-  return ranges && ranges.length && RangeEditor(ranges[ranges.length - 1]);
-};
-
-// history
-var history = __webpack_require__(31);
-ctx.history = function(fn) {
-  if( !arguments.length ) return history;
-  
-  history.add(fn);
-  return this;
-};
-
 module.exports = ctx;
 
 
@@ -2103,6 +2105,27 @@ module.exports = ctx;
     if( doc.body ) fn();
     else readyfn = fn;
   };
+  
+  // bind undo/redo shortcut listener
+  var platform = win.navigator.platform;
+  var mac = !!~platform.toLowerCase().indexOf('mac');
+  var history = ctx.history();
+  
+  $(win).on('keydown', function(e) {
+    if( !ctx.editmode() ) return;
+  
+    if( mac ) {
+      if( e.metaKey && e.key == 'z' ) history.undo();
+      else if( e.metaKey && e.shiftKey && e.key == 'Z' ) history.redo();
+      else return;
+    } else {
+      if( e.ctrlKey && e.key == 'z' ) history.undo();
+      else if( e.ctrlKey && e.key == 'y' ) history.redo();
+      else return;
+    }
+  
+    e.preventDefault();
+  }, true);
 })();
 
 
@@ -2137,6 +2160,152 @@ module.exports = function(flushfn, timeout) {
 
 /***/ }),
 /* 14 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var win = window;
+var doc = document;
+
+function nextnode(node, skip){
+  if( node.firstChild && !skip ) return node.firstChild;
+  if( !node.parentNode ) return null;
+  
+  return node.nextSibling || nextnode(node.parentNode, true);
+}
+
+function rangelist(range){
+  var start = range.startContainer.childNodes[range.startOffset] || range.startContainer;
+  var end = range.endContainer.childNodes[range.endOffset] || range.endContainer;
+  
+  if( start === end ) return [start];
+  
+  var nodes = [], current = start;
+  do {
+    nodes.push(current);
+  } while ((current = nextnode(current)) && (current != end));
+  
+  return nodes;
+}
+
+function wrap(range, selector) {
+  if( !range ) return null;
+  if( typeof selector != 'string' || !selector ) selector = 'div';
+  
+  var node = range.cloneContents();
+  var asm = $.util.assemble(selector);
+  var wrapper = doc.createElement(asm.tag);
+  if( asm.id ) wrapper.id = id;
+  if( asm.classes ) wrapper.className = asm.classes;
+  
+  wrapper.appendChild(node);
+  wrapper.normalize();
+  range.deleteContents();
+  range.insertNode(wrapper);
+  
+  // select new node
+  var range = doc.createRange();
+  range.selectNodeContents(wrapper);
+  var selection = win.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  return wrapper;
+};
+
+function unwrap(range, selector) {
+  if( !range || !selector ) return this;
+  
+  var common = $(range.commonAncestorContainer);
+  var node = range.cloneContents();
+  var tmp = $('<div/>').append(node);
+  
+  //console.log('tmp', tmp.html());
+  tmp.nodes().each(function() {
+    var el = $(this);
+    
+    el.find(selector).nodes().unwrap();
+    if( el.is(selector) ) el.nodes().unwrap();
+  });
+  
+  var nodes = tmp.normalize().nodes();
+  //console.log('nodes', tmp.html());
+  if( !nodes.length ) return this;
+  
+  var start = nodes[0];
+  var end = nodes[nodes.length - 1];
+  
+  range.deleteContents();
+  
+  nodes.reverse().each(function() {
+    range.insertNode(this);
+  });
+  
+  range = doc.createRange();
+  range.selectNodeContents(start);
+  var startoffset = range.startOffset;
+  
+  range = doc.createRange();
+  range.selectNodeContents(end);
+  var endoffset = range.endOffset;
+  
+  range = doc.createRange();
+  range.setStart(start, startoffset);
+  range.setEnd(end, endoffset);
+  
+  var selection = win.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+  
+  start.parentNode.normalize();
+  
+  return this;
+};
+
+function iswrapped(range, selector) {
+  if( !range ) return false;
+  
+  var wrapped = false;
+  $(rangelist(range)).each(function() {
+    if( wrapped ) return false;
+    var el = $(this);
+    wrapped = el.is(selector) || el.parent(selector).length || el.find(selector).length;
+  });
+  
+  return wrapped;
+};
+
+function togglewrap(range, selector) {
+  if( !range ) return this;
+  if( iswrapped(range, selector) ) unwrap(range, selector);
+  else wrap(range, selector);
+  
+  return this;
+};
+
+function RangeEditor(range) {
+  return {
+    range: function() {
+      return range;
+    },
+    iswrapped: function(selector) {
+      return iswrapped(range, selector);
+    },
+    togglewrap: function(selector) {
+      return togglewrap(range, selector);
+    },
+    unwrap: function(selector) {
+      return unwrap(range, selector);
+    },
+    wrap: function(selector) {
+      return wrap(range, selector);
+    }
+  };
+}
+
+module.exports = RangeEditor;
+
+/***/ }),
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2223,7 +2392,7 @@ $(document).ready(function() {
 module.exports = ListButton;
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2243,7 +2412,7 @@ proto.handleEvent = function(e) {};
 module.exports = Separator;
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports) {
 
 var types = {};
@@ -2266,7 +2435,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -2362,7 +2531,7 @@ module.exports = new Items()
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2400,7 +2569,7 @@ exports['default'] = defaultParams;
 module.exports = exports['default'];
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports) {
 
 var g;
@@ -2427,7 +2596,7 @@ module.exports = g;
 
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(setImmediate) {var matches = Element.prototype.matches || 
@@ -2605,7 +2774,7 @@ var lib = module.exports = {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(100).setImmediate))
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = {
@@ -2644,7 +2813,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -2710,13 +2879,13 @@ var CustomPart = function (_Part) {
 exports.default = CustomPart;
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports) {
 
 module.exports = "<div id=\"pwsp\" class=\"pswp\" tabindex=\"-1\" role=\"dialog\" aria-hidden=\"true\">\n\n  <!-- Background of PhotoSwipe. \n     It's a separate element as animating opacity is faster than rgba(). -->\n  <div class=\"pswp__bg\"></div>\n\n  <!-- Slides wrapper with overflow:hidden. -->\n  <div class=\"pswp__scroll-wrap\">\n\n    <!-- Container that holds slides. \n      PhotoSwipe keeps only 3 of them in the DOM to save memory.\n      Don't modify these 3 pswp__item elements, data is added later on. -->\n    <div class=\"pswp__container\">\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n      <div class=\"pswp__item\"></div>\n    </div>\n\n    <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->\n    <div class=\"pswp__ui pswp__ui--hidden\">\n\n      <div class=\"pswp__top-bar\">\n\n        <!-- Controls are self-explanatory. Order can be changed. -->\n\n        <div class=\"pswp__counter\"></div>\n\n        <button class=\"pswp__button pswp__button--close\" title=\"Close (Esc)\"></button>\n\n        <button class=\"pswp__button pswp__button--fs\" title=\"Toggle fullscreen\"></button>\n\n        <button class=\"pswp__button pswp__button--zoom\" title=\"Zoom in/out\"></button>\n\n        <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->\n        <!-- element will get class pswp__preloader--active when preloader is running -->\n        <div class=\"pswp__preloader\">\n          <div class=\"pswp__preloader__icn\">\n           <div class=\"pswp__preloader__cut\">\n            <div class=\"pswp__preloader__donut\"></div>\n           </div>\n          </div>\n        </div>\n      </div>\n\n      <div class=\"pswp__share-modal pswp__share-modal--hidden pswp__single-tap\">\n        <div class=\"pswp__share-tooltip\"></div> \n      </div>\n\n      <button class=\"pswp__button pswp__button--arrow--left\" title=\"Previous (arrow left)\">\n      </button>\n\n      <button class=\"pswp__button pswp__button--arrow--right\" title=\"Next (arrow right)\">\n      </button>\n\n      <div class=\"pswp__caption\">\n        <div class=\"pswp__caption__center\"></div>\n      </div>\n\n    </div>\n\n  </div>\n\n</div>";
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*! PhotoSwipe Default UI - 4.1.1 - 2015-12-24
@@ -3587,7 +3756,7 @@ return PhotoSwipeUI_Default;
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_RESULT__;/*! PhotoSwipe - v4.1.1 - 2015-12-24
@@ -7314,7 +7483,7 @@ _registerModule('History', {
 });
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
@@ -7340,7 +7509,7 @@ if(false) {
 }
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
@@ -7366,7 +7535,7 @@ if(false) {
 }
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
@@ -7392,7 +7561,7 @@ if(false) {
 }
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -7435,7 +7604,7 @@ var _handleKeyDown2 = _interopRequireWildcard(_handleKeyDown);
 
 // Default values
 
-var _defaultParams = __webpack_require__(18);
+var _defaultParams = __webpack_require__(19);
 
 var _defaultParams2 = _interopRequireWildcard(_defaultParams);
 
@@ -7701,14 +7870,14 @@ if (typeof window !== 'undefined') {
 module.exports = exports['default'];
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var ff = __webpack_require__(12);
 var $ = __webpack_require__(0);
 var Part = ff.Part;
-var CustomPart = __webpack_require__(22).default;
-var tpls = __webpack_require__(21);
+var CustomPart = __webpack_require__(23).default;
+var tpls = __webpack_require__(22);
 var version = 2;
 
 ff.data(tpls['spongebob']);
@@ -7718,14 +7887,14 @@ if( +localStorage.getItem('ff-version') !== version )
 
 // override alert/prompt/imageshow action
 (function() {
-  var PhotoSwipe = __webpack_require__(25);
-  var PhotoSwipeDefaultUI = __webpack_require__(24);
-  var slidetpl = $(__webpack_require__(23));
-  __webpack_require__(27);
-  __webpack_require__(26);
-  
-  var swal = __webpack_require__(29);
+  var PhotoSwipe = __webpack_require__(26);
+  var PhotoSwipeDefaultUI = __webpack_require__(25);
+  var slidetpl = $(__webpack_require__(24));
   __webpack_require__(28);
+  __webpack_require__(27);
+  
+  var swal = __webpack_require__(30);
+  __webpack_require__(29);
   
   ff.on('ff-alert', function(e) {
     e.preventDefault();
@@ -7854,11 +8023,10 @@ ff.ready(function() {
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
 
 var win = window;
 var timeoutid, timeoutfn;
@@ -7872,7 +8040,7 @@ var redo = function() {
   var action =  next();
   if( action ) {
     //console.log('redo', index);
-    action.call(context, redo);
+    action.call(scope, redo);
   }
   processing = false;
   return scope;
@@ -7883,7 +8051,7 @@ var undo = function() {
   var action =  prev();
   if( action ) {
     //console.log('undo', index);
-    action.call(context, undo);
+    action.call(scope, undo);
   }
   processing = false;
   return scope;
@@ -7946,169 +8114,6 @@ var scope = module.exports = {
     return this;
   }
 };
-
-// add keydown listener to document
-var platform = win.navigator.platform;
-var mac = !!~platform.toLowerCase().indexOf('mac');
-
-$(win).on('keydown', function(e) {
-  if( !context.editmode() ) return;
-  
-  if( mac ) {
-    if( e.metaKey && e.key == 'z' ) undo();
-    else if( e.metaKey && e.shiftKey && e.key == 'Z' ) redo();
-    else return;
-  } else {
-    if( e.ctrlKey && e.key == 'z' ) undo();
-    else if( e.ctrlKey && e.key == 'y' ) redo();
-    else return;
-  }
-  
-  e.preventDefault();
-}, true);
-
-/***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var win = window;
-var doc = document;
-
-function nextnode(node, skip){
-  if( node.firstChild && !skip ) return node.firstChild;
-  if( !node.parentNode ) return null;
-  
-  return node.nextSibling || nextnode(node.parentNode, true);
-}
-
-function rangelist(range){
-  var start = range.startContainer.childNodes[range.startOffset] || range.startContainer;
-  var end = range.endContainer.childNodes[range.endOffset] || range.endContainer;
-  
-  if( start === end ) return [start];
-  
-  var nodes = [], current = start;
-  do {
-    nodes.push(current);
-  } while ((current = nextnode(current)) && (current != end));
-  
-  return nodes;
-}
-
-function wrap(range, selector) {
-  if( !range ) return null;
-  if( typeof selector != 'string' || !selector ) selector = 'div';
-  
-  var node = range.cloneContents();
-  var asm = $.util.assemble(selector);
-  var wrapper = doc.createElement(asm.tag);
-  if( asm.id ) wrapper.id = id;
-  if( asm.classes ) wrapper.className = asm.classes;
-  
-  wrapper.appendChild(node);
-  wrapper.normalize();
-  range.deleteContents();
-  range.insertNode(wrapper);
-  
-  // select new node
-  var range = doc.createRange();
-  range.selectNodeContents(wrapper);
-  var selection = win.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  return wrapper;
-};
-
-function unwrap(range, selector) {
-  if( !range || !selector ) return this;
-  
-  var common = $(range.commonAncestorContainer);
-  var node = range.cloneContents();
-  var tmp = $('<div/>').append(node);
-  
-  //console.log('tmp', tmp.html());
-  tmp.nodes().each(function() {
-    var el = $(this);
-    
-    el.find(selector).nodes().unwrap();
-    if( el.is(selector) ) el.nodes().unwrap();
-  });
-  
-  var nodes = tmp.normalize().nodes();
-  //console.log('nodes', tmp.html());
-  if( !nodes.length ) return this;
-  
-  var start = nodes[0];
-  var end = nodes[nodes.length - 1];
-  
-  range.deleteContents();
-  
-  nodes.reverse().each(function() {
-    range.insertNode(this);
-  });
-  
-  range = doc.createRange();
-  range.selectNodeContents(start);
-  var startoffset = range.startOffset;
-  
-  range = doc.createRange();
-  range.selectNodeContents(end);
-  var endoffset = range.endOffset;
-  
-  range = doc.createRange();
-  range.setStart(start, startoffset);
-  range.setEnd(end, endoffset);
-  
-  var selection = win.getSelection();
-  selection.removeAllRanges();
-  selection.addRange(range);
-  
-  start.parentNode.normalize();
-  
-  return this;
-};
-
-function iswrapped(range, selector) {
-  if( !range ) return false;
-  
-  var wrapped = false;
-  $(rangelist(range)).each(function() {
-    if( wrapped ) return false;
-    var el = $(this);
-    wrapped = el.is(selector) || el.parent(selector).length || el.find(selector).length;
-  });
-  
-  return wrapped;
-};
-
-function togglewrap(range, selector) {
-  if( !range ) return this;
-  if( iswrapped(range, selector) ) unwrap(range, selector);
-  else wrap(range, selector);
-  
-  return this;
-};
-
-function RangeEditor(range) {
-  return {
-    iswrapped: function(selector) {
-      return iswrapped(range, selector);
-    },
-    togglewrap: function(selector) {
-      return togglewrap(range, selector);
-    },
-    unwrap: function(selector) {
-      return unwrap(range, selector);
-    },
-    wrap: function(selector) {
-      return wrap(range, selector);
-    }
-  };
-}
-
-module.exports = RangeEditor;
 
 /***/ }),
 /* 33 */
@@ -8460,8 +8465,8 @@ module.exports = Toolbar;
 /***/ (function(module, exports, __webpack_require__) {
 
 var Button = __webpack_require__(8);
-var Separator = __webpack_require__(15);
-var ListButton = __webpack_require__(14);
+var Separator = __webpack_require__(16);
+var ListButton = __webpack_require__(15);
 
 Button.eval = function(o) {
   if( !o ) return null;
@@ -8495,7 +8500,7 @@ function ArticlePart() {
   Part.apply(this, arguments);
 }
 
-var items = ArticlePart.toolbar = __webpack_require__(17);
+var items = ArticlePart.toolbar = __webpack_require__(18);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
 
 proto.createToolbar = function() {
@@ -8850,7 +8855,7 @@ module.exports = DnD;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var toolbar = __webpack_require__(17);
+var toolbar = __webpack_require__(18);
 var Button = __webpack_require__(5).Button;
 
 __webpack_require__(86);
@@ -12052,7 +12057,7 @@ function isnan (val) {
   return val !== val // eslint-disable-line no-self-compare
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(19)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(20)))
 
 /***/ }),
 /* 53 */
@@ -12794,7 +12799,7 @@ process.umask = function() { return 0; };
     attachTo.clearImmediate = clearImmediate;
 }(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(19), __webpack_require__(76)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(20), __webpack_require__(76)))
 
 /***/ }),
 /* 78 */
@@ -13846,7 +13851,7 @@ var Extensions = function() {}
 Extensions.prototype = new Array();
 var extensions = new Extensions();
 
-var util = __webpack_require__(20);
+var util = __webpack_require__(21);
 var isArrayLike = util.isArrayLike;
 var create = util.create;
 var isHTML = util.isHTML;
@@ -13917,7 +13922,7 @@ module.exports = Context;
 /* 102 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var util = __webpack_require__(20);
+var util = __webpack_require__(21);
 var win = window;
 var doc = document;
 
