@@ -2796,7 +2796,7 @@ var Toolbar = __webpack_require__(5);
 __webpack_require__(62);
 
 function isedge(dom, y) {
-  var top = $.util.offset(dom, true).top;
+  var top = $.util.offset(dom).top;
   var height = dom.offsetHeight;
   
   if( y < top + 30 || y > top + height - 30 ) return true;
@@ -2812,7 +2812,7 @@ function getcellindex(dom, target, x) {
   var index = cells.indexOf(cell);
   
   if( !~index ) return index;
-  if( x > $.util.offset(cell, true).left + (cell.offsetWidth / 2) ) {
+  if( x > $.util.offset(cell).left + (cell.offsetWidth / 2) ) {
     index = index + 1;
     cell.style.borderRight = '2px solid #2796DD';
   } else {
