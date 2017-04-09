@@ -2562,8 +2562,9 @@ var lib = module.exports = {
     var top = el.offsetTop, left = el.offsetLeft;
     if( abs ) {
       while( el = el.offsetParent ) {
-        top += el.offsetTop;
-        left += el.offsetLeft;
+        //console.log('offsettop', el.offsetTop, 'scrolltop', el.scrollTop)
+        top += el.offsetTop - (el.scrollTop || 0);
+        left += el.offsetLeft - (el.scrollLeft || 0);
       }
     }
     
@@ -8238,6 +8239,7 @@ module.exports = Buttons;
 var $ = __webpack_require__(0);
 var Buttons = __webpack_require__(33);
 var doc = document;
+var win = window;
 
 __webpack_require__(80);
 
@@ -8248,7 +8250,7 @@ function clone(o) {
 }
 
 function Toolbar(scope, options) {
-  this._el = $('<div/>').ac('ff-toolbar');
+  this._el = $('<div/>').ac('ff-toolbar ff-acc');
   this._buttons = new Buttons(this);
   this.options(options);
   this.scope(scope);
@@ -8344,7 +8346,9 @@ Toolbar.prototype = {
   show: function(b) {
     if( !this.enable() ) return this;
     
-    var el = $(this.dom()).appendTo(doc.body).css('opacity', 1);
+    var tracker = this.tracker();
+    var offsetparent = tracker.offsetParent || doc.body;
+    if( offsetparent ) $(this.dom()).appendTo(offsetparent).css('opacity', 1);
     this.update();
     return this;
   },
@@ -8355,13 +8359,17 @@ Toolbar.prototype = {
     return this;
   },
   update: function() {
+    var tracker = this.tracker();
+    if( !tracker ) return this;
+    
     var dom = this.dom();
     var el = $(dom);
-    var tracker = this.tracker();
     var enable = this.enable();
-    var win = $(window).off('scroll resize', this);
+    var offsetparent = tracker.offsetParent || doc.body;
     
-    if( !enable || !doc.body || !doc.body.contains(dom) || !doc.body.contains(tracker) ) {
+    $(win).off('scroll resize wheel', this);
+    
+    if( !enable || !offsetparent || !offsetparent.contains(dom) || !offsetparent.contains(tracker) ) {
       el.remove();
       return this;
     }
@@ -8372,7 +8380,7 @@ Toolbar.prototype = {
     var position = this.position();
     var gap = this.gap();
     var limitY = Toolbar.DEFAULT_LIMIT_Y;
-    var scopeposition = $(tracker).offset();
+    var scopeposition = $(tracker).position();
     var posarr = position.split(' ');
     var inside = ~posarr.indexOf('inside');
     var vertical = ~posarr.indexOf('vertical');
@@ -8386,23 +8394,7 @@ Toolbar.prototype = {
     var top = 0, left = 0, margin = nomargin ? 0 : gap;
     
     posarr.forEach(function(pos) {
-      if( !vertical ) {
-        if( pos === 'top' ) {
-          if( inside ) top = scopeposition.top + margin;
-          else top = scopeposition.top - tbarheight - margin;
-        } else if( pos == 'bottom' ) {
-          if( inside ) top = scopeposition.top + height - tbarheight - margin;
-          else top = scopeposition.top + height + margin;
-        } else if( pos == 'left' ) {
-          left = scopeposition.left;
-          if( inside ) left += margin;
-        } else if( pos == 'center' ) {
-          left = scopeposition.left + (width - tbarwidth) / 2;
-        } else if( pos == 'right' ) {
-          left = scopeposition.left + width - tbarwidth;
-          if( inside ) left -= margin;
-        }
-      } else {
+      if( vertical ) {
         if( pos === 'top' ) {
           top = scopeposition.top;
           if( inside ) top += margin;
@@ -8418,15 +8410,35 @@ Toolbar.prototype = {
           if( inside ) left = scopeposition.left + width - tbarwidth - margin;
           else left = scopeposition.left + width + margin;
         }
+        
+      } else {
+        if( pos === 'top' ) {
+          if( inside ) top = scopeposition.top + margin;
+          else top = scopeposition.top - tbarheight - margin;
+        } else if( pos == 'bottom' ) {
+          if( inside ) top = scopeposition.top + height - tbarheight - margin;
+          else top = scopeposition.top + height + margin;
+        } else if( pos == 'left' ) {
+          left = scopeposition.left;
+          if( inside ) left += margin;
+        } else if( pos == 'center' ) {
+          left = scopeposition.left + (width - tbarwidth) / 2;
+        } else if( pos == 'right' ) {
+          left = scopeposition.left + width - tbarwidth;
+          if( inside ) left -= margin;
+        }
       }
     });
-    
-    if( top <= 5 ) top = 5;
-    if( left <= 5 ) left = 5;
-    
-    if( vertical ) {
-      if( window.scrollY + limitY > tracker.offsetTop ) top = window.scrollY + limitY;
-      if( top > tracker.offsetTop + height - tbarheight ) top = tracker.offsetTop + height - tbarheight;
+      
+    if( offsetparent === doc.body ) {
+      if( top <= 5 ) top = 5;
+      if( left <= 5 ) left = 5;
+      
+      if( vertical ) {
+        //console.log('vertical', scopeposition, top);
+        if( win.scrollY + limitY > scopeposition.top ) top = win.scrollY + limitY;
+        if( top > scopeposition.top + height - tbarheight ) top = scopeposition.top + height - tbarheight;
+      }
     }
     
     dom.style.top = top + 'px';
@@ -8434,7 +8446,7 @@ Toolbar.prototype = {
     
     this.buttons().update();
     
-    win.on('scroll resize', this);
+    $(win).on('scroll resize wheel', this);
     return this;
   }
 };
@@ -12132,7 +12144,7 @@ exports = module.exports = __webpack_require__(1)(undefined);
 
 
 // module
-exports.push([module.i, ".ff-article {\n  position: relative;\n}\n.ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.f_article_view {\n  clear: both;\n}\n", ""]);
+exports.push([module.i, ".ff-article.ff-focus-state {\n  background-color: initial;\n}\n.ff-article.ff-edit-state {\n  border: 1px dotted #ccc;\n}\n.f_article_view {\n  clear: both;\n}\n", ""]);
 
 // exports
 
