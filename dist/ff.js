@@ -1373,7 +1373,7 @@ proto.oninit = function(e) {
   
   var el = $(dom)
   .on('paste', function(e) {
-    //if( part.multiline() ) return;
+    if( part.multiline() ) return;
     
     e.preventDefault();
     
