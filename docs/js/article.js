@@ -8711,6 +8711,8 @@ proto.insert = function(node, ref) {
     } else if( images.length ) {
       var chunksize = +target.attr('ff-row-chunk-size');
       
+      images.reverse();
+      
       if( !chunksize || chunksize < 1 ) chunksize = 5;
       $.util.chunk(images, chunksize).forEach(function(arr) {
         var row = new context.Row().valign('justify');
