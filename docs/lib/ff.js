@@ -2366,11 +2366,15 @@ proto.insert = function(node, ref) {
       insert(images[0].dom(), ref);
     } else if( images.length ) {
       var chunksize = +target.attr('ff-row-chunk-size');
+      
       if( !chunksize || chunksize < 1 ) chunksize = 5;
       $.util.chunk(images, chunksize).forEach(function(arr) {
         var row = new context.Row().valign('justify');
         arr.forEach(function(image) {
           row.add(image);
+          image.on('load', function() {
+            row.validate();
+          });
         });
         insert(row.dom(), ref);
       });
