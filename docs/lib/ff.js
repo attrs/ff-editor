@@ -562,7 +562,7 @@ var context = {
     return context;
   },
   clear: function() {
-    context.data(null, true).fire('clear');
+    context.data(null, true).fire('ff-clear');
     return context;
   },
   reset: function() {
@@ -881,11 +881,19 @@ module.exports = Items;
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var $ = __webpack_require__(0);
 var Toolbar = __webpack_require__(28);
 
 Toolbar.Button = __webpack_require__(7);
 Toolbar.Separator = __webpack_require__(12);
 Toolbar.ListButton = __webpack_require__(11);
+
+Toolbar.update = function() {
+  $('.ff-toolbar').each(function(i, el) {
+    var toolbar = el.toolbar;
+    toolbar && toolbar.update();
+  });
+};
 
 module.exports = Toolbar;
 
@@ -3392,6 +3400,10 @@ module.exports = ctx;
     else readyfn = fn;
   };
   
+  ctx.on('ff-data ff-clear ff-modechange', function(e) {
+    Toolbar.update();
+  });
+  
   // bind undo/redo shortcut listener
   var platform = win.navigator.platform;
   var mac = !!~platform.toLowerCase().indexOf('mac');
@@ -3399,7 +3411,7 @@ module.exports = ctx;
   
   $(win).on('keydown', function(e) {
     if( !ctx.editmode() ) return;
-  
+    
     if( mac ) {
       if( e.metaKey && e.key == 'z' ) history.undo();
       else if( e.metaKey && e.shiftKey && e.key == 'Z' ) history.redo();
@@ -3559,6 +3571,8 @@ function Toolbar(scope, options) {
   this._buttons = new Buttons(this);
   this.options(options);
   this.scope(scope);
+  
+  this._el[0].toolbar = this;
 }
 
 Toolbar.DEFAULT_GAP = 10;
@@ -3748,10 +3762,9 @@ Toolbar.prototype = {
     
     dom.style.top = top + 'px';
     dom.style.left = left + 'px';
+    $(win).on('scroll resize wheel', this);
     
     this.buttons().update();
-    
-    $(win).on('scroll resize wheel', this);
     return this;
   }
 };
