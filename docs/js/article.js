@@ -1812,6 +1812,7 @@ proto.oninit = function(e) {
   }, 200);
   
   var el = $(dom)
+  .ac('f_txt')
   .on('paste', function(e) {
     if( part.multiline() ) return;
     
