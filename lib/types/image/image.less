@@ -1,3 +1,23 @@
+.f_img {
+  img {
+    display: block;
+    width: 100%;
+    margin: 0 auto;
+    user-drag: none; 
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+  }
+  
+  figcaption {
+    margin: 8px 0;
+    text-align: center;
+    outline: none;
+  }
+}
+
 .f_img_block {
   display: block;
   max-width: 100%;
@@ -16,13 +36,13 @@
   width: 100%;
 }
 
-img.f_pullleft {
+.f_img.f_pullleft {
   float: left;
   margin-right: 25px;
   max-width: 40%;
 }
 
-img.f_pullright {
+.f_img.f_pullright {
   float: right;
   margin-left: 25px;
   max-width: 40%;

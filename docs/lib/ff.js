@@ -866,6 +866,7 @@ proto.get = function(id) {
 };
 
 proto.remove = function(item) {
+  if( ~['string', 'number'].indexOf(typeof item) ) item = this[id];
   for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
   return this;
 };
@@ -1009,8 +1010,8 @@ Part.prototype = {
         if( target === dom ) {
           toolbar.hide();
           context.dragging = dom;
-          e.dataTransfer.setDragImage(el[0], 0, 0);
-          e.dataTransfer.setData('text', target.outerHTML);
+          e.dataTransfer.setDragImage(dom, 0, 0);
+          e.dataTransfer.setData('text', dom.outerHTML);
           el.ac('ff-dragging');
           self.history().init();
         }
@@ -2225,8 +2226,13 @@ proto.scan = function() {
   
   context.scan();
   
-  dom.find('img').each(function() {
+  dom.find('figure').each(function() {
     if( $(this).hc('ff-acc') ) return;
+    if( !this._ff ) new context.Image(this);
+  });
+  
+  dom.find('img').each(function() {
+    if( $(this).hc('ff-acc') || this.parentNode.tagName == 'FIGURE' ) return;
     if( !this._ff ) new context.Image(this);
   });
   
@@ -2495,6 +2501,8 @@ function ImagePart(el) {
   Part.apply(this, arguments);
 }
 
+ImagePart.placeholder = 'Caption Here';
+
 var items = ImagePart.toolbar = __webpack_require__(33);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
 
@@ -2503,49 +2511,157 @@ proto.createToolbar = function() {
 };
 
 proto.oninit = function() {
-  var self = this;
-  var dom = this.dom();
+  var part = this;
+  var dom = part.dom();
+  
   var el = $(dom)
+  .ac('f_img')
   .on('click', function(e) {
-    if( !self.editmode() ) context.fire('ff-imageshow', {
+    if( !part.editmode() ) context.fire('ff-imageshow', {
       originalEvent: e,
-      image: dom,
-      src: dom.src,
-      part: self
+      image: img[0] || dom,
+      src: (img[0] || dom).src,
+      part: part
     });
+  });
+  
+  var img = el.find('img')
+  .on('load', function(e) {
+    part.fire(e.type);
+  });
+  
+  var placeholder = part._placeholder = $('<div class="ff-placeholder ff-acc"/>')
+  .attr('contenteditable', false)
+  .html(el.attr('placeholder') || ImagePart.placeholder || '');
+  
+  var placeholderlistener = function(e) {
+    var figcaption = el.find('figcaption');
+    placeholder.remove();
+    
+    if( e.type == 'mousedown' ) return figcaption[0].click();
+    
+    setTimeout(function() {
+      var caption = figcaption.html();
+      if( !caption ) {
+        placeholder.appendTo(figcaption);
+      }
+    }, 10);
+  };
+  
+  part.on('ff-modechange', function() {
+    var el = $(part.dom());
+    var figcaption = el.find('figcaption');
+  
+    figcaption
+    .off('mousedown', placeholderlistener)
+    .off('keydown', placeholderlistener)
+    .off('keyup', placeholderlistener);
+    
+    placeholder.off('mousedown', placeholderlistener);
+    part.off('ff-blur', placeholderlistener);
+    
+    if( part.editmode() ) {
+      if( !figcaption.length ) figcaption = $('<figcaption/>').appendTo(el);
+      
+      var caption = figcaption.html();
+      if( !caption ) {
+        placeholder.appendTo(figcaption);
+      }
+      
+      figcaption
+      .on('mousedown', placeholderlistener)
+      .on('keydown', placeholderlistener)
+      .on('keyup', placeholderlistener);
+      
+      placeholder.on('mousedown', placeholderlistener);
+      part.on('ff-blur', placeholderlistener);
+      
+      figcaption.attr('contenteditable', true);
+    } else {
+      placeholder.remove();
+      
+      figcaption.attr('contenteditable', null);
+    }
   });
 };
 
 proto.create = function(arg) {
   var src;
   var title;
+  var caption;
   
   if( typeof arg === 'object' ) {
     src = arg.src;
     title = arg.name || arg.title;
+    caption = arg.caption;
   } else {
     src = arg;
   }
   
-  return $('<img/>')
-  .ac('f_img_block')
+  var el = $('<img/>')
   .attr('title', title)
-  .src(translatesrc(src))[0];
+  .src(translatesrc(src));
+  
+  if( caption ) {
+    if( typeof caption !== 'string' ) caption = '';
+    el = $('<figure/>').append(el).append($('<figcaption/>').html(caption));
+  } else {
+    el.ac('f_img_block');
+  }
+  
+  return el[0];
+};
+
+proto.img = function() {
+  var dom = this.dom();
+  if( dom.tagName == 'IMG' ) return dom;
+  return $(dom).find('img')[0];
+};
+
+proto.figcaption = function() {
+  return $(this.dom()).find('figcaption')[0];
 };
 
 proto.src = function(src) {
-  if( !arguments.length ) return this.dom().src;
+  if( !arguments.length ) return this.img().src;
   
   src = translatesrc(src);
-  if( src ) this.dom().src = src;
+  if( src ) this.img().src = src;
   
   return this;
 };
 
 proto.title = function(title) {
-  var el = $(this.dom());
+  var el = $(this.img());
   if( !arguments.length ) return el.attr('title');
   el.attr('title', title);
+  return this;
+};
+
+proto.isFigure = function() {
+  var dom = this.dom();
+  return dom.tagName == 'FIGURE' ? true : false;
+};
+
+proto.caption = function(caption) {
+  var part = this;
+  var dom = part.dom();
+  
+  if( !arguments.length ) return $(dom).find('figcaption').html();
+  
+  var el = $(part.dom());
+  var parentpart = part.parent();
+  var floating = part.floating();
+  var blockmode = part.blockmode();
+  
+  var newpart = new ImagePart({
+    src: part.src(),
+    title: part.title(),
+    caption: caption
+  }).blockmode(blockmode).floating(floating);
+  
+  el.after(newpart.dom()).remove();
+  
   return this;
 };
 
@@ -2555,7 +2671,7 @@ proto.floating = function(direction) {
   
   el.rc('f_pullleft f_pullright')
   if( direction == 'left' ) el.ac('f_pullleft');
-  else if( direction == 'right') el.ac('f_pullright');
+  else if( direction == 'right' ) el.ac('f_pullright');
   
   return this;
 };
@@ -2890,6 +3006,10 @@ proto.validate = function() {
     cells
     .children(':first-child')
     .each(function(i, el) {
+      if( el.tagName == 'FIGURE' ) {
+        el = $(el).find('img')[0];
+      }
+      
       var width = el.naturalWidth;
       var height = el.naturalHeight;
       
@@ -2898,14 +3018,12 @@ proto.validate = function() {
         totalwidth += width;
         warr.push(width);
       } else {
-        el.style.width = 'auto';
-        el.style.height = '100px';
-        var width = el.offsetWidth;
+        el.style.width = '100px';
+        height = el.offsetHeight;
+        width = 100 * (100 / height);
         totalwidth += width;
         warr.push(width);
-        el.style.display = null;
         el.style.width = null;
-        el.style.height = null;
       }
       //console.log(i, this, width);
     });
@@ -4087,6 +4205,7 @@ var Items = __webpack_require__(4);
 
 module.exports = new Items()
 .add({
+  id: 'float-left',
   text: '<i class="fa fa-dedent"></i>',
   tooltip: '좌측플로팅',
   fn: function(btn) {
@@ -4094,6 +4213,7 @@ module.exports = new Items()
   }
 })
 .add({
+  id: 'float-right',
   text: '<i class="fa fa-dedent ff-flip"></i>',
   tooltip: '우측플로팅',
   fn: function(btn) {
@@ -4101,6 +4221,7 @@ module.exports = new Items()
   }
 })
 .add({
+  id: 'rotate-size',
   text: '<i class="fa fa-circle-o"></i>',
   tooltip: '크기변경',
   onupdate: function(btn) {
@@ -4125,6 +4246,7 @@ module.exports = new Items()
   }
 })
 .add({
+  id: 'upload-image',
   text: '<i class="fa fa-file-image-o"></i>',
   tooltip: '사진변경(업로드)',
   fn: function() {
@@ -4139,6 +4261,7 @@ module.exports = new Items()
   }
 })
 .add({
+  id: 'change-image',
   text: '<i class="fa fa-instagram"></i>',
   tooltip: '사진변경',
   fn: function() {
@@ -4147,6 +4270,48 @@ module.exports = new Items()
       src && part.src(src).title(null);
       part.history().save();
     });
+  }
+})
+.add({
+  text: '<i class="fa fa-align-justify"></i>',
+  tooltip: '정렬',
+  onupdate: function(btn) {
+    var part = this;
+    var el = $(part.figcaption());
+    var align = el.css('text-align');
+    
+    if( part.isFigure() ) btn.show();
+    else btn.hide();
+    
+    if( align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+    else if( align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
+    else btn.text('<i class="fa fa-align-center"></i>');
+  },
+  fn: function(btn) {
+    var part = this;
+    var el = $(part.figcaption());
+    var align = el.css('text-align');
+    
+    if( align == 'right' ) {
+      el.css('text-align', 'left');
+    } else if( align == 'left' ) {
+      el.css('text-align', null);
+    } else {
+      el.css('text-align', 'right');
+    }
+    part.history().save();
+  }
+})
+.add({
+  id: 'change-image',
+  text: '<i class="fa fa-text-width"></i>',
+  onupdate: function(btn) {
+    if( this.isFigure() ) btn.active(true);
+    else btn.active(false);
+  },
+  tooltip: '캡션',
+  fn: function() {
+    this.caption(!this.isFigure());
   }
 });
 
@@ -4561,7 +4726,7 @@ exports = module.exports = __webpack_require__(1)(undefined);
 
 
 // module
-exports.push([module.i, ".f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\nimg.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\nimg.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
+exports.push([module.i, ".f_img img {\n  display: block;\n  width: 100%;\n  margin: 0 auto;\n  user-drag: none;\n  user-select: none;\n  -moz-user-select: none;\n  -webkit-user-drag: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n}\n.f_img figcaption {\n  margin: 8px 0;\n  text-align: center;\n  outline: none;\n}\n.f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n.f_img.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
 
 // exports
 
