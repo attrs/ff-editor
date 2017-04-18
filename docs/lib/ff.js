@@ -3867,16 +3867,18 @@ Toolbar.prototype = {
         }
       }
     });
-      
+    
     if( offsetparent === doc.body ) {
       if( top <= 5 ) top = 5;
       if( left <= 5 ) left = 5;
+    }
+    
+    if( vertical ) {
+      //console.log('vertical', scopeposition, top);
+      var scrolltop = (offsetparent && offsetparent.scrollTop) ? offsetparent.scrollTop : doc.body.scrollTop;
       
-      if( vertical ) {
-        //console.log('vertical', scopeposition, top);
-        if( win.scrollY + limitY > scopeposition.top ) top = win.scrollY + limitY;
-        if( top > scopeposition.top + height - tbarheight ) top = scopeposition.top + height - tbarheight;
-      }
+      if( scrolltop + limitY > scopeposition.top ) top = scrolltop + limitY;
+      if( top > scopeposition.top + height - tbarheight ) top = scopeposition.top + height - tbarheight;
     }
     
     dom.style.top = top + 'px';
@@ -4726,7 +4728,7 @@ exports = module.exports = __webpack_require__(1)(undefined);
 
 
 // module
-exports.push([module.i, ".f_img img {\n  display: block;\n  width: 100%;\n  margin: 0 auto;\n  user-drag: none;\n  user-select: none;\n  -moz-user-select: none;\n  -webkit-user-drag: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n}\n.f_img figcaption {\n  margin: 8px 0;\n  text-align: center;\n  outline: none;\n}\n.f_img_block {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  max-width: 100%;\n  width: 100%;\n}\n.f_img.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
+exports.push([module.i, ".f_img img {\n  display: block;\n  width: 100%;\n  margin: 0 auto;\n  user-drag: none;\n  user-select: none;\n  -moz-user-select: none;\n  -webkit-user-drag: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n}\n.f_img figcaption {\n  margin: 8px 0;\n  text-align: center;\n  outline: none;\n}\n.f_img_block {\n  display: block;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  width: 100%;\n}\n.f_img.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
 
 // exports
 
