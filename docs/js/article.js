@@ -9313,10 +9313,11 @@ proto.blockmode = function(mode) {
     el.hc('f_img_full') ? 'full' : 
     el.hc('f_img_medium') ? 'medium' : false;
   
-  el.rc('f_pullleft f_pullright f_img_block f_img_medium f_img_full');
+  el.rc('f_img_block f_img_medium f_img_full');
   if( mode == 'natural' ) el.ac('f_img_block');
   else if( mode == 'medium') el.ac('f_img_medium');
   else if( mode == 'full') el.ac('f_img_full');
+  else el.rc('f_pullleft f_pullright');
   
   return this;
 };
@@ -12378,7 +12379,7 @@ exports = module.exports = __webpack_require__(1)(undefined);
 
 
 // module
-exports.push([module.i, ".f_img img {\n  display: block;\n  width: 100%;\n  margin: 0 auto;\n  user-drag: none;\n  user-select: none;\n  -moz-user-select: none;\n  -webkit-user-drag: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n}\n.f_img figcaption {\n  margin: 8px 0;\n  text-align: center;\n  outline: none;\n}\n.f_img_block {\n  display: block;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  width: 100%;\n}\n.f_img.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
+exports.push([module.i, ".f_img img {\n  display: block;\n  max-width: 100%;\n  margin: 0 auto;\n  user-drag: none;\n  user-select: none;\n  -moz-user-select: none;\n  -webkit-user-drag: none;\n  -webkit-user-select: none;\n  -ms-user-select: none;\n}\n.f_img figcaption {\n  margin: 8px 0;\n  text-align: center;\n  outline: none;\n}\n.f_img.f_img_medium img,\n.f_img.f_img_full img {\n  width: 100%;\n}\n.f_img_block {\n  display: block;\n  margin: 0 auto;\n}\n.f_img_medium {\n  display: block;\n  width: 50%;\n  margin: 0 auto;\n}\n.f_img_full {\n  display: block;\n  width: 100%;\n}\n.f_img.f_pullleft {\n  float: left;\n  margin-right: 25px;\n  max-width: 40%;\n}\n.f_img.f_pullright {\n  float: right;\n  margin-left: 25px;\n  max-width: 40%;\n}\n", ""]);
 
 // exports
 

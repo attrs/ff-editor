@@ -1,7 +1,7 @@
 .f_img {
   img {
     display: block;
-    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
     user-drag: none; 
     user-select: none;
@@ -15,6 +15,12 @@
     margin: 8px 0;
     text-align: center;
     outline: none;
+  }
+  
+  &.f_img_medium, &.f_img_full {
+    img {
+      width: 100%;
+    }
   }
 }
 
