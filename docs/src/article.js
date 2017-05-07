@@ -89,6 +89,29 @@ if( +localStorage.getItem('ff-version') !== version )
   ff.colors().get('default').text = '기본 글자색';
 })();
 
+// modify buttons
+(function() {
+  var tools = ff.tools;
+  
+  // remove common clearfix button
+  ff.Part.toolbar.remove('clearfix');
+  
+  // add common button
+  ff.Part.toolbar = [
+    {
+      id: 'test',
+      text: '<i class="fa fa-gear"></i>',
+      fn: function() {
+        alert('test');
+      }
+    },
+    tools.remove
+  ];
+  
+  // reset part buttons
+  ff.Heading.toolbar = [tools.clearfix, '-', tools.remove];
+})();
+
 
 // init gnb dropdown
 $(document).ready(function($) {
