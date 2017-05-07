@@ -88,9 +88,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Context = __webpack_require__(65);
+var Context = __webpack_require__(60);
 
-__webpack_require__(66)(Context);
+__webpack_require__(61)(Context);
 
 var def = Context(document);
 var lib = module.exports = function(doc) {
@@ -226,7 +226,7 @@ var stylesInDom = {},
 	singletonElement = null,
 	singletonCounter = 0,
 	styleElementsInsertedAtTop = [],
-	fixUrls = __webpack_require__(51);
+	fixUrls = __webpack_require__(46);
 
 module.exports = function(list, options) {
 	if(typeof DEBUG !== "undefined" && DEBUG) {
@@ -489,11 +489,652 @@ function updateLink(linkElement, options, obj) {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var types = __webpack_require__(13);
-var Items = __webpack_require__(4);
-var RangeEditor = __webpack_require__(10);
+
+function Items(arr) {
+  if( $.util.isArrayLike(arr) ) {
+    var self = this;
+    [].forEach.call(arr, function(item) {
+      self.add(item);
+    });
+  }
+}
+
+var proto = Items.prototype = [];
+
+proto.push = function() {
+  var self = this;
+  [].forEach.call(arguments, function(item) {
+    if( item && item.id ) self[item.id] = item;
+  });
+  
+  return [].push.apply(this, arguments);
+};
+
+proto.add = function(item) {
+  if( $.util.isArrayLike(item) ) {
+    var self = this;
+    [].forEach.call(item, function(item) {
+      self.push(item);
+    });
+  } else {
+    this.push(item);
+  }
+  
+  return this;
+};
+
+proto.get = function(id) {
+  return this[id];
+};
+
+proto.remove = function(item) {
+  if( ~['string', 'number'].indexOf(typeof item) ) item = this[id];
+  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
+  return this;
+};
+
+proto.clear = function() {
+  this.splice(0, this.length);
+  return this;
+};
+
+module.exports = Items;
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var context = __webpack_require__(5);
+
+function rangeitem(id, text, tooltip, selector, fn) {
+  return {
+    id: id,
+    text: text,
+    tooltip: tooltip,
+    onupdate: function(btn) {
+      var range = this.range();
+      if( !range ) return btn.enable(false);
+    
+      btn.enable(true);
+      btn.active(range.iswrapped(selector));
+    },
+    fn: fn || function(btn) {
+      var part = this;
+      var range = part.range();
+      if( !range ) return;
+      
+      range.togglewrap(selector);
+      part.history().save();
+    }
+  };
+}
+
+module.exports = {
+  insert: {
+    heading: {
+      id: 'insert.heading',
+      text: '<i class="fa fa-header"></i>',
+      tooltip: 'Heading',
+      fn: function(e) {
+        var placeholder = $(this.dom()).attr('placeholder');
+        this.insert(new context.Heading().placeholder(placeholder));
+      }
+    },
+    paragraph: {
+      id: 'insert.paragraph',
+      text: '<i class="fa fa-font"></i>',
+      tooltip: '문단',
+      fn: function(e) {
+        var placeholder = $(this.dom()).attr('placeholder');
+        this.insert(new context.Paragraph().placeholder(placeholder));
+      }
+    },
+    imagefile: {
+      id: 'insert.imagefile',
+      text: '<i class="fa fa-picture-o"></i>',
+      tooltip: '이미지 파일',
+      fn: function(e) {
+        var part = this;
+        part.context().selectFiles(function(err, files) {
+          if( err ) return context.error(err);
+          if( !files.length ) return;
+          
+          part.insert(files);
+        }, {
+          upload: false,
+          type: 'image'
+        });
+      }
+    },
+    image: {
+      id: 'insert.image',
+      text: '<i class="fa fa-instagram"></i>',
+      tooltip: '이미지',
+      fn: function(e) {
+        var part = this;
+        
+        context.prompt('Please enter the image URL.', function(src) {
+          src && part.insert(new context.Image(src));
+        });
+      }
+    },
+    video: {
+      id: 'insert.video',
+      text: '<i class="fa fa-youtube-square"></i>',
+      tooltip: '동영상',
+      fn: function(e) {
+        var part = this;
+        
+        context.prompt('Please enter the video URL', function(src) {
+          src && part.insert(new context.Video(src));
+        });
+      }
+    },
+    separator: {
+      id: 'insert.separator',
+      text: '<i class="fa fa-minus"></i>',
+      tooltip: '구분선',
+      fn: function(e) {
+        this.insert(new context.Separator());
+      }
+    },
+    link: {
+      id: 'insert.link',
+      text: '<i class="fa fa-link"></i>',
+      tooltip: '링크',
+      fn: function(e) {
+        var part = this;
+    
+        context.prompt('Please enter the anchor URL', function(src) {
+          src && part.insert(new context.Link(src));
+        });
+      }
+    },
+    attach: {
+      id: 'insert.attach',
+      text: '<i class="fa fa-paperclip"></i>',
+      tooltip: '첨부파일',
+      fn: function(e) {
+        var part = this;
+        
+        part.context().selectFile(function(err, file) {
+          if( err ) return context.error(err);
+          
+          part.insert(new context.Link(file));
+        });
+      }
+    }
+  },
+  clear: {
+    id: 'clear',
+    text: '<i class="fa fa-eraser"></i>',
+    tooltip: '내용 삭제',
+    fn: function(e) {
+      this.clear();
+    }
+  },
+  heading: {
+    id: 'heading',
+    type: 'list',
+    text: '<i class="fa fa-header"></i>',
+    tooltip: 'Select Heading',
+    onselect: function(item, i, btn) {
+      var part = this;
+      var dom = part.dom();
+      
+      if( dom.tagName.toLowerCase() !== item.tag ) {
+        var el = $(part.dom());
+        var parentpart = part.parent();
+        
+        var newpart = new context.Heading({
+          tag: item.tag,
+          html: el.html()
+        });
+        
+        el.after(newpart.dom()).remove();
+        
+        newpart.focus();
+        parentpart && parentpart.history().save();
+      }
+    },
+    items: [
+      { text: '<h1>Title</h1>', tag: 'h1' },
+      { text: '<h2>Title</h2>', tag: 'h2' },
+      { text: '<h3>Title</h3>', tag: 'h3' },
+      { text: '<h4>Title</h4>', tag: 'h4' },
+      { text: '<h5>Title</h5>', tag: 'h5' },
+      { text: '<h6>Title</h6>', tag: 'h6' }
+    ]
+  },
+  align: {
+    id: 'align',
+    text: '<i class="fa fa-align-justify"></i>',
+    tooltip: '정렬',
+    onupdate: function(btn) {
+      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
+      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+      else if( btn.align == 'justify' ) btn.text('<i class="fa fa-align-justify"></i>');
+      else btn.text('<i class="fa fa-align-left"></i>');
+    },
+    fn: function(btn) {
+      var part = this;
+      var el = $(part.dom());
+    
+      if( btn.align == 'center' ) {
+        el.css('text-align', 'right');
+        btn.align = 'right';
+      } else if( btn.align == 'right' ) {
+        el.css('text-align', 'justify');
+        btn.align = 'justify';
+      } else if( btn.align == 'justify' ) {
+        el.css('text-align', '');
+        btn.align = '';
+      } else {
+        el.css('text-align', 'center');
+        btn.align = 'center';
+      }
+      part.history().save();
+    }
+  },
+  draggable: {
+    id: 'draggable',
+    text: '<i class="fa fa-hand-pointer-o"></i>',
+    tooltip: '요소이동',
+    onupdate: function(btn) {
+      var part = this;
+      var el = $(part.dom());
+      
+      if( el.ha('draggable') ) btn.active(true);
+      else btn.active(false);
+    },
+    fn: function() {
+      var part = this;
+      part.dragmode(!part.dragmode());
+    }
+  },
+  clearfix: {
+    id: 'clearfix',
+    text: '<i class="fa fa-asterisk"></i>',
+    tooltip: '클리어픽스',
+    onupdate: function(btn) {
+      btn.active($(this.dom()).hc('f_clearfix'));
+    },
+    fn: function() {
+      $(this.dom()).tc('f_clearfix');
+      this.history().save();
+    }
+  },
+  remove: {
+    id: 'remove',
+    text: '<i class="fa fa-remove"></i>',
+    onupdate: function(btn) {
+      if( this.removable() ) btn.show();
+      else btn.hide();
+    },
+    fn: function() {
+      this.remove();
+    }
+  },
+  target: {
+    id: 'target',
+    text: '<i class="fa fa-external-link"></i>',
+    tooltip: '새창으로',
+    onupdate: function(btn) {
+      var el = $(this.dom());
+      if( el.find('a').attr('target') ) btn.active(true);
+      else btn.active(false);
+    },
+    fn: function() {
+      this.target(!this.target() ? '_blank' : null);
+    }
+  },
+  separator: {
+    shape: {
+      id: 'separator.shape',
+      text: '<i class="fa fa-chevron-up"></i>',
+      tooltip: '모양',
+      onupdate: function(btn) {
+        var part = this;
+        var shape = part.shape();
+        if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
+        else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
+        else if( shape == 'zigzag' ) btn.text('<i class="fa fa-chevron-up"></i>');
+        else if( shape == 'line' ) btn.text('<i class="fa fa-minus"></i>');
+        else btn.text('<i class="fa fa-minus"></i>');
+      },
+      fn: function(btn) {
+        var part = this;
+        var shape = part.shape();
+      
+        if( shape == 'dotted' ) part.shape('dashed');
+        else if( shape == 'dashed' ) part.shape('zigzag');
+        else if( shape == 'zigzag' ) part.shape('line');
+        else if( shape == 'line' ) part.shape(false);
+        else part.shape('dotted');
+        part.history().save();
+      }
+    },
+    width: {
+      id: 'separator.width',
+      text: '<i class="fa fa-arrows-h"></i>',
+      tooltip: '너비',
+      onupdate: function(btn) {
+        var part = this;
+        var el = $(part.dom());
+      
+        if( part.shape() === false ) return btn.hide();
+        btn.show();
+        if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
+        else btn.text('<i class="fa fa-arrows-h"></i>');
+      },
+      fn: function(e) {
+        var part = this;
+        var el = $(part.dom());
+        
+        el.tc('f_sep_narrow');
+        this.history().save();
+      }
+    }
+  },
+  row: {
+    valign: {
+      id: 'row.valign',
+      text: '<i class="fa fa-align-justify"></i>',
+      tooltip: '정렬',
+      onupdate: function(btn) {
+        var part = this;
+        var valign = part.valign();
+        
+        if( valign == 'middle' ) btn.text('<i class="fa fa-align-center ff-vert"></i>');
+        else if( valign == 'bottom' ) btn.text('<i class="fa fa-align-left ff-vert"></i>');
+        else if( valign == 'justify' ) btn.text('<i class="fa fa-align-justify ff-vert"></i>');
+        else btn.text('<i class="fa fa-align-right ff-vert"></i>');
+      },
+      fn: function(btn) {
+        var part = this;
+        var valign = part.valign();
+        
+        if( valign == 'middle' ) part.valign('bottom');
+        else if( valign == 'bottom' ) part.valign('justify');
+        else if( valign == 'justify' ) part.valign(false);
+        else part.valign('middle');
+        part.history().save();
+      }
+    }
+  },
+  image: {
+    floatleft: {
+      id: 'image.floatleft',
+      text: '<i class="fa fa-dedent"></i>',
+      tooltip: '좌측플로팅',
+      fn: function(btn) {
+        this.floating('left').history().save();
+      }
+    },
+    floatright: {
+      id: 'image.floatright',
+      text: '<i class="fa fa-dedent ff-flip"></i>',
+      tooltip: '우측플로팅',
+      fn: function(btn) {
+        this.floating('right').history().save();
+      }
+    },
+    size: {
+      id: 'image.size',
+      text: '<i class="fa fa-circle-o"></i>',
+      tooltip: '크기변경',
+      onupdate: function(btn) {
+        var part = this;
+        
+        var blockmode = part.blockmode();
+        if( blockmode == 'natural' ) btn.text('<i class="fa fa-square-o"></i>');
+        else if( blockmode == 'medium' ) btn.text('<i class="fa fa-arrows-alt"></i>');
+        else if( blockmode == 'full' ) btn.text('<i class="fa fa-circle-o"></i>');
+        else btn.text('<i class="fa fa-align-center"></i>');
+      },
+      fn: function(btn) {
+        var part = this;
+        
+        var blockmode = part.blockmode();
+        if( blockmode == 'natural' ) part.blockmode('medium');
+        else if( blockmode == 'medium' ) part.blockmode('full');
+        else if( blockmode == 'full' ) part.blockmode(false);
+        else part.blockmode('natural');
+        
+        part.history().save();
+      }
+    },
+    upload: {
+      id: 'image.upload',
+      text: '<i class="fa fa-file-image-o"></i>',
+      tooltip: '사진변경(업로드)',
+      fn: function() {
+        var part = this;
+        context.selectFile(function(err, file) {
+          if( err ) return context.error(err);
+          if( !file ) return;
+      
+          part.src(file.src).title(file.name);
+          part.history().save();
+        });
+      }
+    },
+    change: {
+      id: 'image.change',
+      text: '<i class="fa fa-instagram"></i>',
+      tooltip: '사진변경',
+      fn: function() {
+        var part = this;
+        context.prompt('Please enter the image URL.', function(src) {
+          src && part.src(src).title(null);
+          part.history().save();
+        });
+      }
+    },
+    align: {
+      id: 'image.align',
+      text: '<i class="fa fa-align-justify"></i>',
+      tooltip: '정렬',
+      onupdate: function(btn) {
+        var part = this;
+        var el = $(part.figcaption());
+        var align = el.css('text-align');
+    
+        if( part.isFigure() ) btn.show();
+        else btn.hide();
+    
+        if( align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
+        else if( align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
+        else btn.text('<i class="fa fa-align-center"></i>');
+      },
+      fn: function(btn) {
+        var part = this;
+        var el = $(part.figcaption());
+        var align = el.css('text-align');
+    
+        if( align == 'right' ) {
+          el.css('text-align', 'left');
+        } else if( align == 'left' ) {
+          el.css('text-align', null);
+        } else {
+          el.css('text-align', 'right');
+        }
+        part.history().save();
+      }
+    },
+    caption: {
+      id: 'image.caption',
+      text: '<i class="fa fa-text-width"></i>',
+      onupdate: function(btn) {
+        if( this.isFigure() ) btn.active(true);
+        else btn.active(false);
+      },
+      tooltip: '캡션',
+      fn: function() {
+        this.caption(!this.isFigure());
+      }
+    }
+  },
+  video: {
+    size: {
+      id: 'video.size',
+      text: '<i class="fa fa-circle-o"></i>',
+      tooltip: '크기변경',
+      onupdate: function(btn) {
+        var el = $(this.dom());
+        if( el.hc('f_video_fit') ) btn.text('<i class="fa fa-circle-o"></i>');
+        else btn.text('<i class="fa fa-arrows-alt"></i>');
+      },
+      fn: function() {
+        var el = $(this.dom());
+    
+        if( el.hc('f_video_fit') ) el.rc('f_video_fit').ac('f_video_narrow');
+        else el.rc('f_video_narrow').ac('f_video_fit');
+      }
+    }
+  },
+  paragraph: {
+    font: {
+      id: 'paragraph.font',
+      type: 'list',
+      text: '<i class="fa fa-font"></i>',
+      tooltip: 'Select Font',
+      onupdate: function(btn) {
+        var range = this.range();
+        
+        range && btn.active(range.iswrapped('span.f_txt_font'));
+      },
+      onselect: function(item, i, btn) {
+        var part = this;
+        var dom = part.dom();
+        var range = part.range();
+        
+        if( !range ) {
+          dom.style.fontFamily = item.font || '';
+          part.history().save();
+          return;
+        }
+        
+        range.unwrap('span.f_txt_font');
+        var node = range.wrap('span.f_txt_font');
+        node.style.fontFamily = item.font || '';
+        
+        part.history().save();
+      },
+      items: function() {
+        return context.fonts();
+      }
+    },
+    fontsize: {
+      id: 'paragraph.fontsize',
+      type: 'list',
+      text: '<i class="fa fa-text-height"></i>',
+      tooltip: 'Select Font Size',
+      onupdate: function(btn) {
+        var range = this.range();
+        range && btn.active(range.iswrapped('span.f_txt_fontsize'));
+      },
+      onselect: function(item, i, btn) {
+        var part = this;
+        var dom = part.dom();
+        var range = part.range();
+        
+        if( !range ) {
+          dom.style.fontSize = item.size || '';
+          part.history().save();
+          return;
+        }
+        
+        range.unwrap('span.f_txt_fontsize');
+        var node = range.wrap('span.f_txt_fontsize');
+        node.style.fontSize = item.size || '';
+        
+        part.history().save();
+      },
+      items: [
+        { text: 'Default' },
+        { text: '<span style="font-size:11px;">11px</span>', size: '11px' },
+        { text: '<span style="font-size:12px;">12px</span>', size: '12px' },
+        { text: '<span style="font-size:14px;">14px</span>', size: '14px' },
+        { text: '<span style="font-size:16px;">16px</span>', size: '16px' },
+        { text: '<span style="font-size:18px;">18px</span>', size: '18px' },
+        { text: '<span style="font-size:20px;">20px</span>', size: '20px' }
+      ]
+    },
+    color: {
+      id: 'paragraph.color',
+      type: 'list',
+      text: '<i class="fa fa-square"></i>',
+      tooltip: 'Select Color',
+      onupdate: function(btn) {
+        var range = this.range();
+        range && btn.active(range.iswrapped('span.f_txt_color'));
+      },
+      onselect: function(item, i, btn) {
+        var part = this;
+        var dom = part.dom();
+        var range = part.range();
+        
+        var change = function(color) {
+          if( !range ) {
+            dom.style.color = color || '';
+            return;
+          }
+          
+          range.unwrap('span.f_txt_color');
+          var node = range.wrap('span.f_txt_color');
+          node.style.color = color || '';
+        }
+        
+        if( item.id == 'picker' ) {
+          $('<input type="color">').on('change', function() {
+            if( this.value ) change(this.value);
+          }).click();
+        } else {
+          change(item.color);
+          part.history().save();
+        }
+      },
+      items: function() {
+        var colors = context.colors().slice();
+        colors.push({
+          id: 'picker',
+          text: 'Select Color'
+        });
+        return colors;
+      }
+    },
+    bold: rangeitem('paragraph.bold', '<i class="fa fa-bold"></i>', '굵게', 'b'),
+    underline: rangeitem('paragraph.underline', '<i class="fa fa-underline"></i>', '밑줄', 'u'),
+    italic: rangeitem('paragraph.italic', '<i class="fa fa-italic"></i>', '이탤릭', 'i'),
+    strike: rangeitem('paragraph.strike', '<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'),
+    anchor: rangeitem('paragraph.anchor', '<i class="fa fa-link"></i>', '링크', 'a', function(e) {
+      var part = this;
+      var range = part.range();
+      if( !range || range.iswrapped('a') ) return range.unwrap('a');
+      
+      context.prompt('Please enter the anchor URL.', function(href) {
+        if( !href ) return;
+        var a = range.wrap('a');
+        a.href = href;
+        a.target = '_blank';
+        part.history().save();
+      });
+    })
+  }
+};
+
+/***/ }),
+/* 5 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
+var types = __webpack_require__(14);
+var Items = __webpack_require__(3);
+var RangeEditor = __webpack_require__(11);
 var history = __webpack_require__(25);
-var RangeEditor = __webpack_require__(10);
+var RangeEditor = __webpack_require__(11);
 
 var win = window,
     doc = document,
@@ -823,71 +1464,15 @@ module.exports = context;
 
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-
-function Items(arr) {
-  if( $.util.isArrayLike(arr) ) {
-    var self = this;
-    [].forEach.call(arr, function(item) {
-      self.add(item);
-    });
-  }
-}
-
-var proto = Items.prototype = [];
-
-proto.push = function() {
-  var self = this;
-  [].forEach.call(arguments, function(item) {
-    if( item && item.id ) self[item.id] = item;
-  });
-  
-  return [].push.apply(this, arguments);
-};
-
-proto.add = function(item) {
-  if( $.util.isArrayLike(item) ) {
-    var self = this;
-    [].forEach.call(item, function(item) {
-      self.push(item);
-    });
-  } else {
-    this.push(item);
-  }
-  
-  return this;
-};
-
-proto.get = function(id) {
-  return this[id];
-};
-
-proto.remove = function(item) {
-  if( ~['string', 'number'].indexOf(typeof item) ) item = this[id];
-  for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
-  return this;
-};
-
-proto.clear = function() {
-  this.splice(0, this.length);
-  return this;
-};
-
-module.exports = Items;
-
-/***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 var Toolbar = __webpack_require__(28);
 
-Toolbar.Button = __webpack_require__(7);
-Toolbar.Separator = __webpack_require__(12);
-Toolbar.ListButton = __webpack_require__(11);
+Toolbar.Button = __webpack_require__(8);
+Toolbar.Separator = __webpack_require__(13);
+Toolbar.ListButton = __webpack_require__(12);
 
 Toolbar.update = function() {
   $('.ff-toolbar').each(function(i, el) {
@@ -899,14 +1484,14 @@ Toolbar.update = function() {
 module.exports = Toolbar;
 
 /***/ }),
-/* 6 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Types = __webpack_require__(13);
-var Toolbar = __webpack_require__(5);
+var Types = __webpack_require__(14);
+var Toolbar = __webpack_require__(6);
 var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
+var context = __webpack_require__(5);
+var tools = __webpack_require__(4);
 
 function Part(arg) {
   var dom = arg;
@@ -1211,40 +1796,17 @@ Part.prototype = {
   }
 };
 
-Part.toolbar = new Items()
-.add({
-  id: 'clearfix',
-  text: '<i class="fa fa-asterisk"></i>',
-  tooltip: '클리어픽스',
-  onupdate: function(btn) {
-    btn.active($(this.dom()).hc('f_clearfix'));
-  },
-  fn: function() {
-    $(this.dom()).tc('f_clearfix');
-    this.history().save();
-  }
-})
-.add({
-  id: 'remove',
-  text: '<i class="fa fa-remove"></i>',
-  onupdate: function(btn) {
-    if( this.removable() ) btn.show();
-    else btn.hide();
-  },
-  fn: function() {
-    this.remove();
-  }
-});
+Part.toolbar = [tools.clearfix, tools.remove];
 
 module.exports = Part;
 
 /***/ }),
-/* 7 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(53);
+__webpack_require__(48);
 
 function Button(options) {
   if( typeof options == 'string' ) options = {text:options};
@@ -1349,25 +1911,39 @@ Button.prototype = {
 module.exports = Button;
 
 /***/ }),
-/* 8 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(6);
-var Toolbar = __webpack_require__(5);
-var context = __webpack_require__(3);
-var autoflush = __webpack_require__(9);
+var Part = __webpack_require__(7);
+var Toolbar = __webpack_require__(6);
+var context = __webpack_require__(5);
+var Items = __webpack_require__(3);
+var tools = __webpack_require__(4);
+var autoflush = __webpack_require__(10);
 var win = window;
 var doc = document;
 
-__webpack_require__(61);
+__webpack_require__(56);
 
 function ParagraphPart() {
   Part.apply(this, arguments);
 }
 
 var proto = ParagraphPart.prototype = Object.create(Part.prototype);
-var items = ParagraphPart.toolbar = __webpack_require__(34);
+var items = ParagraphPart.toolbar = new Items([
+  tools.paragraph.font,
+  tools.paragraph.fontsize,
+  tools.paragraph.color,
+  '-',
+  tools.paragraph.bold,
+  tools.paragraph.underline,
+  tools.paragraph.italic,
+  tools.paragraph.strike,
+  tools.paragraph.anchor,
+  '-',
+  tools.draggable
+]);
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position).add(items);
@@ -1572,7 +2148,7 @@ module.exports = ParagraphPart;
 
 
 /***/ }),
-/* 9 */
+/* 10 */
 /***/ (function(module, exports) {
 
 module.exports = function(flushfn, timeout) {
@@ -1601,7 +2177,7 @@ module.exports = function(flushfn, timeout) {
 };
 
 /***/ }),
-/* 10 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
@@ -1747,13 +2323,13 @@ function RangeEditor(range) {
 module.exports = RangeEditor;
 
 /***/ }),
-/* 11 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(7);
+var Button = __webpack_require__(8);
 
-__webpack_require__(54);
+__webpack_require__(49);
 
 function ListButton(options) {
   Button.apply(this, arguments);
@@ -1834,13 +2410,13 @@ $(document).ready(function() {
 module.exports = ListButton;
 
 /***/ }),
-/* 12 */
+/* 13 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(7);
+var Button = __webpack_require__(8);
 
-__webpack_require__(55);
+__webpack_require__(50);
 
 function Separator() {
   Button.apply(this, arguments);
@@ -1854,7 +2430,7 @@ proto.handleEvent = function(e) {};
 module.exports = Separator;
 
 /***/ }),
-/* 13 */
+/* 14 */
 /***/ (function(module, exports) {
 
 var types = {};
@@ -1875,102 +2451,6 @@ module.exports = {
     return !!types[id];
   }
 };
-
-/***/ }),
-/* 14 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
-
-module.exports = new Items()
-.add({
-  text: '<i class="fa fa-header"></i>',
-  tooltip: 'Heading',
-  fn: function(e) {
-    var placeholder = $(this.dom()).attr('placeholder');
-    this.insert(new context.Heading().placeholder(placeholder));
-  }
-})
-.add({
-  text: '<i class="fa fa-font"></i>',
-  tooltip: '문단',
-  fn: function(e) {
-    var placeholder = $(this.dom()).attr('placeholder');
-    this.insert(new context.Paragraph().placeholder(placeholder));
-  }
-})
-.add({
-  text: '<i class="fa fa-picture-o"></i>',
-  tooltip: '이미지 파일',
-  fn: function(e) {
-    var part = this;
-    part.context().selectFiles(function(err, files) {
-      if( err ) return context.error(err);
-      if( !files.length ) return;
-      
-      part.insert(files);
-    }, {
-      upload: false,
-      type: 'image'
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-instagram"></i>',
-  tooltip: '이미지',
-  fn: function(e) {
-    var part = this;
-    
-    context.prompt('Please enter the image URL.', function(src) {
-      src && part.insert(new context.Image(src));
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-youtube-square"></i>',
-  tooltip: '동영상',
-  fn: function(e) {
-    var part = this;
-    
-    context.prompt('Please enter the video URL', function(src) {
-      src && part.insert(new context.Video(src));
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-minus"></i>',
-  tooltip: '구분선',
-  fn: function(e) {
-    this.insert(new context.Separator());
-  }
-})
-.add({
-  text: '<i class="fa fa-link"></i>',
-  tooltip: '링크',
-  fn: function(e) {
-    var part = this;
-    
-    context.prompt('Please enter the anchor URL', function(src) {
-      src && part.insert(new context.Link(src));
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-paperclip"></i>',
-  tooltip: '첨부파일',
-  fn: function(e) {
-    var part = this;
-    
-    part.context().selectFile(function(err, file) {
-      if( err ) return context.error(err);
-      
-      part.insert(new context.Link(file));
-    });
-  }
-});
-
 
 /***/ }),
 /* 15 */
@@ -2154,31 +2634,36 @@ var lib = module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
+var context = __webpack_require__(5);
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 var Part = context.Part;
 var Toolbar = context.Toolbar;
 var Marker = __webpack_require__(31);
 var DnD = __webpack_require__(30);
 
-__webpack_require__(56);
+__webpack_require__(51);
 
 function ArticlePart() {
   Part.apply(this, arguments);
 }
 
-var items = ArticlePart.toolbar = __webpack_require__(14);
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
+var items = ArticlePart.toolbar = new Items([
+  tools.clear,
+  '-',
+  tools.insert.heading,
+  tools.insert.paragraph,
+  tools.insert.imagefile,
+  tools.insert.image,
+  tools.insert.video,
+  tools.insert.separator,
+  tools.insert.link,
+  tools.insert.attach
+]);
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position || 'vertical top right outside')
-  .add({
-    text: '<i class="fa fa-eraser"></i>',
-    tooltip: '내용 삭제',
-    fn: function(e) {
-      this.clear();
-    }
-  }, 0)
-  .add('-')
   .add(items)
   .always(true);
 };
@@ -2445,16 +2930,22 @@ module.exports = ArticlePart;
 /* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
+var tools = __webpack_require__(4);
 var $ = __webpack_require__(0);
-var Toolbar = __webpack_require__(5);
-var ParagraphPart = __webpack_require__(8);
+var Toolbar = __webpack_require__(6);
+var ParagraphPart = __webpack_require__(9);
+var Items = __webpack_require__(3);
 
 function HeadingPart() {
   ParagraphPart.apply(this, arguments);
 }
 
 var proto = HeadingPart.prototype = Object.create(ParagraphPart.prototype);
-var items = ParagraphPart.toolbar = __webpack_require__(32);
+var items = ParagraphPart.toolbar = new Items([
+  tools.heading,
+  tools.align,
+  tools.draggable
+]);
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position).add(items);
@@ -2479,11 +2970,13 @@ module.exports = HeadingPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Part = __webpack_require__(6);
-var Toolbar = __webpack_require__(5);
+var context = __webpack_require__(5);
+var Part = __webpack_require__(7);
+var Toolbar = __webpack_require__(6);
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 
-__webpack_require__(59);
+__webpack_require__(54);
 
 function translatesrc(src) {
   if( src && ~src.indexOf('instagram.com') ) {
@@ -2503,8 +2996,16 @@ function ImagePart(el) {
 
 ImagePart.placeholder = 'Caption Here';
 
-var items = ImagePart.toolbar = __webpack_require__(33);
 var proto = ImagePart.prototype = Object.create(Part.prototype);
+var items = ImagePart.toolbar = new Items([
+  tools.image.floatleft,
+  tools.image.floatright,
+  tools.image.size,
+  tools.image.upload,
+  tools.image.change,
+  tools.image.align,
+  tools.image.caption
+]);
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position || 'inside top center').add(items);
@@ -2713,16 +3214,22 @@ module.exports = ImagePart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(6);
-var autoflush = __webpack_require__(9);
+var Part = __webpack_require__(7);
+var autoflush = __webpack_require__(10);
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 
-__webpack_require__(60);
+__webpack_require__(55);
 
 function Link() {
   Part.apply(this, arguments);
 }
 
 var proto = Link.prototype = Object.create(Part.prototype);
+var items = Link.toolbar = new Items([
+  tools.align,
+  tools.target
+]);
 
 proto.oninit = function() {
   var part = this;
@@ -2737,44 +3244,7 @@ proto.oninit = function() {
   });
   
   this.toolbar()
-  .add({
-    text: '<i class="fa fa-align-justify"></i>',
-    tooltip: '정렬',
-    onupdate: function(btn) {
-      if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-      else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-      else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-      else btn.text('<i class="fa fa-align-justify"></i>');
-    },
-    fn: function(btn) {
-      if( btn.align == 'center' ) {
-        el.css('text-align', 'right');
-        btn.align = 'right';
-      } else if( btn.align == 'right' ) {
-        el.css('text-align', 'left');
-        btn.align = 'left';
-      } else if( btn.align == 'left' ) {
-        el.css('text-align', '');
-        btn.align = '';
-      } else {
-        el.css('text-align', 'center');
-        btn.align = 'center';
-      }
-      
-      part.history().save();
-    }
-  })
-  .add({
-    text: '<i class="fa fa-external-link"></i>',
-    tooltip: '새창으로',
-    onupdate: function(btn) {
-      if( el.find('a').attr('target') ) btn.active(true);
-      else btn.active(false);
-    },
-    fn: function() {
-      part.target(!part.target() ? '_blank' : null);
-    }
-  });
+  .add(items);
 }
 
 proto.create = function(arg) {
@@ -2843,11 +3313,13 @@ module.exports = Link;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Part = __webpack_require__(6);
-var Toolbar = __webpack_require__(5);
+var context = __webpack_require__(5);
+var Part = __webpack_require__(7);
+var Toolbar = __webpack_require__(6);
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 
-__webpack_require__(62);
+__webpack_require__(57);
 
 function isedge(dom, y) {
   var top = $.util.offset(dom).top;
@@ -2880,8 +3352,10 @@ function RowPart(el) {
   Part.call(this, el);
 }
 
-var items = RowPart.toolbar = __webpack_require__(35);
 var proto = RowPart.prototype = Object.create(Part.prototype);
+var items = RowPart.toolbar = new Items([
+  tools.row.valign
+]);
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position).add(items);
@@ -3107,59 +3581,28 @@ module.exports = RowPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Part = __webpack_require__(6);
+var Part = __webpack_require__(7);
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 
-__webpack_require__(63);
+__webpack_require__(58);
 
 function Separator() {
   Part.apply(this, arguments);
-  
-  var part = this;
-  var el = $(this.dom());
-  
-  this.toolbar().add({
-    text: '<i class="fa fa-chevron-up"></i>',
-    tooltip: '모양',
-    onupdate: function(btn) {
-      var part = this;
-      var shape = part.shape();
-      if( shape == 'dotted' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
-      else if( shape == 'dashed' ) btn.text('<i class="fa fa-ellipsis-h"></i>');
-      else if( shape == 'zigzag' ) btn.text('<i class="fa fa-chevron-up"></i>');
-      else if( shape == 'line' ) btn.text('<i class="fa fa-minus"></i>');
-      else btn.text('<i class="fa fa-minus"></i>');
-    },
-    fn: function(btn) {
-      var part = this;
-      var shape = part.shape();
-      
-      if( shape == 'dotted' ) part.shape('dashed');
-      else if( shape == 'dashed' ) part.shape('zigzag');
-      else if( shape == 'zigzag' ) part.shape('line');
-      else if( shape == 'line' ) part.shape(false);
-      else part.shape('dotted');
-      part.history().save();
-    }
-  })
-  .add({
-    text: '<i class="fa fa-arrows-h"></i>',
-    tooltip: '너비',
-    onupdate: function(btn) {
-      var part = this;
-      
-      if( part.shape() === false ) return btn.hide();
-      btn.show();
-      if( el.hc('f_sep_narrow') ) btn.text('<i class="fa fa-minus"></i>');
-      else btn.text('<i class="fa fa-arrows-h"></i>');
-    },
-    fn: function(e) {
-      el.tc('f_sep_narrow');
-      part.history().save();
-    }
-  });
 }
 
 var proto = Separator.prototype = Object.create(Part.prototype);
+var items = Separator.toolbar = new Items([
+  tools.separator.shape,
+  tools.separator.width
+]);
+
+proto.oninit = function() {
+  var part = this;
+  var el = $(this.dom());
+  
+  this.toolbar().add(items);
+};
 
 proto.create = function(arg) {
   return $('<hr/>').ac('f_sep')[0];
@@ -3189,7 +3632,7 @@ module.exports = Separator;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var ParagraphPart = __webpack_require__(8);
+var ParagraphPart = __webpack_require__(9);
 
 function TextPart() {
   ParagraphPart.apply(this, arguments);
@@ -3217,11 +3660,13 @@ module.exports = TextPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Part = __webpack_require__(6);
-var Toolbar = __webpack_require__(5);
+var context = __webpack_require__(5);
+var Part = __webpack_require__(7);
+var Toolbar = __webpack_require__(6);
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 
-__webpack_require__(64);
+__webpack_require__(59);
 
 function translatesrc(src) {
   if( ~src.indexOf('youtube.com') ) {
@@ -3247,8 +3692,10 @@ function VideoPart() {
   Part.apply(this, arguments);
 }
 
-var items = VideoPart.toolbar = __webpack_require__(36);
 var proto = VideoPart.prototype = Object.create(Part.prototype);
+var items = VideoPart.toolbar = new Items([
+  tools.video.size
+]);
 
 proto.createToolbar = function() {
   return new Toolbar(this).position(items.position).add(items);
@@ -3295,7 +3742,7 @@ module.exports = VideoPart;
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(37);
+var content = __webpack_require__(32);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // add the styles to the DOM
 var update = __webpack_require__(2)(content, {});
@@ -3413,20 +3860,22 @@ var scope = module.exports = {
 
 var win = window,
     doc = document,
-    ctx = __webpack_require__(3),
-    Toolbar = __webpack_require__(5),
-    Part = __webpack_require__(6),
-    Items = __webpack_require__(4)
-    $ = __webpack_require__(0);
-
+    ctx = __webpack_require__(5),
+    Toolbar = __webpack_require__(6),
+    Part = __webpack_require__(7),
+    Items = __webpack_require__(3)
+    $ = __webpack_require__(0),
+    tools = __webpack_require__(4);
+    
 __webpack_require__(24);
 
 ctx.Part = Part;
 ctx.Toolbar = Toolbar;
 ctx.Items = Items;
+ctx.tools = tools;
 
 var ArticlePart = __webpack_require__(16);
-var ParagraphPart = __webpack_require__(8);
+var ParagraphPart = __webpack_require__(9);
 var SeparatorPart = __webpack_require__(21);
 var ImagePart = __webpack_require__(18);
 var VideoPart = __webpack_require__(23);
@@ -3678,7 +4127,7 @@ var Buttons = __webpack_require__(27);
 var doc = document;
 var win = window;
 
-__webpack_require__(52);
+__webpack_require__(47);
 
 function clone(o) {
   var result = {};
@@ -3899,9 +4348,9 @@ module.exports = Toolbar;
 /* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var Button = __webpack_require__(7);
-var Separator = __webpack_require__(12);
-var ListButton = __webpack_require__(11);
+var Button = __webpack_require__(8);
+var Separator = __webpack_require__(13);
+var ListButton = __webpack_require__(12);
 
 Button.eval = function(o) {
   if( !o ) return null;
@@ -3924,7 +4373,7 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 
-__webpack_require__(57);
+__webpack_require__(52);
 
 function DnD(part, dom) {
   var el = $(dom);
@@ -4009,10 +4458,11 @@ module.exports = DnD;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var toolbar = __webpack_require__(14);
-var Button = __webpack_require__(5).Button;
+var Button = __webpack_require__(6).Button;
+var tools = __webpack_require__(4);
+var Items = __webpack_require__(3);
 
-__webpack_require__(58);
+__webpack_require__(53);
 
 function Marker(part, dom) {
   var el = $(dom);
@@ -4021,7 +4471,7 @@ function Marker(part, dom) {
   
   function update() {
     var tools = marker.find('.ff-marker-tools').empty();
-    toolbar.forEach(function(item) {
+    items.forEach(function(item) {
       if( !item || !item.text ) return;
       
       new Button(item).cls('ff-marker-tools-btn').scope(part).appendTo(tools);
@@ -4109,507 +4559,21 @@ function Marker(part, dom) {
   };
 }
 
+var items = Marker.toolbar = new Items([
+  tools.insert.heading,
+  tools.insert.paragraph,
+  tools.insert.imagefile,
+  tools.insert.image,
+  tools.insert.video,
+  tools.insert.separator,
+  tools.insert.link,
+  tools.insert.attach
+]);
+
 module.exports = Marker;
 
 /***/ }),
 /* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
-
-
-module.exports = new Items()
-.add({
-  type: 'list',
-  text: '<i class="fa fa-header"></i>',
-  tooltip: 'Select Heading',
-  onselect: function(item, i, btn) {
-    var part = this;
-    var dom = part.dom();
-    
-    if( dom.tagName.toLowerCase() !== item.tag ) {
-      var el = $(part.dom());
-      var parentpart = part.parent();
-      
-      var newpart = new context.Heading({
-        tag: item.tag,
-        html: el.html()
-      });
-      
-      el.after(newpart.dom()).remove();
-      
-      newpart.focus();
-      parentpart && parentpart.history().save();
-    }
-  },
-  items: [
-    { text: '<h1>Title</h1>', tag: 'h1' },
-    { text: '<h2>Title</h2>', tag: 'h2' },
-    { text: '<h3>Title</h3>', tag: 'h3' },
-    { text: '<h4>Title</h4>', tag: 'h4' },
-    { text: '<h5>Title</h5>', tag: 'h5' },
-    { text: '<h6>Title</h6>', tag: 'h6' }
-  ]
-})
-.add({
-  text: '<i class="fa fa-align-justify"></i>',
-  tooltip: '정렬',
-  onupdate: function(btn) {
-    if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-    else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-    else if( btn.align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-    else btn.text('<i class="fa fa-align-justify"></i>');
-  },
-  fn: function(btn) {
-    var part = this;
-    var el = $(part.dom());
-    
-    if( btn.align == 'center' ) {
-      el.css('text-align', 'right');
-      btn.align = 'right';
-    } else if( btn.align == 'right' ) {
-      el.css('text-align', 'left');
-      btn.align = 'left';
-    } else if( btn.align == 'left' ) {
-      el.css('text-align', '');
-      btn.align = '';
-    } else {
-      el.css('text-align', 'center');
-      btn.align = 'center';
-    }
-    part.history().save();
-  }
-})
-.add({
-  text: '<i class="fa fa-hand-pointer-o"></i>',
-  tooltip: '요소이동',
-  onupdate: function(btn) {
-    var part = this;
-    var el = $(part.dom());
-    
-    if( el.ha('draggable') ) btn.active(true);
-    else btn.active(false);
-  },
-  fn: function() {
-    var part = this;
-    part.dragmode(!part.dragmode());
-  }
-});
-
-/***/ }),
-/* 33 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
-
-module.exports = new Items()
-.add({
-  id: 'float-left',
-  text: '<i class="fa fa-dedent"></i>',
-  tooltip: '좌측플로팅',
-  fn: function(btn) {
-    this.floating('left').history().save();
-  }
-})
-.add({
-  id: 'float-right',
-  text: '<i class="fa fa-dedent ff-flip"></i>',
-  tooltip: '우측플로팅',
-  fn: function(btn) {
-    this.floating('right').history().save();
-  }
-})
-.add({
-  id: 'rotate-size',
-  text: '<i class="fa fa-circle-o"></i>',
-  tooltip: '크기변경',
-  onupdate: function(btn) {
-    var part = this;
-    
-    var blockmode = part.blockmode();
-    if( blockmode == 'natural' ) btn.text('<i class="fa fa-square-o"></i>');
-    else if( blockmode == 'medium' ) btn.text('<i class="fa fa-arrows-alt"></i>');
-    else if( blockmode == 'full' ) btn.text('<i class="fa fa-circle-o"></i>');
-    else btn.text('<i class="fa fa-align-center"></i>');
-  },
-  fn: function(btn) {
-    var part = this;
-    
-    var blockmode = part.blockmode();
-    if( blockmode == 'natural' ) part.blockmode('medium');
-    else if( blockmode == 'medium' ) part.blockmode('full');
-    else if( blockmode == 'full' ) part.blockmode(false);
-    else part.blockmode('natural');
-    
-    part.history().save();
-  }
-})
-.add({
-  id: 'upload-image',
-  text: '<i class="fa fa-file-image-o"></i>',
-  tooltip: '사진변경(업로드)',
-  fn: function() {
-    var part = this;
-    context.selectFile(function(err, file) {
-      if( err ) return context.error(err);
-      if( !file ) return;
-      
-      part.src(file.src).title(file.name);
-      part.history().save();
-    });
-  }
-})
-.add({
-  id: 'change-image',
-  text: '<i class="fa fa-instagram"></i>',
-  tooltip: '사진변경',
-  fn: function() {
-    var part = this;
-    context.prompt('Please enter the image URL.', function(src) {
-      src && part.src(src).title(null);
-      part.history().save();
-    });
-  }
-})
-.add({
-  text: '<i class="fa fa-align-justify"></i>',
-  tooltip: '정렬',
-  onupdate: function(btn) {
-    var part = this;
-    var el = $(part.figcaption());
-    var align = el.css('text-align');
-    
-    if( part.isFigure() ) btn.show();
-    else btn.hide();
-    
-    if( align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-    else if( align == 'left' ) btn.text('<i class="fa fa-align-left"></i>');
-    else btn.text('<i class="fa fa-align-center"></i>');
-  },
-  fn: function(btn) {
-    var part = this;
-    var el = $(part.figcaption());
-    var align = el.css('text-align');
-    
-    if( align == 'right' ) {
-      el.css('text-align', 'left');
-    } else if( align == 'left' ) {
-      el.css('text-align', null);
-    } else {
-      el.css('text-align', 'right');
-    }
-    part.history().save();
-  }
-})
-.add({
-  id: 'change-image',
-  text: '<i class="fa fa-text-width"></i>',
-  onupdate: function(btn) {
-    if( this.isFigure() ) btn.active(true);
-    else btn.active(false);
-  },
-  tooltip: '캡션',
-  fn: function() {
-    this.caption(!this.isFigure());
-  }
-});
-
-/***/ }),
-/* 34 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
-
-function rangeitem(text, tooltip, selector, fn) {
-  return {
-    text: text,
-    tooltip: tooltip,
-    onupdate: function(btn) {
-      var range = this.range();
-      if( !range ) return btn.enable(false);
-    
-      btn.enable(true);
-      btn.active(range.iswrapped(selector));
-    },
-    fn: fn || function(btn) {
-      var part = this;
-      var range = part.range();
-      if( !range ) return;
-      
-      range.togglewrap(selector);
-      part.history().save();
-    }
-  };
-}
-
-module.exports = new Items()
-.add({
-  type: 'list',
-  text: '<i class="fa fa-font"></i>',
-  tooltip: 'Select Font',
-  onupdate: function(btn) {
-    var range = this.range();
-    
-    range && btn.active(range.iswrapped('span.f_txt_font'));
-  },
-  onselect: function(item, i, btn) {
-    var part = this;
-    var dom = part.dom();
-    var range = part.range();
-    
-    if( !range ) {
-      dom.style.fontFamily = item.font || '';
-      part.history().save();
-      return;
-    }
-    
-    range.unwrap('span.f_txt_font');
-    var node = range.wrap('span.f_txt_font');
-    node.style.fontFamily = item.font || '';
-    
-    part.history().save();
-  },
-  items: function() {
-    return context.fonts();
-  }
-})
-.add({
-  type: 'list',
-  text: '<i class="fa fa-text-height"></i>',
-  tooltip: 'Select Font Size',
-  onupdate: function(btn) {
-    var range = this.range();
-    range && btn.active(range.iswrapped('span.f_txt_fontsize'));
-  },
-  onselect: function(item, i, btn) {
-    var part = this;
-    var dom = part.dom();
-    var range = part.range();
-    
-    if( !range ) {
-      dom.style.fontSize = item.size || '';
-      part.history().save();
-      return;
-    }
-    
-    range.unwrap('span.f_txt_fontsize');
-    var node = range.wrap('span.f_txt_fontsize');
-    node.style.fontSize = item.size || '';
-    
-    part.history().save();
-  },
-  items: [
-    { text: 'Default' },
-    { text: '<span style="font-size:11px;">11px</span>', size: '11px' },
-    { text: '<span style="font-size:12px;">12px</span>', size: '12px' },
-    { text: '<span style="font-size:14px;">14px</span>', size: '14px' },
-    { text: '<span style="font-size:16px;">16px</span>', size: '16px' },
-    { text: '<span style="font-size:18px;">18px</span>', size: '18px' },
-    { text: '<span style="font-size:20px;">20px</span>', size: '20px' }
-  ]
-})
-.add({
-  type: 'list',
-  text: '<i class="fa fa-square"></i>',
-  tooltip: 'Select Color',
-  onupdate: function(btn) {
-    var range = this.range();
-    range && btn.active(range.iswrapped('span.f_txt_color'));
-  },
-  onselect: function(item, i, btn) {
-    var part = this;
-    var dom = part.dom();
-    var range = part.range();
-    
-    var change = function(color) {
-      if( !range ) {
-        dom.style.color = color || '';
-        return;
-      }
-      
-      range.unwrap('span.f_txt_color');
-      var node = range.wrap('span.f_txt_color');
-      node.style.color = color || '';
-    }
-    
-    if( item.id == 'picker' ) {
-      $('<input type="color">').on('change', function() {
-        if( this.value ) change(this.value);
-      }).click();
-    } else {
-      change(item.color);
-      part.history().save();
-    }
-  },
-  items: function() {
-    var colors = context.colors().slice();
-    colors.push({
-      id: 'picker',
-      text: 'Select Color'
-    });
-    return colors;
-  }
-})
-.add('-')
-.add({
-  type: 'list',
-  text: '<i class="fa fa-header"></i>',
-  tooltip: 'Select Heading',
-  onupdate: function(btn) {
-    var range = this.range();
-    if( !range ) return btn.enable(false);
-    
-    btn.enable(true);
-    
-    range && btn.active(range.iswrapped('h1, h2, h3, h4, h5, h6'));
-  },
-  onselect: function(item, i, btn) {
-    var part = this;
-    var range = part.range();
-    if( !range ) return;
-    
-    range.unwrap('h1, h2, h3, h4, h5, h6');
-    item.tag && range.wrap(item.tag);
-    part.history().save();
-  },
-  items: [
-    { text: 'Default' },
-    { text: '<h1>Heading</h1>', tag: 'h1' },
-    { text: '<h2>Heading</h2>', tag: 'h2' },
-    { text: '<h3>Heading</h3>', tag: 'h3' },
-    { text: '<h4>Heading</h4>', tag: 'h4' },
-    { text: '<h5>Heading</h5>', tag: 'h5' },
-    { text: '<h6>Heading</h6>', tag: 'h6' }
-  ]
-})
-.add(rangeitem('<i class="fa fa-bold"></i>', '굵게', 'b'))
-.add(rangeitem('<i class="fa fa-underline"></i>', '밑줄', 'u'))
-.add(rangeitem('<i class="fa fa-italic"></i>', '이탤릭', 'i'))
-.add(rangeitem('<i class="fa fa-strikethrough"></i>', '가로줄', 'strike'))
-.add(rangeitem('<i class="fa fa-link"></i>', '링크', 'a', function(e) {
-  var part = this;
-  var range = part.range();
-  if( !range || range.iswrapped('a') ) return range.unwrap('a');
-  
-  context.prompt('Please enter the anchor URL.', function(href) {
-    if( !href ) return;
-    var a = range.wrap('a');
-    a.href = href;
-    a.target = '_blank';
-    part.history().save();
-  });
-}))
-.add({
-  text: '<i class="fa fa-align-justify"></i>',
-  tooltip: '정렬',
-  onupdate: function(btn) {
-    if( btn.align == 'center' ) btn.text('<i class="fa fa-align-center"></i>');
-    else if( btn.align == 'right' ) btn.text('<i class="fa fa-align-right"></i>');
-    else if( btn.align == 'justify' ) btn.text('<i class="fa fa-align-justify"></i>');
-    else btn.text('<i class="fa fa-align-left"></i>');
-  },
-  fn: function(btn) {
-    var part = this;
-    var el = $(part.dom());
-    
-    if( btn.align == 'center' ) {
-      el.css('text-align', 'right');
-      btn.align = 'right';
-    } else if( btn.align == 'right' ) {
-      el.css('text-align', 'justify');
-      btn.align = 'justify';
-    } else if( btn.align == 'justify' ) {
-      el.css('text-align', '');
-      btn.align = '';
-    } else {
-      el.css('text-align', 'center');
-      btn.align = 'center';
-    }
-    part.history().save();
-  }
-})
-.add({
-  text: '<i class="fa fa-hand-pointer-o"></i>',
-  tooltip: '요소이동',
-  onupdate: function(btn) {
-    var part = this;
-    var el = $(part.dom());
-    
-    if( el.ha('draggable') ) btn.active(true);
-    else btn.active(false);
-  },
-  fn: function() {
-    var part = this;
-    part.dragmode(!part.dragmode());
-  }
-});
-
-/***/ }),
-/* 35 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
-
-module.exports = new Items()
-.add({
-  text: '<i class="fa fa-align-justify"></i>',
-  tooltip: '정렬',
-  onupdate: function(btn) {
-    var part = this;
-    var valign = part.valign();
-    
-    if( valign == 'middle' ) btn.text('<i class="fa fa-align-center ff-vert"></i>');
-    else if( valign == 'bottom' ) btn.text('<i class="fa fa-align-left ff-vert"></i>');
-    else if( valign == 'justify' ) btn.text('<i class="fa fa-align-justify ff-vert"></i>');
-    else btn.text('<i class="fa fa-align-right ff-vert"></i>');
-  },
-  fn: function(btn) {
-    var part = this;
-    var valign = part.valign();
-    
-    if( valign == 'middle' ) part.valign('bottom');
-    else if( valign == 'bottom' ) part.valign('justify');
-    else if( valign == 'justify' ) part.valign(false);
-    else part.valign('middle');
-    part.history().save();
-  }
-});
-
-/***/ }),
-/* 36 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var context = __webpack_require__(3);
-var Items = __webpack_require__(4);
-
-module.exports = new Items()
-.add({
-  text: '<i class="fa fa-circle-o"></i>',
-  tooltip: '크기변경',
-  onupdate: function(btn) {
-    var el = $(this.dom());
-    if( el.hc('f_video_fit') ) btn.text('<i class="fa fa-circle-o"></i>');
-    else btn.text('<i class="fa fa-arrows-alt"></i>');
-  },
-  fn: function() {
-    var el = $(this.dom());
-    
-    if( el.hc('f_video_fit') ) el.rc('f_video_fit').ac('f_video_narrow');
-    else el.rc('f_video_narrow').ac('f_video_fit');
-  }
-});
-
-/***/ }),
-/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4623,7 +4587,7 @@ exports.push([module.i, ".ff-focus-state {\n  background-color: #eee;\n}\n.ff[co
 
 
 /***/ }),
-/* 38 */
+/* 33 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4637,7 +4601,7 @@ exports.push([module.i, ".ff-toolbar {\n  position: absolute;\n  border: none;\n
 
 
 /***/ }),
-/* 39 */
+/* 34 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4651,7 +4615,7 @@ exports.push([module.i, ".ff-toolbar-btn {\n  display: table-cell;\n  cursor: po
 
 
 /***/ }),
-/* 40 */
+/* 35 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4665,7 +4629,7 @@ exports.push([module.i, ".ff-toolbar-list-btn .ff-toolbar-list-dropdown {\n  dis
 
 
 /***/ }),
-/* 41 */
+/* 36 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4679,7 +4643,7 @@ exports.push([module.i, ".ff-toolbar-separator-btn {\n  letter-spacing: -99999;\
 
 
 /***/ }),
-/* 42 */
+/* 37 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4693,7 +4657,7 @@ exports.push([module.i, ".ff-article.ff-focus-state {\n  background-color: initi
 
 
 /***/ }),
-/* 43 */
+/* 38 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4707,7 +4671,7 @@ exports.push([module.i, ".ff-dnd-marker {\n  height: 1px;\n  background-color: #
 
 
 /***/ }),
-/* 44 */
+/* 39 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4721,7 +4685,7 @@ exports.push([module.i, ".ff-marker {\n  display: block;\n  position: relative;\
 
 
 /***/ }),
-/* 45 */
+/* 40 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4735,7 +4699,7 @@ exports.push([module.i, ".f_img img {\n  display: block;\n  max-width: 100%;\n  
 
 
 /***/ }),
-/* 46 */
+/* 41 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4749,7 +4713,7 @@ exports.push([module.i, ".f_link {\n  margin: 15px 0;\n}\n.f_link a {\n  display
 
 
 /***/ }),
-/* 47 */
+/* 42 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4763,7 +4727,7 @@ exports.push([module.i, ".ff-paragraph.ff-edit-state {\n  min-height: 1em;\n}\n.
 
 
 /***/ }),
-/* 48 */
+/* 43 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4777,7 +4741,7 @@ exports.push([module.i, ".f_row {\n  display: table;\n  table-layout: fixed;\n  
 
 
 /***/ }),
-/* 49 */
+/* 44 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4791,7 +4755,7 @@ exports.push([module.i, "hr.ff-edit-state {\n  display: block;\n  min-height: 1p
 
 
 /***/ }),
-/* 50 */
+/* 45 */
 /***/ (function(module, exports, __webpack_require__) {
 
 exports = module.exports = __webpack_require__(1)(undefined);
@@ -4805,7 +4769,7 @@ exports.push([module.i, ".f_video {\n  position: relative;\n  margin: 15px auto;
 
 
 /***/ }),
-/* 51 */
+/* 46 */
 /***/ (function(module, exports) {
 
 
@@ -4900,6 +4864,136 @@ module.exports = function (css) {
 
 
 /***/ }),
+/* 47 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(33);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/index.js!./toolbar.less", function() {
+			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/index.js!./toolbar.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 48 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(34);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./button.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./button.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 49 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(35);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./list.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./list.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 50 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(36);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
+/* 51 */
+/***/ (function(module, exports, __webpack_require__) {
+
+// style-loader: Adds some css to the DOM by adding a <style> tag
+
+// load the styles
+var content = __webpack_require__(37);
+if(typeof content === 'string') content = [[module.i, content, '']];
+// add the styles to the DOM
+var update = __webpack_require__(2)(content, {});
+if(content.locals) module.exports = content.locals;
+// Hot Module Replacement
+if(false) {
+	// When the styles change, update the <style> tags
+	if(!content.locals) {
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./article.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./article.less");
+			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
+			update(newContent);
+		});
+	}
+	// When the module is disposed, remove the <style> tags
+	module.hot.dispose(function() { update(); });
+}
+
+/***/ }),
 /* 52 */
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -4915,8 +5009,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/index.js!./toolbar.less", function() {
-			var newContent = require("!!../../node_modules/css-loader/index.js!../../node_modules/less-loader/dist/index.js!./toolbar.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./dnd.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./dnd.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4941,8 +5035,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./button.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./button.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./marker.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./marker.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4967,8 +5061,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./list.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./list.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./image.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./image.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -4993,8 +5087,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./link.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./link.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5019,8 +5113,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./article.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./article.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./paragraph.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./paragraph.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5045,8 +5139,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./dnd.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./dnd.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./row.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./row.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5071,8 +5165,8 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./marker.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./marker.less");
+		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less", function() {
+			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 			update(newContent);
 		});
@@ -5097,136 +5191,6 @@ if(content.locals) module.exports = content.locals;
 if(false) {
 	// When the styles change, update the <style> tags
 	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./image.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./image.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 60 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(46);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./link.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./link.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 61 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(47);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./paragraph.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./paragraph.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 62 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(48);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./row.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./row.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 63 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(49);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
-		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less", function() {
-			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./separator.less");
-			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
-			update(newContent);
-		});
-	}
-	// When the module is disposed, remove the <style> tags
-	module.hot.dispose(function() { update(); });
-}
-
-/***/ }),
-/* 64 */
-/***/ (function(module, exports, __webpack_require__) {
-
-// style-loader: Adds some css to the DOM by adding a <style> tag
-
-// load the styles
-var content = __webpack_require__(50);
-if(typeof content === 'string') content = [[module.i, content, '']];
-// add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
-if(content.locals) module.exports = content.locals;
-// Hot Module Replacement
-if(false) {
-	// When the styles change, update the <style> tags
-	if(!content.locals) {
 		module.hot.accept("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./video.less", function() {
 			var newContent = require("!!../../../node_modules/css-loader/index.js!../../../node_modules/less-loader/dist/index.js!./video.less");
 			if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
@@ -5238,7 +5202,7 @@ if(false) {
 }
 
 /***/ }),
-/* 65 */
+/* 60 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var win = window;
@@ -5314,7 +5278,7 @@ Context.each = each;
 module.exports = Context;
 
 /***/ }),
-/* 66 */
+/* 61 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var util = __webpack_require__(15);
