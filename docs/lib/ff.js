@@ -491,6 +491,7 @@ function updateLink(linkElement, options, obj) {
 var $ = __webpack_require__(0);
 
 function Items(arr) {
+  this._ = {};
   if( $.util.isArrayLike(arr) ) {
     var self = this;
     [].forEach.call(arr, function(item) {
@@ -504,7 +505,7 @@ var proto = Items.prototype = [];
 proto.push = function() {
   var self = this;
   [].forEach.call(arguments, function(item) {
-    if( item && item.id ) self[item.id] = item;
+    if( item && item.id ) self._[item.id] = item;
   });
   
   return [].push.apply(this, arguments);
@@ -524,11 +525,12 @@ proto.add = function(item) {
 };
 
 proto.get = function(id) {
-  return this[id];
+  return this._[id];
 };
 
 proto.remove = function(item) {
-  if( ~['string', 'number'].indexOf(typeof item) ) item = this[id];
+  if( ~['string', 'number'].indexOf(typeof item) ) item = this._[item];
+  if( !item ) return this;
   for(var pos;~(pos = this.indexOf(item));) this.splice(pos, 1);
   return this;
 };
@@ -545,7 +547,7 @@ module.exports = Items;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
+var context = __webpack_require__(6);
 
 function rangeitem(id, text, tooltip, selector, fn) {
   return {
@@ -1130,6 +1132,26 @@ module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
+var Toolbar = __webpack_require__(28);
+
+Toolbar.Button = __webpack_require__(8);
+Toolbar.Separator = __webpack_require__(13);
+Toolbar.ListButton = __webpack_require__(12);
+
+Toolbar.update = function() {
+  $('.ff-toolbar').each(function(i, el) {
+    var toolbar = el.toolbar;
+    toolbar && toolbar.update();
+  });
+};
+
+module.exports = Toolbar;
+
+/***/ }),
+/* 6 */
+/***/ (function(module, exports, __webpack_require__) {
+
+var $ = __webpack_require__(0);
 var types = __webpack_require__(14);
 var Items = __webpack_require__(3);
 var RangeEditor = __webpack_require__(11);
@@ -1464,33 +1486,14 @@ module.exports = context;
 
 
 /***/ }),
-/* 6 */
-/***/ (function(module, exports, __webpack_require__) {
-
-var $ = __webpack_require__(0);
-var Toolbar = __webpack_require__(28);
-
-Toolbar.Button = __webpack_require__(8);
-Toolbar.Separator = __webpack_require__(13);
-Toolbar.ListButton = __webpack_require__(12);
-
-Toolbar.update = function() {
-  $('.ff-toolbar').each(function(i, el) {
-    var toolbar = el.toolbar;
-    toolbar && toolbar.update();
-  });
-};
-
-module.exports = Toolbar;
-
-/***/ }),
 /* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 var Types = __webpack_require__(14);
-var Toolbar = __webpack_require__(6);
+var Toolbar = __webpack_require__(5);
 var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
+var context = __webpack_require__(6);
+var Items = __webpack_require__(3);
 var tools = __webpack_require__(4);
 
 function Part(arg) {
@@ -1796,7 +1799,7 @@ Part.prototype = {
   }
 };
 
-Part.toolbar = [tools.clearfix, tools.remove];
+Part.toolbar = new Items([tools.clearfix, tools.remove]);
 
 module.exports = Part;
 
@@ -1916,8 +1919,8 @@ module.exports = Button;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(7);
-var Toolbar = __webpack_require__(6);
-var context = __webpack_require__(5);
+var Toolbar = __webpack_require__(5);
+var context = __webpack_require__(6);
 var Items = __webpack_require__(3);
 var tools = __webpack_require__(4);
 var autoflush = __webpack_require__(10);
@@ -1931,7 +1934,8 @@ function ParagraphPart() {
 }
 
 var proto = ParagraphPart.prototype = Object.create(Part.prototype);
-var items = ParagraphPart.toolbar = new Items([
+
+ParagraphPart.toolbar = new Items([
   tools.paragraph.font,
   tools.paragraph.fontsize,
   tools.paragraph.color,
@@ -1946,7 +1950,7 @@ var items = ParagraphPart.toolbar = new Items([
 ]);
 
 proto.createToolbar = function() {
-  return new Toolbar(this).position(items.position).add(items);
+  return new Toolbar(this).position(ParagraphPart.toolbar.position).add(ParagraphPart.toolbar);
 };
 
 proto.oninit = function(e) {
@@ -2634,7 +2638,7 @@ var lib = module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
+var context = __webpack_require__(6);
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
 var Part = context.Part;
@@ -2649,7 +2653,8 @@ function ArticlePart() {
 }
 
 var proto = ArticlePart.prototype = Object.create(Part.prototype);
-var items = ArticlePart.toolbar = new Items([
+
+ArticlePart.toolbar = new Items([
   tools.clear,
   '-',
   tools.insert.heading,
@@ -2663,8 +2668,8 @@ var items = ArticlePart.toolbar = new Items([
 ]);
 
 proto.createToolbar = function() {
-  return new Toolbar(this).position(items.position || 'vertical top right outside')
-  .add(items)
+  return new Toolbar(this).position(ArticlePart.toolbar.position || 'vertical top right outside')
+  .add(ArticlePart.toolbar)
   .always(true);
 };
 
@@ -2932,7 +2937,7 @@ module.exports = ArticlePart;
 
 var tools = __webpack_require__(4);
 var $ = __webpack_require__(0);
-var Toolbar = __webpack_require__(6);
+var Toolbar = __webpack_require__(5);
 var ParagraphPart = __webpack_require__(9);
 var Items = __webpack_require__(3);
 
@@ -2941,14 +2946,15 @@ function HeadingPart() {
 }
 
 var proto = HeadingPart.prototype = Object.create(ParagraphPart.prototype);
-var items = ParagraphPart.toolbar = new Items([
+
+HeadingPart.toolbar = new Items([
   tools.heading,
   tools.align,
   tools.draggable
 ]);
 
 proto.createToolbar = function() {
-  return new Toolbar(this).position(items.position).add(items);
+  return new Toolbar(this).position(HeadingPart.toolbar.position).add(HeadingPart.toolbar);
 };
 
 proto.create = function(arg) {
@@ -2970,9 +2976,9 @@ module.exports = HeadingPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
+var context = __webpack_require__(6);
 var Part = __webpack_require__(7);
-var Toolbar = __webpack_require__(6);
+var Toolbar = __webpack_require__(5);
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
 
@@ -2997,7 +3003,7 @@ function ImagePart(el) {
 ImagePart.placeholder = 'Caption Here';
 
 var proto = ImagePart.prototype = Object.create(Part.prototype);
-var items = ImagePart.toolbar = new Items([
+ImagePart.toolbar = new Items([
   tools.image.floatleft,
   tools.image.floatright,
   tools.image.size,
@@ -3008,7 +3014,7 @@ var items = ImagePart.toolbar = new Items([
 ]);
 
 proto.createToolbar = function() {
-  return new Toolbar(this).position(items.position || 'inside top center').add(items);
+  return new Toolbar(this).position(ImagePart.toolbar.position || 'inside top center').add(ImagePart.toolbar);
 };
 
 proto.oninit = function() {
@@ -3215,6 +3221,7 @@ module.exports = ImagePart;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(7);
+var Toolbar = __webpack_require__(5);
 var autoflush = __webpack_require__(10);
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
@@ -3226,10 +3233,15 @@ function Link() {
 }
 
 var proto = Link.prototype = Object.create(Part.prototype);
-var items = Link.toolbar = new Items([
+
+Link.toolbar = new Items([
   tools.align,
   tools.target
 ]);
+
+proto.createToolbar = function() {
+  return new Toolbar(this).position(Link.toolbar.position).add(Link.toolbar);
+};
 
 proto.oninit = function() {
   var part = this;
@@ -3242,9 +3254,6 @@ proto.oninit = function() {
   .on('keydown', function(e) {
     if( part.editmode() && !e.metaKey && !e.ctrKey && e.target.tagName == 'A' ) flush();
   });
-  
-  this.toolbar()
-  .add(items);
 }
 
 proto.create = function(arg) {
@@ -3313,9 +3322,9 @@ module.exports = Link;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
+var context = __webpack_require__(6);
 var Part = __webpack_require__(7);
-var Toolbar = __webpack_require__(6);
+var Toolbar = __webpack_require__(5);
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
 
@@ -3353,12 +3362,13 @@ function RowPart(el) {
 }
 
 var proto = RowPart.prototype = Object.create(Part.prototype);
-var items = RowPart.toolbar = new Items([
+
+RowPart.toolbar = new Items([
   tools.row.valign
 ]);
 
 proto.createToolbar = function() {
-  return new Toolbar(this).position(items.position).add(items);
+  return new Toolbar(this).position(RowPart.toolbar.position).add(RowPart.toolbar);
 };
 
 proto.oninit = function() {
@@ -3582,6 +3592,7 @@ module.exports = RowPart;
 
 var $ = __webpack_require__(0);
 var Part = __webpack_require__(7);
+var Toolbar = __webpack_require__(5);
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
 
@@ -3592,16 +3603,14 @@ function Separator() {
 }
 
 var proto = Separator.prototype = Object.create(Part.prototype);
-var items = Separator.toolbar = new Items([
+
+Separator.toolbar = new Items([
   tools.separator.shape,
   tools.separator.width
 ]);
 
-proto.oninit = function() {
-  var part = this;
-  var el = $(this.dom());
-  
-  this.toolbar().add(items);
+proto.createToolbar = function() {
+  return new Toolbar(this).position(Separator.toolbar.position).add(Separator.toolbar);
 };
 
 proto.create = function(arg) {
@@ -3660,9 +3669,9 @@ module.exports = TextPart;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var context = __webpack_require__(5);
+var context = __webpack_require__(6);
 var Part = __webpack_require__(7);
-var Toolbar = __webpack_require__(6);
+var Toolbar = __webpack_require__(5);
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
 
@@ -3693,12 +3702,13 @@ function VideoPart() {
 }
 
 var proto = VideoPart.prototype = Object.create(Part.prototype);
-var items = VideoPart.toolbar = new Items([
+
+VideoPart.toolbar = new Items([
   tools.video.size
 ]);
 
 proto.createToolbar = function() {
-  return new Toolbar(this).position(items.position).add(items);
+  return new Toolbar(this).position(VideoPart.toolbar.position).add(VideoPart.toolbar);
 };
 
 proto.create = function(arg) {
@@ -3860,8 +3870,8 @@ var scope = module.exports = {
 
 var win = window,
     doc = document,
-    ctx = __webpack_require__(5),
-    Toolbar = __webpack_require__(6),
+    ctx = __webpack_require__(6),
+    Toolbar = __webpack_require__(5),
     Part = __webpack_require__(7),
     Items = __webpack_require__(3)
     $ = __webpack_require__(0),
@@ -4458,7 +4468,7 @@ module.exports = DnD;
 /***/ (function(module, exports, __webpack_require__) {
 
 var $ = __webpack_require__(0);
-var Button = __webpack_require__(6).Button;
+var Button = __webpack_require__(5).Button;
 var tools = __webpack_require__(4);
 var Items = __webpack_require__(3);
 
