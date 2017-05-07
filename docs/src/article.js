@@ -91,8 +91,6 @@ if( +localStorage.getItem('ff-version') !== version )
 
 // modify buttons
 (function() {
-  var tools = ff.tools;
-  
   // remove common clearfix button
   ff.Part.toolbar.remove('clearfix');
   
@@ -105,11 +103,11 @@ if( +localStorage.getItem('ff-version') !== version )
         alert('test');
       }
     },
-    tools.remove
+    ff.tools.remove
   ];
   
   // reset part buttons
-  ff.Heading.toolbar = [tools.clearfix, '-', tools.remove];
+  ff.Heading.toolbar = [ff.tools.clearfix, '-', ff.tools.remove];
 })();
 
 
