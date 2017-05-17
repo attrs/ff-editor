@@ -2592,7 +2592,7 @@ var lib = module.exports = {
     var top = el.offsetTop, left = el.offsetLeft;
     if( abs ) {
       while( el = el.offsetParent ) {
-        //console.log('offsettop', el.offsetTop, 'scrolltop', el.scrollTop)
+        if( !el || el.tagName === 'BODY' ) break;
         top += el.offsetTop - (el.scrollTop || 0);
         left += el.offsetLeft - (el.scrollLeft || 0);
       }
@@ -5557,6 +5557,8 @@ module.exports = function(ctx) {
   fn.append = function(node, index) {
     if( !node && typeof node != 'string' ) return this;
     
+    if( index !== null && index !== undefined ) console.log('append', index);
+    
     return this.each(function(i) {
       if( !isElement(this) ) return;
       
@@ -5567,11 +5569,11 @@ module.exports = function(ctx) {
       if( isHTML(node) ) node = create(node);
       if( !isArrayLike(node) ) node = [node];
       
-      if( ref && ref.nextSibling && el.insertBefore ) {
+      if( ref && el.insertBefore ) {
         [].forEach.call(node, function(node) {
           if( typeof node == 'string' ) node = doc.createTextNode(node);
           if( !isNode(node) ) return;
-          el.insertBefore(node, ref.nextSibling);
+          el.insertBefore(node, ref);
           ref = node;
         });
       } else if( el.appendChild ) {

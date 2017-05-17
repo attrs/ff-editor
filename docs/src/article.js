@@ -92,19 +92,18 @@ if( +localStorage.getItem('ff-version') !== version )
 // modify buttons
 (function() {
   // remove common clearfix button
-  ff.Part.toolbar.remove('clearfix');
+  //ff.Part.toolbar.remove('clearfix');
   
   // add common button
-  ff.Part.toolbar = [
+  ff.Part.toolbar.add(
     {
       id: 'test',
       text: '<i class="fa fa-gear"></i>',
       fn: function() {
         alert('test');
       }
-    },
-    ff.tools.remove
-  ];
+    }
+  );
   
   // reset part buttons
   ff.Heading.toolbar = [ff.tools.clearfix, '-', ff.tools.remove];
