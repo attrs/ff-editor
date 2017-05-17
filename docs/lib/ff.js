@@ -24,9 +24,9 @@ return /******/ (function(modules) { // webpackBootstrap
 /******/ 	function __webpack_require__(moduleId) {
 /******/
 /******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
+/******/ 		if(installedModules[moduleId]) {
 /******/ 			return installedModules[moduleId].exports;
-/******/
+/******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
@@ -167,7 +167,7 @@ function cssWithMappingToString(item, useSourceMap) {
 		return content;
 	}
 
-	if (useSourceMap) {
+	if (useSourceMap && typeof btoa === 'function') {
 		var sourceMapping = toComment(cssMapping);
 		var sourceURLs = cssMapping.sources.map(function (source) {
 			return '/*# sourceURL=' + cssMapping.sourceRoot + source + ' */'
@@ -181,10 +181,11 @@ function cssWithMappingToString(item, useSourceMap) {
 
 // Adapted from convert-source-map (MIT)
 function toComment(sourceMap) {
-  var base64 = new Buffer(JSON.stringify(sourceMap)).toString('base64');
-  var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
+	// eslint-disable-next-line no-undef
+	var base64 = btoa(unescape(encodeURIComponent(JSON.stringify(sourceMap))));
+	var data = 'sourceMappingURL=data:application/json;charset=utf-8;base64,' + base64;
 
-  return '/*# ' + data + ' */';
+	return '/*# ' + data + ' */';
 }
 
 
@@ -246,7 +247,7 @@ module.exports = function(list, options) {
 	// By default, add <style> tags to the bottom of the target
 	if (typeof options.insertAt === "undefined") options.insertAt = "bottom";
 
-	var styles = listToStyles(list);
+	var styles = listToStyles(list, options);
 	addStylesToDom(styles, options);
 
 	return function update(newList) {
@@ -258,7 +259,7 @@ module.exports = function(list, options) {
 			mayRemove.push(domStyle);
 		}
 		if(newList) {
-			var newStyles = listToStyles(newList);
+			var newStyles = listToStyles(newList, options);
 			addStylesToDom(newStyles, options);
 		}
 		for(var i = 0; i < mayRemove.length; i++) {
@@ -294,12 +295,12 @@ function addStylesToDom(styles, options) {
 	}
 }
 
-function listToStyles(list) {
+function listToStyles(list, options) {
 	var styles = [];
 	var newStyles = {};
 	for(var i = 0; i < list.length; i++) {
 		var item = list[i];
-		var id = item[0];
+		var id = options.base ? item[0] + options.base : item[0];
 		var css = item[1];
 		var media = item[2];
 		var sourceMap = item[3];
@@ -368,7 +369,24 @@ function attachTagAttrs(element, attrs) {
 }
 
 function addStyle(obj, options) {
-	var styleElement, update, remove;
+	var styleElement, update, remove, transformResult;
+
+	// If a transform function was defined, run it on the css
+	if (options.transform && obj.css) {
+	    transformResult = options.transform(obj.css);
+	    
+	    if (transformResult) {
+	    	// If transform returns a value, use that instead of the original css.
+	    	// This allows running runtime transformations on the css.
+	    	obj.css = transformResult;
+	    } else {
+	    	// If the transform function returns a falsy value, don't add this css. 
+	    	// This allows conditional loading of css
+	    	return function() {
+	    		// noop
+	    	};
+	    }
+	}
 
 	if (options.singleton) {
 		var styleIndex = singletonCounter++;
@@ -3754,8 +3772,13 @@ module.exports = VideoPart;
 // load the styles
 var content = __webpack_require__(32);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4882,8 +4905,13 @@ module.exports = function (css) {
 // load the styles
 var content = __webpack_require__(33);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4908,8 +4936,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(34);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4934,8 +4967,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(35);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4960,8 +4998,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(36);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -4986,8 +5029,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(37);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5012,8 +5060,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(38);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5038,8 +5091,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(39);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5064,8 +5122,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(40);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5090,8 +5153,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(41);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5116,8 +5184,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(42);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5142,8 +5215,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(43);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5168,8 +5246,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(44);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5194,8 +5277,13 @@ if(false) {
 // load the styles
 var content = __webpack_require__(45);
 if(typeof content === 'string') content = [[module.i, content, '']];
+// Prepare cssTransformation
+var transform;
+
+var options = {}
+options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(2)(content, {});
+var update = __webpack_require__(2)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -5556,8 +5644,6 @@ module.exports = function(ctx) {
   
   fn.append = function(node, index) {
     if( !node && typeof node != 'string' ) return this;
-    
-    if( index !== null && index !== undefined ) console.log('append', index);
     
     return this.each(function(i) {
       if( !isElement(this) ) return;
