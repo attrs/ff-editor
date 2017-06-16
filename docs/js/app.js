@@ -2388,6 +2388,7 @@ ParagraphPart.toolbar = new Items([
   tools.paragraph.font,
   tools.paragraph.fontsize,
   tools.paragraph.color,
+  tools.align,
   '-',
   tools.paragraph.bold,
   tools.paragraph.underline,
@@ -8491,18 +8492,16 @@ if( +localStorage.getItem('ff-version') !== version )
   //ff.Part.toolbar.remove('clearfix');
   
   // add common button
-  ff.Part.toolbar.add(
-    {
-      id: 'test',
-      text: '<i class="fa fa-gear"></i>',
-      fn: function() {
-        alert('test');
-      }
+  ff.Part.toolbar.add({
+    id: 'test',
+    text: '<i class="fa fa-gear"></i>',
+    fn: function() {
+      alert('test');
     }
-  );
+  });
   
   // reset part buttons
-  ff.Heading.toolbar = [ff.tools.clearfix, '-', ff.tools.remove];
+  ff.Heading.toolbar = [ff.tools.heading, ff.tools.align, ff.tools.draggable];
 })();
 
 
@@ -12869,4 +12868,4 @@ module.exports = function(ctx) {
 
 /***/ })
 /******/ ]);
-//# sourceMappingURL=article.js.map
+//# sourceMappingURL=app.js.map

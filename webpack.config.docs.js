@@ -19,7 +19,7 @@ var alias = {};
 
 module.exports = {
   entry: {
-    article: path.join(__dirname, 'docs/src/article.js')
+    app: path.join(__dirname, 'docs/src/app.js')
   },
   output: {
     path: path.join(__dirname, 'docs/js'),
