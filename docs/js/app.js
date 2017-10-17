@@ -8788,6 +8788,19 @@ var win = window;
 
 __webpack_require__(70);
 
+var supportsPassive = (function() {
+  var support = false;
+  try {
+    window.addEventListener('test', null, Object.defineProperty({}, 'passive', {
+      get: function() {
+        support = true;
+      }
+    }));
+  } catch (e) {}
+  
+  return support;
+})();
+
 function clone(o) {
   var result = {};
   for(var k in o) result[k] = o[k];
@@ -8984,7 +8997,7 @@ Toolbar.prototype = {
     
     if( vertical ) {
       //console.log('vertical', scopeposition, top);
-      var scrolltop = (offsetparent && offsetparent.scrollTop) ? offsetparent.scrollTop : doc.body.scrollTop;
+      var scrolltop = (offsetparent && offsetparent.scrollTop) ? offsetparent.scrollTop : (doc.documentElement.scrollTop || doc.body.scrollTop);
       
       if( scrolltop + limitY > scopeposition.top ) top = scrolltop + limitY;
       if( top > scopeposition.top + height - tbarheight ) top = scopeposition.top + height - tbarheight;
@@ -8992,7 +9005,14 @@ Toolbar.prototype = {
     
     dom.style.top = top + 'px';
     dom.style.left = left + 'px';
-    $(win).on('scroll resize wheel', this);
+    
+    if( supportsPassive ) {
+      win.addEventListener('scroll', this, { passive: true });
+      win.addEventListener('resize', this, { passive: true });
+      win.addEventListener('wheel', this, { passive: true });
+    } else {
+      $(win).on('scroll resize wheel', this);
+    }
     
     this.buttons().update();
     return this;
